@@ -6,7 +6,7 @@ Date: 2008-08-04
 Author: Anthony la Grange
 Maintainer: Anthony la Grange <amlg@sun.ac.za>
 Depends: R (>= 2.7.0), MASS, tcltk, tcltk2 (>= 1.0-7), tkrplot (>= 0.0-18) 
-Suggests: KernSmooth, rgl, vcd, xlsReadWrite
+Suggests: KernSmooth, rgl (>= 0.79), vcd, xlsReadWrite
 Description: Provides a GUI with which users can construct and interact with biplots.
 License: GPL (>=3)
 LazyLoad: yes

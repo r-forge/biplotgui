@@ -1,0 +1,196 @@
+%PDF-1.1
+%Å‚Å„ÅœÅ”\r
+1 0 obj
+<<
+/CreationDate (D:20080802215543)
+/ModDate (D:20080802215543)
+/Title (R Graphics Output)
+/Producer (R 2.7.1)
+/Creator (R)
+>>
+endobj
+2 0 obj
+<<
+/Type /Catalog
+/Pages 3 0 R
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/Name /F1
+/BaseFont /ZapfDingbats
+>>
+endobj
+6 0 obj
+<<
+/Type /Page
+/Parent 3 0 R
+/Contents 7 0 R
+/Resources 4 0 R
+>>
+endobj
+7 0 obj
+<<
+/Length 8 0 R
+>>
+stream
+q
+1.000 1.000 1.000 rg
+0 0 576.00 576.00 re f
+Q q
+0.000 0.000 0.000 RG
+0.75 w
+[] 0 d
+1 J
+1 j
+10.00 M
+57.60 57.60 m
+518.40 57.60 l
+518.40 518.40 l
+57.60 518.40 l
+57.60 57.60 l
+S
+Q q
+BT
+0.000 0.000 0.000 rg
+/F3 1 Tf 14.00 0.00 0.00 14.00 228.09 543.60 Tm (Axis predictivities) Tj
+ET
+Q q
+0.000 0.000 0.000 RG
+0.75 w
+[] 0 d
+1 J
+1 j
+10.00 M
+74.67 57.60 m 498.28 57.60 l S
+74.67 57.60 m 74.67 50.40 l S
+159.39 57.60 m 159.39 50.40 l S
+244.11 57.60 m 244.11 50.40 l S
+328.83 57.60 m 328.83 50.40 l S
+413.56 57.60 m 413.56 50.40 l S
+498.28 57.60 m 498.28 50.40 l S
+BT
+0.000 0.000 0.000 rg
+/F2 1 Tf 9.00 0.00 0.00 9.00 68.41 31.68 Tm (0.0) Tj
+/F2 1 Tf 9.00 0.00 0.00 9.00 153.13 31.68 Tm (0.2) Tj
+/F2 1 Tf 9.00 0.00 0.00 9.00 237.86 31.68 Tm (0.4) Tj
+/F2 1 Tf 9.00 0.00 0.00 9.00 322.58 31.68 Tm (0.6) Tj
+/F2 1 Tf 9.00 0.00 0.00 9.00 407.30 31.68 Tm (0.8) Tj
+/F2 1 Tf 9.00 0.00 0.00 9.00 492.02 31.68 Tm (1.0) Tj
+ET
+57.60 76.19 m 57.60 499.81 l S
+57.60 76.19 m 50.40 76.19 l S
+57.60 160.92 m 50.40 160.92 l S
+57.60 245.64 m 50.40 245.64 l S
+57.60 330.36 m 50.40 330.36 l S
+57.60 415.08 m 50.40 415.08 l S
+57.60 499.81 m 50.40 499.81 l S
+BT
+/F2 1 Tf 0.00 9.00 -9.00 0.00 40.32 69.94 Tm (0.0) Tj
+/F2 1 Tf 0.00 9.00 -9.00 0.00 40.32 154.66 Tm (0.2) Tj
+/F2 1 Tf 0.00 9.00 -9.00 0.00 40.32 239.38 Tm (0.4) Tj
+/F2 1 Tf 0.00 9.00 -9.00 0.00 40.32 324.11 Tm (0.6) Tj
+/F2 1 Tf 0.00 9.00 -9.00 0.00 40.32 408.83 Tm (0.8) Tj
+/F2 1 Tf 0.00 9.00 -9.00 0.00 40.32 493.55 Tm (1.0) Tj
+ET
+Q q 57.60 57.60 460.80 460.80 re W n
+1.000 0.647 0.000 RG
+0.75 w
+[] 0 d
+1 J
+1 j
+10.00 M
+74.67 76.19 m
+498.28 499.81 l
+S
+BT
+0.851 0.851 0.851 rg
+/F2 1 Tf 10.00 0.00 0.00 10.00 73.28 484.72 Tm (Population) Tj
+/F2 1 Tf 10.00 0.00 0.00 10.00 469.76 482.70 Tm (Income) Tj
+/F2 1 Tf 10.00 0.00 0.00 10.00 359.54 437.49 Tm (Illiteracy) Tj
+/F2 1 Tf 10.00 0.00 0.00 10.00 380.61 449.79 Tm (Life Exp) Tj
+/F2 1 Tf 10.00 0.00 0.00 10.00 460.45 487.78 Tm (HS Grad) Tj
+/F2 1 Tf 10.00 0.00 0.00 10.00 287.30 470.40 Tm (Frost) Tj
+/F2 1 Tf 10.00 0.00 0.00 10.00 165.77 461.35 Tm (Area) Tj
+0.851 0.851 0.851 RG
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 93.70 491.86 Tm (l) Tj 0 Tr
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 483.19 490.80 Tm (l) Tj 0 Tr
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 374.86 444.59 Tm (l) Tj 0 Tr
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 395.56 456.98 Tm (l) Tj 0 Tr
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 476.89 495.95 Tm (l) Tj 0 Tr
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 295.73 478.50 Tm (l) Tj 0 Tr
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 173.37 469.45 Tm (l) Tj 0 Tr
+0.000 0.000 1.000 rg
+/F2 1 Tf 10.00 0.00 0.00 10.00 323.22 487.21 Tm (Murder) Tj
+0.000 0.000 1.000 RG
+/F1 1 Tf 2 Tr 7.48 0 0 7.48 336.09 495.31 Tm (l) Tj 0 Tr
+ET
+Q
+endstream
+endobj
+8 0 obj
+2617
+endobj
+3 0 obj
+<<
+/Type /Pages
+/Kids [
+6 0 R
+]
+/Count 1
+/MediaBox [0 0 576 576]
+>>
+endobj
+4 0 obj
+<<
+/ProcSet [/PDF /Text]
+/Font << /F1 5 0 R /F2 10 0 R /F3 11 0 R >>
+/ExtGState << >>
+>>
+endobj
+9 0 obj
+<<
+/Type /Encoding
+/BaseEncoding /WinAnsiEncoding
+/Differences [ 45/minus ]
+>>
+endobj
+10 0 obj <<
+/Type /Font
+/Subtype /Type1
+/Name /F2
+/BaseFont /Helvetica
+/Encoding 9 0 R
+>> endobj
+11 0 obj <<
+/Type /Font
+/Subtype /Type1
+/Name /F3
+/BaseFont /Helvetica-Bold
+/Encoding 9 0 R
+>> endobj
+xref
+0 12
+0000000000 65535 f 
+0000000021 00000 n 
+0000000163 00000 n 
+0000003065 00000 n 
+0000003148 00000 n 
+0000000212 00000 n 
+0000000295 00000 n 
+0000000375 00000 n 
+0000003045 00000 n 
+0000003252 00000 n 
+0000003346 00000 n 
+0000003443 00000 n 
+trailer
+<<
+/Size 12
+/Info 1 0 R
+/Root 2 0 R
+>>
+startxref
+3545
+%%EOF
