@@ -6322,7 +6322,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     MenuBar.Help <- tk2menu(MenuBar.menu, tearoff = FALSE)
     tkadd(MenuBar.Help, "command", label = "Manual (in PDF)", 
         underline = "0", accelerator = "F1", command = Help.Manual.cmd)
-    tkadd(MenuBar.Help, "command", label = "Home page", underline = "0", 
+    tkadd(MenuBar.Help, "command", label = "Homepage", underline = "0", 
         command = Help.HomePage.cmd)
     tkadd(MenuBar.Help, "separator")
     tkadd(MenuBar.Help, "checkbutton", label = "Show pop-up help", 
