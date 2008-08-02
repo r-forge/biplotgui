@@ -11,3 +11,4 @@ Description: Provides a GUI with which users can construct and interact with bip
 License: GPL (>=3)
 LazyLoad: yes
 OS_ype: windows
+URL: http://biplotgui.r-forge.r-project.org/
