@@ -9,7 +9,7 @@
 \format{
 A data frame with 15 observations on the following 8 variables.
   \describe{
-    \item{\code{GDP}}{Purchasing price parity (PPP) gross domesitc product (GDP) in trillions of US dollars. A numeric vector.}
+    \item{\code{GDP}}{Purchasing price parity (PPP) gross domesitc product (GDP) per capita in 2007 US dollars. A numeric vector.}
     \item{\code{HIV.Aids}}{HIV/Aids prevalence as a percentage of the population. A numeric vector.}
     \item{\code{Life.exp.}}{Life expectancy in years. A numeric vector.}
     \item{\code{Mil.}}{Military spending as a percentage of GDP. A numeric vector.}
