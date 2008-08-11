@@ -307,9 +307,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         list(xlimt, ylimt)
     }
     mynewplot <- function(x, y, xlimtouse = NA, ylimtouse = NA, 
-        fitaroundlabels = FALSE, .labels = NA, labels.cex = points.label.cex, 
-        HorizOffset = points.label.HorizOffset, VertOffset = points.label.VertOffset, 
-        ...) {
+        fitaroundlabels = FALSE, .labels = NA, labels.cex, HorizOffset, 
+        VertOffset, ...) {
         b <- list(...)
         if (!missing(xlimtouse) && !missing(ylimtouse)) 
             plot(x = x, y = y, xlim = xlimtouse, ylim = ylimtouse, 
@@ -626,7 +625,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         bx <- rowSums(X^2)
         by <- rowSums(Y^2)
         D <- matrix(bx, nrow = n, ncol = m) + matrix(by, nrow = n, 
-            ncol = m, byrow = T) - 2 * X %*% t(Y)
+            ncol = m, byrow = TRUE) - 2 * X %*% t(Y)
         if (identical(X, Y)) 
             diag(D) <- 0
         D^0.5
@@ -2922,13 +2921,13 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 tkconfigure(label5, background = local.interaction.highlight.ShowValues.col.var)
             }
         })
-        tkplace(tk2label(frame2, text = "Show point values: Horizontal offset"), 
+        tkplace(tk2label(frame2, text = "Show point values: horizontal offset"), 
             x = 11, y = 120, "in" = frame2)
         entry5 <- tk2entry(frame2, textvariable = local.interaction.highlight.ShowValues.HorizOffset.var, 
             justify = "right", takefocus = FALSE)
         tkplace(entry5, relx = 0.95, y = 120, height = 18, relwidth = 0.125, 
             "in" = frame2, anchor = "ne")
-        tkplace(tk2label(frame2, text = "Show point values: Vertical offset"), 
+        tkplace(tk2label(frame2, text = "Show point values: vertical offset"), 
             x = 11, y = 140, "in" = frame2)
         entry6 <- tk2entry(frame2, textvariable = local.interaction.highlight.ShowValues.VertOffset.var, 
             justify = "right", takefocus = FALSE)
@@ -4023,7 +4022,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             switch(tclvalue(Points.var), "0" = Points.PCO.cmd(FALSE), 
                 "10" = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 "11" = Points.MDS.MonotoneRegression.cmd(FALSE), 
-                "12" = Points.MDS.MonotoneSpline.autcmd(FALSE))
+                "12" = Points.MDS.MonotoneSplineTransformation.autcmd(FALSE))
         }
         Biplot.title <<- Axes.None.title
         if (Biplot.zoom.mode == 0) 
@@ -4054,10 +4053,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         if (Legend.yes()) {
             if (screen) 
                 layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                  byrow = T), heights = c(4 * BiplotRegion.VerticalScale.func() - 
+                  byrow = TRUE), heights = c(4 * BiplotRegion.VerticalScale.func() - 
                   1.1, 1.1))
             else layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                byrow = T), heights = c(8 - 1.1, 1.1))
+                byrow = TRUE), heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
@@ -4269,10 +4268,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         segments3d(matrix(c(lims[1], lims[3], lims[5], lims[2], 
             lims[3], lims[5], lims[1], lims[3], lims[5], lims[1], 
             lims[4], lims[5], lims[1], lims[3], lims[5], lims[1], 
-            lims[3], lims[6]), byrow = T, ncol = 3), col = "gray60")
+            lims[3], lims[6]), byrow = TRUE, ncol = 3), col = "gray60")
         text3d(matrix(c((lims[1] + lims[2])/2, lims[3], lims[5], 
             lims[1], (lims[3] + lims[4])/2, lims[5], lims[1], 
-            lims[3], (lims[5] + lims[6])/2), byrow = T, nrow = 3), 
+            lims[3], (lims[5] + lims[6])/2), byrow = TRUE, nrow = 3), 
             texts = paste("Dimension ", dimensions), col = "gray60", 
             family = "sans", font = 1, cex = 1)
         if (tclvalue(View.ShowTitle.var) == "1") 
@@ -4305,7 +4304,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             switch(tclvalue(Points.var), "0" = Points.PCO.cmd(FALSE), 
                 "10" = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 "11" = Points.MDS.MonotoneRegression.cmd(FALSE), 
-                "12" = Points.MDS.MonotoneSpline.autcmd(FALSE))
+                "12" = Points.MDS.MonotoneSplineTransformation.autcmd(FALSE))
         }
         Axes.Regression.determine()
         Biplot.title <<- Axes.Regression.title
@@ -4365,7 +4364,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             switch(tclvalue(Points.var), "0" = Points.PCO.cmd(FALSE), 
                 "10" = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 "11" = Points.MDS.MonotoneRegression.cmd(FALSE), 
-                "12" = Points.MDS.MonotoneSpline.autcmd(FALSE))
+                "12" = Points.MDS.MonotoneSplineTransformation.autcmd(FALSE))
         }
         Axes.Procrustes.determine()
         Biplot.title <<- Axes.Procrustes.title
@@ -4497,7 +4496,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             switch(tclvalue(Points.var), "0" = Points.PCO.cmd(FALSE), 
                 "10" = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 "11" = Points.MDS.MonotoneRegression.cmd(FALSE), 
-                "12" = Points.MDS.MonotoneSpline.autcmd(FALSE))
+                "12" = Points.MDS.MonotoneSplineTransformation.autcmd(FALSE))
         }
         Axes.CircularNonLinear.determine()
         if (Axes.CircularNonLinear.NotEmbeddable) {
@@ -5430,8 +5429,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             na.x <- !is.finite(x)
             na.y <- !is.finite(y)
             ok <- !(na.x | na.y)
-            x <- x[ok, , drop = F]
-            y <- y[ok, , drop = F]
+            x <- x[ok, , drop = FALSE]
+            y <- y[ok, , drop = FALSE]
             storage.mode(x) <- "double"
             storage.mode(y) <- "double"
             interpx <- rep(0, 2 * n)
@@ -5774,7 +5773,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             function(x) tapply(x, factor(group[samples.in], exclude = NULL), 
                 mean)) %*% Biplot.Bclassify[, 1:Additional.ClassificationRegion.dimensions], 
             L)
-        class.region <- matrix(apply(dd, 2, which.min), byrow = T, 
+        class.region <- matrix(apply(dd, 2, which.min), byrow = TRUE, 
             nrow = length(xseq))
         if (Additional.ClassificationRegion.dimensions == 1) 
             image(xseq, yseq, matrix(class.region, nrow = length(class.region), 
@@ -5810,6 +5809,9 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     }
     Help.HomePage.cmd <- function() {
         shell.exec("http://biplotgui.r-forge.r-project.org")
+    }
+    Help.ReportABug.cmd <- function() {
+        shell.exec("http://r-forge.r-project.org/tracker/?group_id=225")
     }
     Help.ShowPopUpHelp.var <- tclVar("0")
     Help.ShowPopUpHelp.cmd <- function() {
@@ -6322,8 +6324,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     MenuBar.Help <- tk2menu(MenuBar.menu, tearoff = FALSE)
     tkadd(MenuBar.Help, "command", label = "Manual (in PDF)", 
         underline = "0", accelerator = "F1", command = Help.Manual.cmd)
-    tkadd(MenuBar.Help, "command", label = "Homepage", underline = "0", 
+    tkadd(MenuBar.Help, "command", label = "Home page", underline = "0", 
         command = Help.HomePage.cmd)
+    tkadd(MenuBar.Help, "command", label = "Report a bug", underline = "0", 
+        command = Help.ReportABug.cmd)
     tkadd(MenuBar.Help, "separator")
     tkadd(MenuBar.Help, "checkbutton", label = "Show pop-up help", 
         underline = "6", variable = Help.ShowPopUpHelp.var, command = function() {
@@ -7068,10 +7072,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         if (Legend.yes()) {
             if (screen) 
                 layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                  byrow = T), heights = c(4 * BiplotRegion.VerticalScale.func() - 
+                  byrow = TRUE), heights = c(4 * BiplotRegion.VerticalScale.func() - 
                   1.1, 1.1))
             else layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                byrow = T), heights = c(8 - 1.1, 1.1))
+                byrow = TRUE), heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
@@ -7411,10 +7415,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         segments3d(matrix(c(lims[1], lims[3], lims[5], lims[2], 
             lims[3], lims[5], lims[1], lims[3], lims[5], lims[1], 
             lims[4], lims[5], lims[1], lims[3], lims[5], lims[1], 
-            lims[3], lims[6]), byrow = T, ncol = 3), col = "gray60")
+            lims[3], lims[6]), byrow = TRUE, ncol = 3), col = "gray60")
         text3d(matrix(c((lims[1] + lims[2])/2, lims[3], lims[5], 
             lims[1], (lims[3] + lims[4])/2, lims[5], lims[1], 
-            lims[3], (lims[5] + lims[6])/2), byrow = T, nrow = 3), 
+            lims[3], (lims[5] + lims[6])/2), byrow = TRUE, nrow = 3), 
             texts = paste("Dimension ", dimensions), col = "gray60", 
             family = "sans", font = 1, cex = 1)
         if (tclvalue(View.ShowTitle.var) == "1") 
@@ -7663,10 +7667,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         if (Legend.yes()) {
             if (screen) 
                 layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                  byrow = T), heights = c(4 * BiplotRegion.VerticalScale.func() - 
+                  byrow = TRUE), heights = c(4 * BiplotRegion.VerticalScale.func() - 
                   1.1, 1.1))
             else layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                byrow = T), heights = c(8 - 1.1, 1.1))
+                byrow = TRUE), heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
@@ -8028,10 +8032,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         segments3d(matrix(c(lims[1], lims[3], lims[5], lims[2], 
             lims[3], lims[5], lims[1], lims[3], lims[5], lims[1], 
             lims[4], lims[5], lims[1], lims[3], lims[5], lims[1], 
-            lims[3], lims[6]), byrow = T, ncol = 3), col = "gray60")
+            lims[3], lims[6]), byrow = TRUE, ncol = 3), col = "gray60")
         text3d(matrix(c((lims[1] + lims[2])/2, lims[3], lims[5], 
             lims[1], (lims[3] + lims[4])/2, lims[5], lims[1], 
-            lims[3], (lims[5] + lims[6])/2), byrow = T, nrow = 3), 
+            lims[3], (lims[5] + lims[6])/2), byrow = TRUE, nrow = 3), 
             texts = paste("Dimension ", dimensions), col = "gray60", 
             family = "sans", font = 1, cex = 1)
         if (tclvalue(View.ShowTitle.var) == "1") 
@@ -9072,7 +9076,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     ConvergenceTab.axes.StressVector <- NULL
     ConvergenceTab.plot <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
-            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = T), 
+            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
                 heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
@@ -9238,7 +9242,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     PointsTab.predictivities <- NULL
     PointsTab.plot.predictivities <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
-            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = T), 
+            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
                 heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
@@ -9299,7 +9303,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     }
     PointsTab.plot.ShepardDiagram <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
-            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = T), 
+            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
                 heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
@@ -9522,7 +9526,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     GroupsTab.predictivities <- NULL
     GroupsTab.plot.predictivities <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
-            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = T), 
+            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
                 heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
@@ -9724,7 +9728,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     AxesTab.predictivities <- NULL
     AxesTab.plot.predictivities <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
-            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = T), 
+            layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
                 heights = c(8 - 1.1, 1.1))
             par(mar = c(0, 0, 0, 0), bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
@@ -10791,7 +10795,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                   1:Additional.ClassificationRegion.dimensions], 
                   L)
                 class.region <- matrix(apply(dd, 2, which.min), 
-                  byrow = T, nrow = length(xseq))
+                  byrow = TRUE, nrow = length(xseq))
                 if (Additional.ClassificationRegion.dimensions == 
                   1) list(x1 = xseq, x2 = yseq, class = class.region) else list(x1 = xseq, 
                   x2 = yseq, class = class.region)
