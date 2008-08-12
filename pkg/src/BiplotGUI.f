@@ -1,4 +1,5 @@
-C  Adapted by NJ le Roux from code for bagplots (Rousseeuw PJ, Ruts I, Tukey JW, 1999)
+C  Adapted by NJ le Roux from the original code for bagplots by PJ Rousseeuw, I Ruts and JW Tukey.
+C  The original code can be downloaded from http://www.agoras.ua.ac.be/Locdept.htm
       SUBROUTINE abagplot(n,alpha1,x,y,whisk,tukm,interpx, interpy,num,
      +    datatyp,indoutl,datatyp2,pxpy,boxpl,nointer)
 C

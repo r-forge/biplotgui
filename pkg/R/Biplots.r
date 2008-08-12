@@ -5863,7 +5863,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     }
     Help.About.cmd <- function() {
         tkmessageBox(title = "About", parent = GUI.TopLevel, 
-            message = "Anthony la Grange\n<amlg at sun.ac.za>\n\nVersion 0.0-2\n\nDistributed under the GPL-3 license available from \nhttp://www.r-project.org/Licenses/", 
+            message = "Anthony la Grange\n<amlg at sun.ac.za>\n\nVersion 0.0-3\n\nDistributed under the GPL-3 license available from \nhttp://www.r-project.org/Licenses/", 
             icon = "info", type = "ok")
     }
     MenuBar.menu <- tk2menu(GUI.TopLevel)
