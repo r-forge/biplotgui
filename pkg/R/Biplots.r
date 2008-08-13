@@ -8589,7 +8589,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         })
     ControlButtons.frame <- tkframe(GUI.TopLevel, relief = "groove", 
         borderwidth = "1.5p")
-    ControlButtons.ProgressBar.pb <- tk2progress(ControlButtons.frame, 
+    ControlButtons.ProgressBar.pb <- ttkprogressbar(ControlButtons.frame, 
         mode = "determinate")
     ControlButtons.ProgressBar.create <- function() tkplace(ControlButtons.ProgressBar.pb, 
         relx = 0.005, rely = 0.5, relwidth = 0.1, height = 18, 
