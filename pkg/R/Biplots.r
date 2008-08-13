@@ -1,4 +1,4 @@
-if (Sys.info()["sysname"] != "Windows")
+if (.Platform$OS.type != "windows")
   stop("BiplotGUI is currently intended to be run under Windows.")
 
 .BiplotGUI.loaded <- FALSE
