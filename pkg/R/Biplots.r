@@ -5572,7 +5572,7 @@ tkadd(MenuBar.File,"command",label="Options...",underline="0",command=function()
   GUI.BindingsOn()
   })
 tkadd(MenuBar.File,"separator")
-tkadd(MenuBar.File,"command",label="Exit...",underline="1",command=function()
+tkadd(MenuBar.File,"command",label="Exit",underline="1",command=function()
   {
   GUI.BindingsOff()
   File.Exit.cmd()
@@ -5865,7 +5865,7 @@ tkadd(MenuBar.Additional,"checkbutton",label="Convex hulls...",underline="7",var
   Biplot.replot()
   GUI.BindingsOn()
   })
-tkadd(MenuBar.Additional,"checkbutton",label="Alpha-bags...",underline="0",variable=Additional.AlphaBag.var,command=function()
+tkadd(MenuBar.Additional,"checkbutton",label="Alpha-bags...",underline="0",variable=Additional.AlphaBag.var,state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
   {
   GUI.BindingsOff()
   Additional.AlphaBag.cmd()
@@ -5900,9 +5900,9 @@ tkadd(MenuBar.menu,"cascade",label="Additional",underline="0",menu=MenuBar.Addit
 ##############################################################################
 
 MenuBar.Help<-tk2menu(MenuBar.menu,tearoff=FALSE)
-tkadd(MenuBar.Help,"command",label="Manual (in PDF)",underline="0",accelerator="F1",command=Help.Manual.cmd)
-tkadd(MenuBar.Help,"command",label="Home page",underline="0",command=Help.HomePage.cmd)
-tkadd(MenuBar.Help,"command",label="Report a bug",underline="0",command=Help.ReportABug.cmd)
+tkadd(MenuBar.Help,"command",label="Manual (in PDF)",underline="0",accelerator="F1",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.Manual.cmd)
+tkadd(MenuBar.Help,"command",label="Home page",underline="0",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.HomePage.cmd)
+tkadd(MenuBar.Help,"command",label="Report a bug",underline="0",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.ReportABug.cmd)
 tkadd(MenuBar.Help,"separator")
 tkadd(MenuBar.Help,"checkbutton",label="Show pop-up help",underline="6",variable=Help.ShowPopUpHelp.var,command=function()
   {
