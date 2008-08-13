@@ -23,6 +23,8 @@ At present, BiplotGUI is written to run under Windows. The GUI runs better when 
 }
 \author{
 Author and maintainer: Anthony la Grange <amlg at sun.ac.za>, <\url{http://biplotgui.r-forge.r-project.org/}>
+
+Includes Fortran code adapted by NJ le Roux from the original by PJ Rousseeuw, I Ruts and JW Tukey.
 }
 \references{
   Gower JC, Hand DJ (1996). \emph{Biplots}. Monographs on Statistics and Applied Probability. Chapman \& Hall, London, UK.
