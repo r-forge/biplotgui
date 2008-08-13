@@ -19,7 +19,7 @@ LazyLoad: \tab yes\cr
 }
 The \code{Biplots} function initialises the GUI.
 
-At present, BiplotGUI is written to run under Windows. The GUI runs better when R is in SDI mode rather than MDI mode.
+At present, BiplotGUI runs better under Windows.  When run in Windows, it runs marginally better in SDI mode rather than MDI mode.
 }
 \author{
 Author and maintainer: Anthony la Grange <amlg at sun.ac.za>, <\url{http://biplotgui.r-forge.r-project.org/}>
