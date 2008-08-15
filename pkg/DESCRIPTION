@@ -10,4 +10,5 @@ Suggests: KernSmooth, rgl (>= 0.79), vcd
 Description: Provides a GUI with which users can construct and interact with biplots.
 License: GPL (>=3)
 LazyLoad: yes
+OS_type: windows
 URL: http://biplotgui.r-forge.r-project.org/
