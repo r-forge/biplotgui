@@ -1,70 +1,80 @@
+################################################################################
+################################################################################
+### LOADING ####################################################################
+################################################################################
+################################################################################
+# cat("ENDLISTING \\0sourceone{SC.Loading}{Loading}{Loading} BEGINLISTING")
+
+# Tests whether the platform is Windows. Stops if it's not.
 #if (.Platform$OS.type != "windows")
 #  stop("BiplotGUI is currently intended to be run under Windows.")
 
-.BiplotGUI.loaded <- FALSE
+.BiplotGUI.loaded<-FALSE
 
-.First.lib<-function (lib, pkg)
-{
-    if (!.BiplotGUI.loaded) {
-        chname <- "BiplotGUI"
-        file.ext <- .Platform$dynlib.ext
-        dlname <- paste(chname, file.ext, sep = "")
-        if (is.character(.Platform$r_arch) && .Platform$r_arch !=
-            "")
-            path <- file.path("libs", .Platform$r_arc, dlname)
-        else path <- file.path("libs", dlname)
-        file <- system.file(path, package = pkg, lib.loc = lib)[1]
-        dyn.load(file)
-        .BiplotGUI.loaded <<- TRUE
+# cat("ENDLISTING Loads the Fortran code for alpha-bags. BEGINLISTING")
+.First.lib<-function(lib,pkg)
+  {
+  if (!.BiplotGUI.loaded)
+    {
+    chname<-"BiplotGUI"
+    file.ext<-.Platform$dynlib.ext
+    dlname<-paste(chname,file.ext,sep="")
+    if (is.character(.Platform$r_arch) && .Platform$r_arch!="") path<-file.path("libs",.Platform$r_arc,dlname)
+      else path<-file.path("libs",dlname)
+    file<-system.file(path,package=pkg,lib.loc=lib)[1]
+    dyn.load(file)
+    .BiplotGUI.loaded <<- TRUE
     }
-}
+  }
 
 #####################################################################################################################
 #####################################################################################################################
 ### CALL ############################################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.Call}{Call}{Call} BEGINLISTING")
 
+# cat("ENDLISTING See the \\0proglang{R} help file for this function for details on how its arguments are to be used. BEGINLISTING")
 Biplots<-function(Data,groups=rep(1,nrow(Data)),PointLabels=rownames(Data),AxisLabels=colnames(Data),excel=NULL,ExcelGroupsCol=0)
 {
 
 #####################################################################################################################
 #####################################################################################################################
-### GENERAL #########################################################################################################
+### GENERAL INITIALISATION ##########################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.GeneralInitialisation}{General initialisation}{General initialisation} BEGINLISTING")
 
-##############################################################################
-### PACKAGES #################################################################
-##############################################################################
-
+#####################################################################################################################
+### GENERAL INITIALISATION : PACKAGES ###############################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GeneralInitialisation}{General initialisation: Packages}{Packages} BEGINLISTING")
+# cat("ENDLISTING Tests whether the package \\0code{package} is installed. If not, the \\0code{Biplots} function is stopped with an appropriate message. Otherwise, the package is loaded. BEGINLISTING")
 RequirePackage<-function(package)
   {
   if (data.class(try(.find.package(package),TRUE))=="try-error") stop(paste("Cannot find the `",package,"' package. Please download and install.",sep=""))
     else require(package,character.only=TRUE,quietly=TRUE)
   }
 
-# Disable the following when compiling:
-#RequirePackage("tcltk") # Already loaded because "Depends"
-#RequirePackage("tcltk2") # Already loaded because "Depends"
-#RequirePackage("tkrplot") # Already loaded because "Depends"
-#RequirePackage("MASS") # Already loaded because "Depends"
-# `xlsReadWrite' is loaded if data are imported from an Excel file.
-# `KernSmooth' and `vcd' are loaded if point densities are estimated.
-# `rgl' is loaded if a 3D biplot is requested.
+# The following commands are included when the `Biplots' function is sourced to be run, rather than the package being loaded.
+#RequirePackage("tcltk")
+#RequirePackage("tcltk2") 
+#RequirePackage("tkrplot") 
+#RequirePackage("MASS") 
 
-tclRequire("BWidget")
+# Other packages:
+# `xlsReadWrite' is loaded if data are imported from an Excel file and the platform is Windows.
+# `KernSmooth' and `vcd' are loaded when point densities are to be estimated for the first time.
+# `rgl' is loaded when a 3D biplot is to be drawn for the first time.
 
-#dyn.load("BiplotGUI.dll")
-#print("abagplot_ loaded")
-#print(is.loaded("abagplot_"))
+# cat("ENDLISTING Loads the \\0code{BWidget} tcl package. BEGINLISTING")
+tclRequire("BWidget")
+#####################################################################################################################
+### GENERAL INITIALISATION : MAIN VARIABLES #########################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GeneralInitialisation.MainVariables}{General initialisation: Main variables}{Main variables} BEGINLISTING")
 
-graphics.off()
-
-##############################################################################
-### EXCEL ####################################################################
-##############################################################################
-
+# cat("ENDLISTING If the \\0code{excel} argument of the \\0code{Biplots} function is provided and the platform is Windows, the \\0code{xlsReadWrite} package is loaded and the data are read from the file \\0code{excel}. If the \\0code{ExcelGroupsCol} argument is provided, that column is used to classify the samples into groups. BEGINLISTING")
 if (!missing(excel))
   {
   if (.Platform$OS.type != "windows") stop("Data can only be imported directly from Excel 1997-2003 files if BiplotGUI is run under Windows.")
@@ -77,41 +87,78 @@ if (!missing(excel))
     }
   }
 
-##############################################################################
-### VARIABLES ################################################################
-##############################################################################
-
+# cat("ENDLISTING \\0code{Data} is coerced to be a matrix. The rows of \\0code{Data} are the samples which are to be represented as points. The columns of \\0code{Data} are the variables which are to be represented as axes. BEGINLISTING")
 Data<-as.matrix(Data)
-n<-nrow(Data)
-n.in<-n
-samples.in<-1:n
-samples.in.PreviousScaling<-samples.in
-if (missing(PointLabels) && is.null(PointLabels)) PointLabels<-1:n
-group<-substr(groups,start=1,stop=14)
-group<-factor(group,exclude=NULL)
-g<-nlevels(group)
-g.in<-g
-g.n<-as.numeric(table(group))
-g.n.in<-g.n
-groups.in<-1:g
-p<-ncol(Data)
-p.in<-p
-variables.in<-1:p
-if (missing(AxisLabels) && is.null(AxisLabels)) AxisLabels<-paste("V",1:p,sep="")
-eps<-1e-8
+# cat("ENDLISTING The total number of samples. BEGINLISTING")
+n<-nrow(Data) 
+# cat("ENDLISTING The total number of non-kraal samples. BEGINLISTING")
+n.in<-n 
+# cat("ENDLISTING The index numbers of the non-kraal samples. BEGINLISTING")
+samples.in<-1:n 
+# cat("ENDLISTING The index numbers of the samples included in the previous scaling (PCO or MDS). BEGINLISTING")
+samples.in.PreviousScaling<-samples.in 
+# cat("ENDLISTING If the argument \\0code{PointLabels} of the \\0code{Biplots} function isn't provided and the argument \\0code{Data} has no row names, the point labels are taken to be the numbers 1 to n. BEGINLISTING")
+if (missing(PointLabels) && is.null(PointLabels)) PointLabels<-1:n 
+# cat("ENDLISTING The group labels of the n samples. Restricted to be at most 14 characters. BEGINLISTING")
+group<-substr(groups,start=1,stop=14) 
+# cat("ENDLISTING \\0code{group} is coerced to be a factor. Only those groups (levels) with at least one instance are kept. BEGINLISTING")
+group<-factor(group,exclude=NULL) 
+# cat("ENDLISTING The total number of groups. BEGINLISTING")
+g<-nlevels(group) 
+# cat("ENDLISTING The total number of groups not entirely in the kraal. BEGINLISTING")
+g.in<-g 
+# cat("ENDLISTING The numbers of samples in the groups. BEGINLISTING")
+g.n<-as.numeric(table(group)) 
+# cat("ENDLISTING The numbers of non-kraal samples in the groups. BEGINLISTING")
+g.n.in<-g.n 
+# cat("ENDLISTING The index numbers of the groups not entirely in the kraal. BEGINLISTING")
+groups.in<-1:g 
+# cat("ENDLISTING The total number of variables. BEGINLISTING")
+p<-ncol(Data) 
+# cat("ENDLISTING The total number of non-kraal variables. BEGINLISTING")
+p.in<-p 
+# cat("ENDLISTING The index numbers of the non-kraal variables. BEGINLISTING")
+variables.in<-1:p 
+# cat("ENDLISTING If the argument \\0code{AxisLabels} of the \\0code{Biplots} function isn't provided and the argument \\0code{Data} has no column names, the axis labels are taken to be `V1', ..., `Vp'. BEGINLISTING")
+if (missing(AxisLabels) && is.null(AxisLabels)) AxisLabels<-paste("V",1:p,sep="") 
+# cat("ENDLISTING A small positive number used when such a number is necessary. BEGINLISTING")
+eps<-1e-8 
 
 #####################################################################################################################
+### GENERAL INITIALISATION : OPTIONS ################################################################################
 #####################################################################################################################
-### GRAPHICAL PARAMETERS ############################################################################################
-#####################################################################################################################
-#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GeneralInitialisation.Options}{General initialisation: Options}{Options} BEGINLISTING")
 
+# cat("ENDLISTING The options of the \\0hyperlink{MenuBar.File.Options}{File $\\0rightarrow$ Options} dialogue box. BEGINLISTING")
+boptions<-list()
+# cat("ENDLISTING Convergence BEGINLISTING")
+boptions$MDS.convergence<-1e-6 # Relative decrease in stress required, except for the `inner loop' of monotone regression.
+boptions$MDS.MaximumIterations<-5000 # Maximum number of interations in MDS.
+boptions$Procrustes.convergence<-1e-6 # Absolute decrease in stress required.
+boptions$Procrustes.MaximumIterations<-5000 # Maximum number of interations in predictive Procrustes.
+# cat("ENDLISTING Graphical BEGINLISTING")
+boptions$IterationsToLiveUpdate<-5 # The number of iterations until the next live update of the biplot region and graphcs of the diagnostic tabs in MDS.
+boptions$ReuseExternalWindows<-FALSE # Whether to reuse windows for external graphs, or to create new ones for each new external graph. Applies to both 2D and 3D external graphs, although the windows for the two operate independently.
+boptions$ThreeD.FlyBy<-TRUE # Whether to show a `fly-by' in 3D biplots, or not.
+boptions$ThreeD.MouseButtonAction<-c("trackball","zoom","fov") # The left, middle and right mouse button actions for 3D biplots.
+# cat(ENDLISTING Miscellaneous BEGINLISTING")
+boptions$axes.tick.inter.n<-rep(20,p) # The number of positions to consider between successive markers on non-linear biplot axes. The higher the value, the more accurate prediction is for non-linar biplots.
+
+#####################################################################################################################
+### GENERAL INITIALISATION : GRAPHICAL PARAMETERS ###################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GeneralInitialisation:GraphicalParameters}{General initialisation: Graphical parameters}{Graphical parameters} BEGINLISTING")
+
+# cat("ENDLISTING The graphical parameters of the \\0hyperlink{MenuBar.Format}{Format} menu. Elements of \\0code{bpar} that start with prefix `g' are those that can be changed by group. These elements are of length \\0code{g}, not \\0code{n}. BEGINLISTING")
 bpar<-list()
 
+# cat("ENDLISTING To set or reset the graphical parameters of the points, sample group means, convex hulls / alpha-bags and classification regions of the \\0hyperlink{MenuBar.Format.ByGroup}{Format $\\0rightarrow$ By group} dialogue box. BEGINLISTING")
 bpar.initialise1.func<-function()
   {
+  # cat("ENDLISTING The names of groups. BEGINLISTING")
   bpar$groups.label.text<<-levels(group)
 
+  # cat("ENDLISTING The graphical parameters of points. BEGINLISTING")
   if (g==1) bpar$gpoints.pch<<-22
     else bpar$gpoints.pch<<-rep(21:25,length.out=g)
   bpar$gpoints.cex<<-rep(1,g)
@@ -125,6 +172,7 @@ bpar.initialise1.func<-function()
   bpar$gpoints.label.HorizOffset<<-rep(0,g)
   bpar$gpoints.label.VertOffset<<-rep(-1,g)
 
+  # cat("ENDLISTING The graphical parameters of a newly interpolated sample. BEGINLISTING")
   bpar$ANewSample.pch<<-22
   bpar$ANewSample.cex<<-2
   bpar$ANewSample.col.fg<<-"black"
@@ -137,6 +185,7 @@ bpar.initialise1.func<-function()
   bpar$ANewSample.label.VertOffset<<--1
   bpar$ANewSample.LabelsInBiplot<<-TRUE
 
+  # cat("ENDLISTING The graphical parameters of interpolated sample group means. BEGINLISTING")
   if (g==1) bpar$gSampleGroupMeans.pch<<-22
     else bpar$gSampleGroupMeans.pch<<-rep(21:25,length.out=g)
   bpar$gSampleGroupMeans.cex<<-rep(2,g)
@@ -151,6 +200,7 @@ bpar.initialise1.func<-function()
   bpar$gSampleGroupMeans.label.VertOffset<<-rep(-1,g)
   bpar$SampleGroupMeans.LabelsInBiplot<<-TRUE
 
+  # cat("ENDLISTING The graphical parameters of convex hulls. BEGINLISTING")
   bpar$gConvexHullAlphaBag.lty<<-rep(1,g)
   bpar$gConvexHullAlphaBag.lwd<<-rep(4,g)
   if (g==1) bpar$gConvexHullAlphaBag.col.fg<<-hcl(0,0,60)
@@ -170,6 +220,7 @@ bpar.initialise1.func<-function()
   bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset<<-rep(-1,g)
   bpar$ConvexHullAlphaBag.TukeyMedian.LabelsInBiplot<<-FALSE
 
+  # cat("ENDLISTING The graphical parameters of classification regions. BEGINLISTING")
   if (g==1) bpar$gClassificationRegion.col.bg<<-NA
     else bpar$gClassificationRegion.col.bg<<-hcl(seq(0,360,length=g+2)[-c(1,g+2)],25,95)
   bpar$ClassificationRegion.PixelsPerBiplotDimension<<-150
@@ -177,12 +228,13 @@ bpar.initialise1.func<-function()
 
 bpar.initialise1.func()
 
+# cat("ENDLISTING To set or reset the graphical parameters of the axes of the \\0hyperlink{MenuBar.Format.Axes}{Format $\\0rightarrow$ Axes} dialogue box. BEGINLISTING")
 bpar.initialise2.func<-function()
   {
   bpar$axes.label.text<<-substr(AxisLabels,start=1,stop=14)
   bpar$axes.lty<<-rep(1,p)
   bpar$axes.lwd<<-rep(1,p)
-  bpar$axes.col<<-hcl(h=seq(0,360,length=p+2),l=40,c=110)[-c(1,p+2)] #l=70,c=110
+  bpar$axes.col<<-hcl(h=seq(0,360,length=p+2),l=40,c=110)[-c(1,p+2)]
   bpar$axes.tick.n<<-rep(5,p)
   bpar$axes.tick.lty<<-rep(1,p)
   bpar$axes.tick.lwd<<-rep(1,p)
@@ -200,6 +252,7 @@ bpar.initialise2.func<-function()
 
 bpar.initialise2.func()
 
+# cat("ENDLISTING To set or reset the graphical parameters of interactive variable value prediction and axis highlighting of the \\0hyperlink{MenuBar.Format.Interaction}{Format $\\0rightarrow$ Interaction} dialogue box. BEGINLISTING")
 bpar.initialise3.func<-function()
   {
   bpar$interaction.prediction.lty<<-3
@@ -221,6 +274,7 @@ bpar.initialise3.func<-function()
 
 bpar.initialise3.func()
 
+# cat("ENDLISTING To set or reset the graphical parameters of the graphs of the diagnostic tabs of the \\0hyperlink{MenuBar.Format.DiagnosticTabs}{Format $\\0rightarrow$ Diagnostic tabs} dialogue box. BEGINLISTING")
 bpar.initialise4.func<-function()
   {
   bpar$DiagnosticTabs.convergence.lty<<-1
@@ -250,9 +304,12 @@ bpar.initialise4.func<-function()
 
 bpar.initialise4.func()
 
-bpar.defaults<-bpar
-bparp<-list()
+# cat("ENDLISTING So that the graphical parameter defaults can be quickly restored if necessary. BEGINLISTING")
+bpar.defaults<-bpar 
 
+# cat("ENDLISTING Graphical parameters per point, rather than group. The elements of \\0code{bparp} are vectors of length \\0code{n}, not \\0code{p}. BEGINLISTING")
+bparp<-list() 
+# cat("ENDLISTING Only called towards the very end of the \\0code{Biplots} function. BEGINLISTING")
 bparp.func<-function()
   {
   bparp<<-list()
@@ -269,44 +326,31 @@ bparp.func<-function()
   bparp$points.label.VertOffset<<-rep(bpar$gpoints.label.VertOffset,times=g.n)[temp1]
   }
 
-#####################################################################################################################
-#####################################################################################################################
-### OPTIONS #########################################################################################################
-#####################################################################################################################
-#####################################################################################################################
 
-boptions<-list()
-# Convergence
-boptions$MDS.convergence<-1e-6 # Relative, except inner loop of monotone regression.
-boptions$MDS.MaximumIterations<-5000
-boptions$Procrustes.convergence<-1e-6 # Absolute.
-boptions$Procrustes.MaximumIterations<-5000
-# Graphical
-boptions$IterationsToLiveUpdate<-5#10
-boptions$ReuseExternalWindows<-FALSE
-boptions$ThreeD.FlyBy<-TRUE
-boptions$ThreeD.MouseButtonAction<-c("trackball","zoom","fov")
-# Miscellaneous
-boptions$axes.tick.inter.n<-rep(20,p)
+#####################################################################################################################
+### GENERAL INITIALISATION : MISCELLANEOUS ##########################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GeneralInitialisation.Miscellaneous}{General initialisation: Miscellaneous}{Miscellaneous} BEGINLISTING")
 
-
+# cat("ENDLISTING Closes all existing R graphs. BEGINLISTING")
+graphics.off()
 
 #####################################################################################################################
 #####################################################################################################################
-### AUXILIARY #######################################################################################################
+### GENERAL FUNCTIONS ###############################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.GeneralFunctions}{General functions}{General functions} BEGINLISTING")
 
-
-
-mytkrplot<-function(fun,hscale=1,vscale=1,...)
+# cat("ENDLISTING A modification of the \\0code{tkrplot} function of the \\0pkg{tkrplot} package by Luke Tierney. BEGINLISTING")
+mytkrplot<-function(fun,hscale=1,vscale=1,...) 
   {
   image<-paste("Rplot",.make.tkindex(),sep="")
-  if (.Platform$OS.type != "windows") { X11(display="XImage", width=100 * hscale, height=100 * vscale,pointsize=5,canvas="red"); print("hi") }
+  if (.Platform$OS.type != "windows") X11(display="XImage", width=100 * hscale, height=100 * vscale,pointsize=5,canvas="red") 
 	else .my.tkdev(hscale,vscale)
   try(fun())
   .Tcl(paste("image create Rplot",image))
-  lab<-tklabel(...,image=image) # tk2label fixes the "beige empty" tabs, but now breaks the live updates.
+  lab<-tklabel(...,image=image) # Using `tk2label' instead fixes the known issue of the diagnostic tabs in Windows (see the manual). However the change does not permit `live updates' to be shown in the graphs of the diagnostic tabs. The issue does not affect BiplotGUI run under Unix-alike.
   tkbind(lab,"<Destroy>",function().Tcl(paste("image delete",image)))
   lab$image<-image
   lab$fun<-fun
@@ -315,8 +359,11 @@ mytkrplot<-function(fun,hscale=1,vscale=1,...)
   lab
   }
 
+##############################################################################
+
+# cat("ENDLISTING Returns \\0code{xlim} and \\0code{ylim} values for a plot so that all the labels given in \\0code{.labels} (of size \\0code{.cex}, centred at coordinates (\\0code{xi},\\0code{yi})) will be fully visible. Some \\0code{yi}s may be \\0code{NA}s, but none of the \\0code{xi}s. The missing \\0code{yi}s are replaced by the average of the others. Some \\0code{.labels} may be \\0code{NA}s. Such labels will have no effect on the calculations. BEGINLISTING")
 getLabelUsr<-function(xi,yi,parin,.labels,.cex,horiz,vert,showconv=FALSE)
-  {  # Some yi's may be NA, but not the xi's. The missing yi's are replaced by the average of the others. Some .labels may be NAs. Such labels will have no effect on the calculations.
+  {  
   usr1old<-parin$usr[1]
   usr2old<-parin$usr[2]
   usr3old<-parin$usr[3]
@@ -355,8 +402,11 @@ getLabelUsr<-function(xi,yi,parin,.labels,.cex,horiz,vert,showconv=FALSE)
   list(xlimt,ylimt)
   }
 
+##############################################################################
+
+# cat("ENDLISTING Prepares a new plotting device. However, no plotting is actually performed. Specific values of \\0code{xlimtouse} and \\0code{ylimtouse} may be specified, however by default the plot is made large enough so that all the points (\\0code{x},\\0code{y}) fit. In addition, if \\0code{fitaroundlabels} is \\0code{TRUE}, \\0code{getLabelUsr} is called so that all the labels will be fully visibile on the new plot as well. The font size of the labels is set through \\0code{labels.cex}; their horizontal and vertical offset from (\\0code{x},\\0code{y}) can also be set via \\0code{HorizOffset} and \\0code{VertOffset}. `\\0code{\\0ldots}' is for further graphical parameters. However, for all plots \\0code{type = \"n\"}, \\0code{xlab = \"\"} and \\0code{ylab = \"\"} so that these parameters should not be included in `\\0code{\\0ldots}'. Plots have a unit aspect ratio so that the distances within them can be properly assessed. BEGINLISTING")
 mynewplot<-function(x,y,xlimtouse=NA,ylimtouse=NA,fitaroundlabels=FALSE,.labels=NA,labels.cex,HorizOffset,VertOffset,...)
-  { # The following graphical parameter values are always taken: type="n", xlab="",ylab="". These arguments should therefore not be included in the ... list.
+  { 
   b<-list(...)
   if (!missing(xlimtouse) && !missing(ylimtouse)) plot(x=x,y=y,xlim=xlimtouse,ylim=ylimtouse,asp=1,type="n",xlab="",ylab="",...)
     else if (fitaroundlabels)
@@ -376,27 +426,9 @@ mynewplot<-function(x,y,xlimtouse=NA,ylimtouse=NA,fitaroundlabels=FALSE,.labels=
               else plot(x,y,type="n",xlab="",asp=1,ylab="",...)
   }
 
-SquareRootMatrix<-function(mat)
-  {
-  temp1<-svd(mat)
-  if (min(temp1$d)<=0) stop("mat is required to be positive definite.")
-  temp2<-temp1$u%*%diag(sqrt(temp1$d))%*%t(temp1$u)
-  (temp2+t(temp2))/2
-  }
+##############################################################################
 
-text2hex<-function(textcol) # Still needs Linux work
-{
-  WhichSystemButtonFace<-which(textcol=="SystemButtonFace")
-  if (.Platform$OS.type=="unix") textcol[WhichSystemButtonFace]<-"white"
-  else textcol[WhichSystemButtonFace]<-NA
-  temp1<-col2rgb(textcol)/256
-  temp2<-rgb(temp1[1],temp1[2],temp1[3])
-  if (.Platform$OS.type!="unix") temp2[WhichSystemButtonFace]<-"SystemButtonFace"
-  temp2
-}
-
-tkchooseColor<-function (...)  tcl("tk_chooseColor", ...)
-
+# cat("ENDLISTING The standard \\0proglang{R} \\0code{legend} function, adapted slightly to incorporate an argument \\0code{lines.col} which defaults to \\0code{col}. BEGINLISTING")
 legend2<-function (x, y = NULL, legend, fill = NULL, col = par("col"),lines.col=col,
     lty, lwd, pch, angle = 45, density = NULL, bty = "o", bg = par("bg"),
     box.lwd = par("lwd"), box.lty = par("lty"), pt.bg = NA, cex = 1,
@@ -617,10 +649,12 @@ legend2<-function (x, y = NULL, legend, fill = NULL, col = par("col"),lines.col=
         if (trace)
             catn("  segments2(", xt[ok.l] + x.off * xchar, ",",
                 yt[ok.l], ", dx=", seg.len * xchar, ", dy=0, ...)")
+      # cat("ENDLISTING The modification to \\0proglang{R}'s \\0code{legend} function. BEGINLISTING")
         if (plot)
             segments2(xt[ok.l] + x.off * xchar, yt[ok.l], dx = seg.len *
                 xchar, dy = 0, lty = lty[ok.l], lwd = lwd[ok.l],
-                col = lines.col[ok.l])
+                col = lines.col[ok.l]) 
+      # cat("ENDLISTING End of modification. BEGINLISTING")
         xt <- xt + (seg.len + x.off) * xchar
     }
     if (has.pch) {
@@ -654,17 +688,28 @@ legend2<-function (x, y = NULL, legend, fill = NULL, col = par("col"),lines.col=
         text = list(x = xt, y = yt)))
 }
 
-PythagorasDistance<-function(X,Y)
-  {
-  n<-nrow(X)
-  m<-nrow(Y)
-  bx<-rowSums(X^2)
-  by<-rowSums(Y^2)
-  D<-matrix(bx,nrow=n,ncol=m)+matrix(by,nrow=n,ncol=m,byrow=TRUE)-2*X%*%t(Y)
-  if (identical(X,Y)) diag(D)<-0
-  D^.5
-  }
+##############################################################################
 
+# cat("ENDLISTING Converts the text names of colours (\\0code{textcol}) to the corresponding hexadecimal codes. If an element of \\0code{textcol} has value `SystemButtonFace', an exception is made for it in Windows. BEGINLISTING") #Some work is still required for Unix-alike. At present, `SystemButtonFace' is treated as `white' under that platform.
+text2hex<-function(textcol) 
+{
+  WhichSystemButtonFace<-which(textcol=="SystemButtonFace")
+  if (.Platform$OS.type=="unix") textcol[WhichSystemButtonFace]<-"white"
+  else textcol[WhichSystemButtonFace]<-NA
+  temp1<-col2rgb(textcol)/256
+  temp2<-rgb(temp1[1],temp1[2],temp1[3])
+  if (.Platform$OS.type=="windows") temp2[WhichSystemButtonFace]<-"SystemButtonFace"
+  temp2
+}
+
+##############################################################################
+
+# cat("ENDLISTING Opens a standard colour selection dialogue box. BEGINLISTING")
+tkchooseColor<-function (...)  tcl("tk_chooseColor", ...)
+
+##############################################################################
+
+# cat("ENDLISTING A simple algorithm to place line breaks within a string \\0code{stringin} when the number of characters in a particular line should not exceed the argument \\0code{cuttoff}. Line breaks can be placed between words or after hyphens. BEGINLISTING")
 linebreak<-function(stringin="",cutoff=60)
     {
     stringin<-as.character(stringin)
@@ -687,7 +732,10 @@ linebreak<-function(stringin="",cutoff=60)
     paste(temp1,collapse="")
     }
 
-  mytktip<-function(widget,...)
+##############################################################################
+
+# cat("ENDLISTING Takes all the arguments in `\\0code{\\0ldots}' and for each includes line breaks using the function \\0code{linebreak}. Then all the arguments are added together as different paragraphs of a pop-up message which is bound to the widget \\0code{widget}. BEGINLISTING")
+mytktip<-function(widget,...)
     {
     temp1<-list(...)
     temp2<-lapply(temp1,function(x) linebreak(x))
@@ -696,20 +744,55 @@ linebreak<-function(stringin="",cutoff=60)
     .Tcl(paste('DynamicHelp::add ',widget,' -text "',temp3,'"',sep=""))
     }
 
+##############################################################################
+
+# cat("ENDLISTING Calculates the symmetric square-root-matrix of \\0code{mat}. The matrix \\0code{mat} is required to be positive definite. BEGINLISTING")
+SquareRootMatrix<-function(mat)
+  {
+  temp1<-svd(mat)
+  if (min(temp1$d)<=0) stop("mat is required to be positive definite.")
+  temp2<-temp1$u%*%diag(sqrt(temp1$d))%*%t(temp1$u)
+  (temp2+t(temp2))/2
+  }
+
+##############################################################################
+
+# cat("ENDLISTING Calculates the Pythagoras distances between the rows of matrix \\0code{X} and the rows of matrix \\0code{Y}. BEGINLISTING")
+PythagorasDistance<-function(X,Y)
+  {
+  n<-nrow(X)
+  m<-nrow(Y)
+  bx<-rowSums(X^2)
+  by<-rowSums(Y^2)
+  D<-matrix(bx,nrow=n,ncol=m)+matrix(by,nrow=n,ncol=m,byrow=TRUE)-2*X%*%t(Y)
+  if (identical(X,Y)) diag(D)<-0
+  D^.5
+  }
+
 #####################################################################################################################
 #####################################################################################################################
-### GUI #############################################################################################################
+### GUI INITIALISATION ##############################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.GUIInitialisation}{GUI initialisation}{GUI initialisation} BEGINLISTING")
+
+#####################################################################################################################
+### GUI INITIALISATION : GUI WINDOW #################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GUIInitialisation.GUIWindow}{GUI initialisation (GUI) window}{GUI window} BEGINLISTING")
+
+# cat("ENDLISTING Creates the main GUI window and assigns the standard \\0proglang{R} icon to it. BEGINLISTING")
 
 GUI.TopLevel<-tktoplevel()
 tkwm.title(GUI.TopLevel,"BiplotGUI")
-#tk2theme(theme="xpnative") # Removed for R 2.70
+#tk2theme(theme="xpnative") # Disabled from R 2.7.0
 Rico<-tk2ico.load(file.path(Sys.getenv("R_HOME"),"bin","R.exe"),res="R")
 tk2ico.set(GUI.TopLevel, Rico)
 tk2ico.destroy(Rico)
 rm(Rico)
 tkwm.deiconify(GUI.TopLevel)
+
+# cat("ENDLISTING Sets the default size of the main GUI window and centres it on the screen. The default size depends on the screensize. The minimum size is 900 $\\0times$ 600 pixels. BEGINLISTING")
 GUI.AvailableScreenWidth<-round(as.numeric(tkwinfo("screenwidth",GUI.TopLevel)))
 GUI.AvailableScreenHeight<-round(as.numeric(tkwinfo("screenheight",GUI.TopLevel)))
 if (GUI.AvailableScreenWidth/GUI.AvailableScreenHeight<=1080/720)
@@ -725,11 +808,61 @@ if (GUI.AvailableScreenWidth/GUI.AvailableScreenHeight<=1080/720)
 .Tcl(paste("wm geometry ",GUI.TopLevel," ",GUI.ScreenWidth,"x",GUI.ScreenHeight,"+",round(GUI.AvailableScreenWidth/2-GUI.ScreenWidth/2,0),"+",round(GUI.AvailableScreenHeight/2-GUI.ScreenHeight/2,0),sep=""))
 .Tcl(paste("wm minsize ",GUI.TopLevel," 900 600",sep=""))
 
+#####################################################################################################################
+### GUI INITIALISATION : GUI RESIZING ###############################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GUIInitialisation.GUIResizing}{GUI initialisation (GUI) resizing}{GUI resizing} BEGINLISTING")
+
+GUI.resize.allowed<-TRUE
+GUI.resize.counter<-0
+tkbind(GUI.TopLevel,"<Destroy>",function() GUI.resize.allowed<<-FALSE)
+
+# cat("ENDLISTING Redraws the biplot region, graphs of the diagnostic tabs, the table of the predictions tab, and the kraal. BEGINLISTING")
+GUI.resize.replot<-function()
+  {
+  if (GUI.WindowWidth!=(temp1<-as.numeric(tkwinfo("width",GUI.TopLevel))) | GUI.WindowHeight!=(temp2<-as.numeric(tkwinfo("height",GUI.TopLevel))))
+    {
+    Biplot.replot()
+    CurrentTab<-tclvalue(tcl(DiagnosticTabs.nb,"index","current"))
+    tcl(DiagnosticTabs.nb,"tab",0,state="normal")
+    tkselect(DiagnosticTabs.nb,0)
+    ConvergenceTab.replot()
+    PointsTab.replot()
+    GroupsTab.replot()
+    AxesTab.replot()
+    PredictionsTab.place()
+    Kraal.replot()
+    tkselect(DiagnosticTabs.nb,CurrentTab)
+    if (tclvalue(Points.var)%in%c("10","11","12")) tcl(DiagnosticTabs.nb,"tab",0,state="normal")
+      else tcl(DiagnosticTabs.nb,"tab",0,state="disabled")
+    GUI.WindowWidth<<-temp1
+    GUI.WindowHeight<<-temp2
+    }
+  GUI.resize.counter<<-0
+  }
+
+# cat("ENDLISTING Calls the \\0code{GUI.resize.replot} function only a short period of time after the user dynamically resizes the GUI window in order to avoid the function repeatedly being called as a result of a single resize by the user. BEGINLISTING")
+GUI.resize<-function()
+  {
+  if (GUI.resize.allowed)
+    {
+    GUI.resize.counter<<-GUI.resize.counter+1
+    temp1<-.Tcl(paste("after 200 ",suppressWarnings(tclFun(GUI.resize.replot)),sep=""))
+    if (GUI.resize.counter>1) .Tcl(paste("after cancel ",temp1,sep=""))
+    }
+  }
+
+#####################################################################################################################
+### GUI INITIALISATION : BINDINGS ###################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.GUIInitialisation.Bindings}{GUI initialisation: Bindings}{Bindings} BEGINLISTING")
+
+# cat("ENDLISTING Disables all GUI window bindings. Called when an option is selected in the GUI, so that further options cannot be activated until the previous one has completed. Specifically disables the interactivity of the \\0hyperlink{BiplotRegion}{biplot region}. The mechanism can be improved upon. BEGINLISTING")
 GUI.BindingsOff<-function()
   {
   tkconfigure(GUI.TopLevel,cursor="watch")
-  ControlButtons.ProgressBar.create()
-  tkconfigure(ControlButtons.ProgressBar.pb,value=0)#,state="disabled")
+  Other.ProgressBar.create()
+  tkconfigure(Other.ProgressBar.pb,value=0)
   .Tcl("update")
   tkbind(GUI.TopLevel,"<Control-s>",function() NULL)
   tkbind(GUI.TopLevel,"<Control-S>",function() NULL)
@@ -737,7 +870,7 @@ GUI.BindingsOff<-function()
   tkbind(GUI.TopLevel,"<Control-C>",function() NULL)
   tkbind(GUI.TopLevel,"<Control-p>",function() NULL)
   tkbind(GUI.TopLevel,"<Control-P>",function() NULL)
-  if(.Platform$OS.type!="unix") tkbind(GUI.TopLevel,"<Control-+>",function() NULL)
+  if(.Platform$OS.type!="unix") tkbind(GUI.TopLevel,"<Control-+>",function() NULL) # Requires some work in Unix-alike.
   tkbind(GUI.TopLevel,"<Control-minus>",function() NULL)
   tkbind(GUI.TopLevel,"<Control-g>",function() NULL)
   tkbind(GUI.TopLevel,"<Control-G>",function() NULL)
@@ -782,19 +915,18 @@ GUI.BindingsOff<-function()
   tkbind(Kraal.image,"<Button-3>",function() NULL)
   }
 
-tkbind(GUI.TopLevel,"<Destroy>",function() GUI.resize.allowed<<-FALSE)
-
+# cat("ENDLISTING Enables the GUI window bindings after a previous option has completed. BEGINLISTING")
 GUI.BindingsOn<-function()
   {
   GUI.update()
-  tkbind(GUI.TopLevel,"<Escape>",ControlButtons.Stop.cmd) # This binding isn't switched off.
+  tkbind(GUI.TopLevel,"<Escape>",Other.Stop.cmd) # This binding isn't switched off in `GUI.Bindings.Off'.
   tkbind(GUI.TopLevel,"<Control-s>",function() File.Save.as.cmd())
   tkbind(GUI.TopLevel,"<Control-S>",function() File.Save.as.cmd())
   tkbind(GUI.TopLevel,"<Control-c>",function() tkinvoke(MenuBar.File,1))
   tkbind(GUI.TopLevel,"<Control-C>",function() tkinvoke(MenuBar.File,1))
   tkbind(GUI.TopLevel,"<Control-p>",function() tkinvoke(MenuBar.File,3))
   tkbind(GUI.TopLevel,"<Control-P>",function() tkinvoke(MenuBar.File,3))
-  if(.Platform$OS.type!="unix") tkbind(GUI.TopLevel,"<Control-+>",function() tkinvoke(MenuBar.View,16))
+  if(.Platform$OS.type!="unix") tkbind(GUI.TopLevel,"<Control-+>",function() tkinvoke(MenuBar.View,16)) # Requires some work in Unix-alike.
   tkbind(GUI.TopLevel,"<Control-minus>",function() tkinvoke(MenuBar.View,17))
   tkbind(GUI.TopLevel,"<Control-g>",function() tkinvoke(MenuBar.Format,1))
   tkbind(GUI.TopLevel,"<Control-G>",function() tkinvoke(MenuBar.Format,1))
@@ -827,8 +959,8 @@ GUI.BindingsOn<-function()
   tkbind(BiplotRegion.image,"<Button-1>",Biplot.LeftClick)
   tkbind(BiplotRegion.image,"<ButtonRelease-1>",Biplot.LeftRelease)
   tkbind(BiplotRegion.image,"<Button-3>",Biplot.RightClick)
-  tkbind(GUI.TopLevel,"<F11>",function() tkinvoke(ControlButtons.External.menu,0))
-  tkbind(GUI.TopLevel,"<F12>",function() tkinvoke(ControlButtons.External.menu,1))
+  tkbind(GUI.TopLevel,"<F11>",function() tkinvoke(Other.External.menu,0))
+  tkbind(GUI.TopLevel,"<F12>",function() tkinvoke(Other.External.menu,1))
   tkbind(ConvergenceTab.image,"<Button-3>",ConvergenceTab.RightClick)
   tkbind(PointsTab.image,"<Button-3>",PointsTab.RightClick)
   tkbind(GroupsTab.image,"<Button-3>",GroupsTab.RightClick)
@@ -838,61 +970,26 @@ GUI.BindingsOn<-function()
   tkbind(Kraal.image,"<ButtonRelease-1>",Kraal.LeftRelease)
   tkbind(Kraal.image,"<Button-3>",Kraal.RightClick)
   ExportTab.update()
-  tkconfigure(ControlButtons.ProgressBar.pb,value=100)
-  ControlButtons.ProgressBar.destroy()
+  tkconfigure(Other.ProgressBar.pb,value=100)
+  Other.ProgressBar.destroy()
   tkconfigure(GUI.TopLevel,cursor="arrow")
   .Tcl("update")
   }
 
-GUI.SaveAs.what<-NULL
-
-GUI.resize.allowed<-TRUE
-
-
-GUI.resize.counter<-0
-
-GUI.resize.replot<-function()
-  {
-  if (GUI.WindowWidth!=(temp1<-as.numeric(tkwinfo("width",GUI.TopLevel))) | GUI.WindowHeight!=(temp2<-as.numeric(tkwinfo("height",GUI.TopLevel))))
-    {
-    Biplot.replot()
-    CurrentTab<-tclvalue(tcl(DiagnosticTabs.nb,"index","current"))
-    tcl(DiagnosticTabs.nb,"tab",0,state="normal")
-    tkselect(DiagnosticTabs.nb,0)
-    ConvergenceTab.replot()
-    PointsTab.replot()
-    GroupsTab.replot()
-    AxesTab.replot()
-    PredictionsTab.place()
-    Kraal.replot()
-    tkselect(DiagnosticTabs.nb,CurrentTab)
-    if (tclvalue(Points.var)%in%c("10","11","12")) tcl(DiagnosticTabs.nb,"tab",0,state="normal")
-      else tcl(DiagnosticTabs.nb,"tab",0,state="disabled")
-    GUI.WindowWidth<<-temp1
-    GUI.WindowHeight<<-temp2
-    }
-  GUI.resize.counter<<-0
-  }
-
-GUI.resize<-function()
-  {
-  if (GUI.resize.allowed)
-    {
-    GUI.resize.counter<<-GUI.resize.counter+1
-    temp1<-.Tcl(paste("after 200 ",suppressWarnings(tclFun(GUI.resize.replot)),sep=""))
-    if (GUI.resize.counter>1) .Tcl(paste("after cancel ",temp1,sep=""))
-    }
-  }
+#####################################################################################################################
+### GUI INITIALISATION : GUI UPDATE #################################################################################
+#####################################################################################################################
+# cat("ENDLISTING Called at the outset of the function \\0code{GUI.BindingsOn}. Enables and disables GUI options so that all options are consistent with the previously selected option. BEGINLISTING")
 
 GUI.update<-function()
   {
-  ### MENU BAR ########################################################################################################
+  # cat("ENDLISTING The \\0hyperlink{MenuBar}{menu bar} and \\0hyperlink{BiplotRegion}{biplot region} pop-up menu options. BEGINLISTING")
 
-  if (tclvalue(Biplot.Axes.var)%in%c("0","1","2","10","11","12") | tclvalue(ControlButtons.HideAxes.var)=="1") tkentryconfigure(MenuBar.View,3,state="disabled")
+  if (tclvalue(Biplot.Axes.var)%in%c("0","1","2","10","11","12") | tclvalue(Other.HideAxes.var)=="1") tkentryconfigure(MenuBar.View,3,state="disabled")
     else tkentryconfigure(MenuBar.View,3,state="normal")
   for (temp1 in 2:3) tkentryconfigure(MenuBar.View,temp1,variable=View.ClipAround.var)
 
-  if (tclvalue(ControlButtons.HidePoints.var)=="1") tkentryconfigure(MenuBar.View,5,state="disabled")
+  if (tclvalue(Other.HidePoints.var)=="1") tkentryconfigure(MenuBar.View,5,state="disabled")
     else tkentryconfigure(MenuBar.View,5,state="normal")
 
   tkentryconfigure(MenuBar.View,5,variable=View.ShowPointLabels.var)
@@ -903,13 +1000,13 @@ GUI.update<-function()
 
   if (g>1)
     {
-    if (tclvalue(ControlButtons.HidePoints.var)=="1") tkentryconfigure(MenuBar.View,8,state="disabled")
+    if (tclvalue(Other.HidePoints.var)=="1") tkentryconfigure(MenuBar.View,8,state="disabled")
       else tkentryconfigure(MenuBar.View,8,state="normal")
     }
 
   tkentryconfigure(MenuBar.View,8,variable=View.ShowGroupLabelsInLegend.var)
 
-  if (tclvalue(Biplot.Axes.var)=="10" | tclvalue(ControlButtons.HideAxes.var)=="1") for (temp1 in c(10,12))
+  if (tclvalue(Biplot.Axes.var)=="10" | tclvalue(Other.HideAxes.var)=="1") for (temp1 in c(10,12))
     {
     tkentryconfigure(MenuBar.View,temp1,state="disabled")
     tkentryconfigure(Biplot.RightClickOutside.Menu,temp1-5,state="disabled")
@@ -920,7 +1017,7 @@ GUI.update<-function()
       tkentryconfigure(Biplot.RightClickOutside.Menu,temp1-5,state="normal")
       }
 
-  if (tclvalue(Biplot.Axes.var)%in%c("10","13","14") | tclvalue(ControlButtons.HideAxes.var)=="1")
+  if (tclvalue(Biplot.Axes.var)%in%c("10","13","14") | tclvalue(Other.HideAxes.var)=="1")
     {
     tkentryconfigure(MenuBar.View,11,state="disabled")
     tkentryconfigure(Biplot.RightClickOutside.Menu,6,state="disabled")
@@ -963,10 +1060,10 @@ GUI.update<-function()
   tkentryconfigure(MenuBar.Additional,5,variable=Additional.PointDensities.var)
   tkentryconfigure(MenuBar.Additional,6,variable=Additional.ClassificationRegion.var)
 
-  if (tclvalue(ControlButtons.HideAxes.var)=="1" || tclvalue(tkget(SettingsBox.action.combo))!="Predict") tkentryconfigure(Biplot.RightClickInside.Menu,5,state="disabled")
+  if (tclvalue(Other.HideAxes.var)=="1" || tclvalue(tkget(SettingsBox.action.combo))!="Predict") tkentryconfigure(Biplot.RightClickInside.Menu,5,state="disabled")
     else tkentryconfigure(Biplot.RightClickInside.Menu,5,state="normal")
 
-  if (tclvalue(ControlButtons.HidePoints.var)=="1" || tclvalue(ControlButtons.HideAxes.var)=="1" || tclvalue(tkget(SettingsBox.action.combo))!="Predict") tkentryconfigure(Biplot.RightClickInside.Menu,6,state="disabled")
+  if (tclvalue(Other.HidePoints.var)=="1" || tclvalue(Other.HideAxes.var)=="1" || tclvalue(tkget(SettingsBox.action.combo))!="Predict") tkentryconfigure(Biplot.RightClickInside.Menu,6,state="disabled")
     else tkentryconfigure(Biplot.RightClickInside.Menu,6,state="normal")
 
   for (temp1 in 4:6) tkentryconfigure(Biplot.RightClickInside.Menu,temp1,variable=Biplot.points.mode)
@@ -974,20 +1071,12 @@ GUI.update<-function()
   if (Biplot.axes.mode==0) tkentryconfigure(Biplot.RightClickInside.Menu,8,state="disabled")
     else tkentryconfigure(Biplot.RightClickInside.Menu,8,state="normal")
 
-  ### CONTROL BUTTONS #################################################################################################
+    # cat("ENDLISTING The \\0hyperlink{SettingsBox}{settings box} options. BEGINLISTING")
 
-  if (tclvalue(Biplot.Axes.var)=="10") tkentryconfigure(ControlButtons.Hide.menu,1,state="disabled")
-    else tkentryconfigure(ControlButtons.Hide.menu,1,state="normal")
-
-  if (as.numeric(tclvalue(Biplot.Axes.var))>=10 && as.numeric(tclvalue(Points.var))>=10) tkentryconfigure(ControlButtons.External.menu,1,state="disabled")
-    else tkentryconfigure(ControlButtons.External.menu,1,state="normal")
-
-  ### SETTINGS BOX ####################################################################################################
-
-  if (tclvalue(Biplot.Axes.var)=="10" | tclvalue(ControlButtons.HideAxes.var)=="1") tkconfigure(SettingsBox.action.combo,state="disabled")
+  if (tclvalue(Biplot.Axes.var)=="10" | tclvalue(Other.HideAxes.var)=="1") tkconfigure(SettingsBox.action.combo,state="disabled")
     else tkconfigure(SettingsBox.action.combo,state="normal")
 
-  ### DIAGNOSTIC TABS ################################################################################################
+    # cat("ENDLISTING The  \\0hyperlink{DiagnosticTabs}{diagnostic tabs} options. BEGINLISTING")
 
   if (as.numeric(tclvalue(Biplot.Axes.var))>=10 && tclvalue(Points.var)%in%c("10","11","12")) tcl(DiagnosticTabs.nb,"tab",0,state="normal")
     else tcl(DiagnosticTabs.nb,"tab",0,state="disabled")
@@ -1017,8 +1106,16 @@ GUI.update<-function()
     tcl(DiagnosticTabs.nb,"tab",3,state="disabled")
     })
 
-  if (tclvalue(Biplot.Axes.var)=="10" | tclvalue(ControlButtons.HideAxes.var)=="1" | !tclvalue(tkget(SettingsBox.action.combo))=="Predict") tcl(DiagnosticTabs.nb,"tab",4,state="disabled")
+  if (tclvalue(Biplot.Axes.var)=="10" | tclvalue(Other.HideAxes.var)=="1" | !tclvalue(tkget(SettingsBox.action.combo))=="Predict") tcl(DiagnosticTabs.nb,"tab",4,state="disabled")
     else tcl(DiagnosticTabs.nb,"tab",4,state="normal")
+
+    # cat("ENDLISTING \\0hyperlink{Other}{Other} options. BEGINLISTING")
+
+  if (tclvalue(Biplot.Axes.var)=="10") tkentryconfigure(Other.Hide.menu,1,state="disabled")
+    else tkentryconfigure(Other.Hide.menu,1,state="normal")
+
+  if (as.numeric(tclvalue(Biplot.Axes.var))>=10 && as.numeric(tclvalue(Points.var))>=10) tkentryconfigure(Other.External.menu,1,state="disabled")
+    else tkentryconfigure(Other.External.menu,1,state="normal")
   }
 
 #####################################################################################################################
@@ -1026,12 +1123,23 @@ GUI.update<-function()
 ### MENU BAR ########################################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.MenuBar}{Menu bar}{Menu bar} BEGINLISTING")
+
+#####################################################################################################################
+### MENU BAR : FUNCTIONS ############################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.MenuBar.Functions}{Menu bar (functions)}{Functions} BEGINLISTING")
 
 ##############################################################################
-### FILE #####################################################################
+### MENU BAR : FUNCTIONS : FILE ##############################################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.File}{Menu bar (functions): File}{File} BEGINLISTING")
 
-File.Save.as.cmd<-function() # Called only by the keyboard shortcut
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.File.SaveAs}{Menu bar (functions): File: Save as}{Save as} BEGINLISTING")
+
+# cat("ENDLISTING Activated only through the keyboard shortcut `Ctrl+S'. BEGINLISTING")
+
+File.Save.as.cmd<-function() # Called only by the keyboard shortcut `Ctrl+S'.
   {
   GUI.BindingsOff()
   switch(tclvalue(File.SaveAs.var),
@@ -1045,10 +1153,12 @@ File.Save.as.cmd<-function() # Called only by the keyboard shortcut
     "7"=File.SaveAs.Jpeg.cmd(),
     "8"=File.SaveAs.PicTeX.cmd()
     )
-
   GUI.BindingsOn()
   }
 
+File.SaveAs.var<-tclVar("0")
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.PDF}{Menu bar (functions): File: Save as: PDF\\0ldots}{PDF\\0ldots} BEGINLISTING")
 
 File.SaveAs.PDF.cmd<-function()
   {
@@ -1064,6 +1174,8 @@ File.SaveAs.PDF.cmd<-function()
   tkfocus(GUI.TopLevel)
   }
 
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.Postscript}{Menu bar (functions): File: Save as: Postscript\\0ldots}{Postscript\\0ldots} BEGINLISTING")
+
 File.SaveAs.Postscript.cmd<-function()
   {
   FileName<-tclvalue(tkgetSaveFile(filetypes="{{Postscript files} {.ps}} {{All files} *}"))
@@ -1077,6 +1189,8 @@ File.SaveAs.Postscript.cmd<-function()
     }
   tkfocus(GUI.TopLevel)
   }
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.Metafile}{Menu bar (functions): File: Save as: Metafile\\0ldots}{Metafile\\0ldots} BEGINLISTING")
 
 File.SaveAs.Metafile.cmd<-function()
   {
@@ -1092,6 +1206,8 @@ File.SaveAs.Metafile.cmd<-function()
   tkfocus(GUI.TopLevel)
   }
 
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.Bmp}{Menu bar (functions): File: Save as: Bmp\\0ldots}{Bmp\\0ldots} BEGINLISTING")
+
 File.SaveAs.Bmp.cmd<-function()
   {
   FileName<-tclvalue(tkgetSaveFile(filetypes="{{Bitmap files} {.bmp}} {{All files} *}"))
@@ -1105,6 +1221,8 @@ File.SaveAs.Bmp.cmd<-function()
     }
   tkfocus(GUI.TopLevel)
   }
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.Png}{Menu bar (functions): File: Save as: Png\\0ldots}{Png\\0ldots} BEGINLISTING")
 
 File.SaveAs.Png.cmd<-function()
   {
@@ -1120,7 +1238,8 @@ File.SaveAs.Png.cmd<-function()
   tkfocus(GUI.TopLevel)
   }
 
-File.Jpeg.quality<-NULL
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.Jpeg}{Menu bar (functions): File: Save as: Jpeg}{Jpeg} BEGINLISTING")
 
 File.SaveAs.Jpeg.cmd<-function()
   {
@@ -1136,6 +1255,10 @@ File.SaveAs.Jpeg.cmd<-function()
   tkfocus(GUI.TopLevel)
   }
 
+File.Jpeg.quality<-NULL
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.File.SaveAs.PicTeX}{Menu bar (functions): File: Save as: PicTeX\\0ldots}{PicTeX\\0ldots} BEGINLISTING")
+
 File.SaveAs.PicTeX.cmd<-function()
   {
   FileName<-tclvalue(tkgetSaveFile(filetypes="{{TeX files} {.tex}} {{All files} *}"))
@@ -1150,18 +1273,26 @@ File.SaveAs.PicTeX.cmd<-function()
   tkfocus(GUI.TopLevel)
 }
 
-File.SaveAs.var<-tclVar("0")
+##############################################################################
 
-File.Copy.cmd<-function()
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.File.Copy}{Menu bar (functions): File: Copy}{Copy} BEGINLISTING")
+
+#  Requires work for Unix-alike.  
+
+File.Copy.cmd<-function() # Requires work for Unix-alike.
   {
   win.metafile(width=8,height=8,restoreConsole=FALSE)
   Biplot.plot(screen=FALSE)
   dev.off()
   }
 
-###########################################################
+##############################################################################
 
-File.Print.cmd<-function()
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.File.Print}{Menu bar (functions): File: Print\\0ldots}{Print\\0ldots} BEGINLISTING")
+
+#  Requires work for Unix-alike 
+
+File.Print.cmd<-function() # Requires work for Unix-alike.
   {
   try(win.print(),silent=TRUE)
   if (geterrmessage()!="Error in win.print() : unable to start device devWindows\n")
@@ -1171,7 +1302,9 @@ File.Print.cmd<-function()
     }
   }
 
-###########################################################
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.File.Options}{Menu bar (functions): File: Options\\0ldots}{Options\\0ldots} BEGINLISTING")
 
 File.Options.cmd<-function()
   {
@@ -1304,9 +1437,11 @@ File.Options.cmd<-function()
     }
 
   local.GUI.func()
-
   }
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.File.Exit}{Menu bar (functions): File: Exit}{Exit} BEGINLISTING")
 
 File.Exit.cmd<-function()
   {
@@ -1316,8 +1451,11 @@ File.Exit.cmd<-function()
   }
 
 ##############################################################################
-### VIEW #####################################################################
+### MENU BAR : FUNCTIONS : VIEW ##############################################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.View}{Menu bar (functions): View}{View} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowTitle}{Menu bar (functions): View: Show title}{Show title} BEGINLISTING")
 
 View.ShowTitle.cmd<-function()
   {
@@ -1326,10 +1464,18 @@ View.ShowTitle.cmd<-function()
 
 View.ShowTitle.var<-tclVar("0")
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ClipAroundPoints}{Menu bar (functions): View: Clip around points}{Clip around points} BEGINLISTING")
+
 View.ClipAroundPoints.cmd<-function()
   {
   Biplot.replot()
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ClipAroundPointsAndAxes}{Menu bar (functions): View: Clip around points and axes}{Clip around points and axes} BEGINLISTING")
 
 View.ClipAroundPointsAndAxes.cmd<-function()
   {
@@ -1338,11 +1484,19 @@ View.ClipAroundPointsAndAxes.cmd<-function()
 
 View.ClipAround.var<-tclVar("0")
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowPointLabels}{Menu bar (functions): View: Show point labels}{Show point labels} BEGINLISTING")
+
 View.ShowPointLabels.cmd<-function()
   {
   Biplot.replot()
   }
 View.ShowPointLabels.var<-tclVar("1")
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowPointValues}{Menu bar (functions): View: Show point values}{Show point values} BEGINLISTING")
 
 View.ShowPointValues.cmd<-function()
   {
@@ -1350,11 +1504,19 @@ View.ShowPointValues.cmd<-function()
   }
 View.ShowPointValues.var<-tclVar("1")
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowGroupLabelsInLegend}{Menu bar (functions): View: Show group labels in legend}{Show group labels in legend} BEGINLISTING")
+
 View.ShowGroupLabelsInLegend.cmd<-function()
   {
   Biplot.replot()
   }
 View.ShowGroupLabelsInLegend.var<-if (g==1) tclVar("0") else tclVar("1")
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.DontShowAxisLabels}{Menu bar (functions): View: Don't show axis labels}{Don't show axis labels} BEGINLISTING")
 
 View.DontShowAxisLabels.cmd<-function()
   {
@@ -1362,11 +1524,19 @@ View.DontShowAxisLabels.cmd<-function()
   Biplot.replot()
   }
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowClingingAxisLabels}{Menu bar (functions): View: Show clinging axis labels}{Show clinging axis labels} BEGINLISTING")
+
 View.ShowClingingAxisLabels.cmd<-function()
   {
   if (p.in<p) Kraal.replot()
   Biplot.replot()
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowAxisLabelsInLegend}{Menu bar (functions): View: Show axis labels in legend}{Show axis labels in legend} BEGINLISTING")
 
 View.ShowAxisLabelsInLegend.cmd<-function()
   {
@@ -1376,6 +1546,10 @@ View.ShowAxisLabelsInLegend.cmd<-function()
 
 View.AxisLabels.var<-tclVar("1")
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowAdditionalLabelsInLegend}{Menu bar (functions): View: Show Additional labels in legend}{Show Additional labels in legend} BEGINLISTING")
+
 View.ShowAdditionalLabelsInLegend.cmd<-function()
   {
   Biplot.replot()
@@ -1383,16 +1557,49 @@ View.ShowAdditionalLabelsInLegend.cmd<-function()
 
 View.ShowAdditionalLabelsInLegend.var<-tclVar("1")
 
-View.ShowDisplaySpaceAxes.cmd<-function()
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowNextLegendEntries}{Menu bar (functions): View: Show next legend entries}{Show next legend entries} BEGINLISTING")
+
+View.ShowNextLegendEntries.cmd<-function() 
+  {
+  if (Legend.CurrentPage<Legend.LastPage)
+    {
+    Legend.CurrentPage<<-Legend.CurrentPage+1
+    Biplot.replot()
+    }
+  }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.ShowPreviousLegendEntries}{Menu bar (functions): View: Show previous legend entries}{Show previous legend entries} BEGINLISTING")
+
+View.ShowPreviousLegendEntries.cmd<-function() 
+  {
+  if (Legend.CurrentPage>1)
+    {
+    Legend.CurrentPage<<-Legend.CurrentPage-1
+    Biplot.replot()
+    }
+  }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.View.CalibrateDisplaySpaceAxes}{Menu bar (functions): View: Calibrate display space axes}{Calibrate display space axes} BEGINLISTING")
+
+View.CalibrateDisplaySpaceAxes.cmd<-function()
   {
   Biplot.replot()
   }
 
-View.ShowDisplaySpaceAxes.var<-tclVar("0")
+View.CalibrateDisplaySpaceAxes.var<-tclVar("0")
 
 ##############################################################################
-### FORMAT ###################################################################
+### MENU BAR : FUNCTIONS : FORMAT ############################################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.Format}{Menu bar (functions): Format}{Format} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Format.Title}{Menu bar (functions): Format: Title\\0ldots}{Title\\0ldots} BEGINLISTING")
 
 Format.Title.cmd<-function()
   {
@@ -1459,7 +1666,9 @@ Format.Title.cmd<-function()
   local.GUI.func()
   }
 
-###########################################################
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Format.ByGroup}{Menu bar (functions): Format: By group\\0ldots}{By group\\0ldots} BEGINLISTING")
 
 Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
   {
@@ -1523,7 +1732,9 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
       local.points.label.VertOffset.var[[1]]<<-if (all(unlist(lapply(local.points.label.VertOffset.var[-1],tclvalue))==tclvalue(local.points.label.VertOffset.var[[2]]))) local.points.label.VertOffset.var[[2]] else tclVar(" ")
       tkconfigure(entryA4,textvariable=local.points.label.VertOffset.var[[WhichGroup]])
-###
+
+      ###
+
       local.SampleGroupMeans.pch.var[[1]]<<-if (all(unlist(lapply(local.SampleGroupMeans.pch.var[-1],tclvalue))==tclvalue(local.SampleGroupMeans.pch.var[[2]]))) local.SampleGroupMeans.pch.var[[2]] else tclVar(" ")
       tkconfigure(spinboxB1,textvariable=local.SampleGroupMeans.pch.var[[WhichGroup]])
 
@@ -1550,7 +1761,9 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
       local.SampleGroupMeans.label.VertOffset.var[[1]]<<-if (all(unlist(lapply(local.SampleGroupMeans.label.VertOffset.var[-1],tclvalue))==tclvalue(local.SampleGroupMeans.label.VertOffset.var[[2]]))) local.SampleGroupMeans.label.VertOffset.var[[2]] else tclVar(" ")
       tkconfigure(entryB4,textvariable=local.SampleGroupMeans.label.VertOffset.var[[WhichGroup]])
-###
+
+      ###
+
       local.ConvexHullAlphaBag.lty.var[[1]]<<-if (all(unlist(lapply(local.ConvexHullAlphaBag.lty.var[-1],tclvalue))==tclvalue(local.ConvexHullAlphaBag.lty.var[[2]]))) local.ConvexHullAlphaBag.lty.var[[2]] else tclVar(" ")
       tkconfigure(spinboxC1,textvariable=local.ConvexHullAlphaBag.lty.var[[WhichGroup]])
 
@@ -1562,7 +1775,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
       local.ConvexHullAlphaBag.col.bg.var[[1]]<<-if (all(unlist(local.ConvexHullAlphaBag.col.bg.var[-1])==local.ConvexHullAlphaBag.col.bg.var[[2]])) local.ConvexHullAlphaBag.col.bg.var[[2]] else text2hex("SystemButtonFace")
       tkconfigure(labelC2,background=local.ConvexHullAlphaBag.col.bg.var[[WhichGroup]])
-###
+
       local.ConvexHullAlphaBag.TukeyMedian.pch.var[[1]]<<-if (all(unlist(lapply(local.ConvexHullAlphaBag.TukeyMedian.pch.var[-1],tclvalue))==tclvalue(local.ConvexHullAlphaBag.TukeyMedian.pch.var[[2]]))) local.ConvexHullAlphaBag.TukeyMedian.pch.var[[2]] else tclVar(" ")
       tkconfigure(spinboxC2,textvariable=local.ConvexHullAlphaBag.TukeyMedian.pch.var[[WhichGroup]])
 
@@ -1589,46 +1802,48 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
       local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[1]]<<-if (all(unlist(lapply(local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[-1],tclvalue))==tclvalue(local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[2]]))) local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[2]] else tclVar(" ")
       tkconfigure(entryC5,textvariable=local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[WhichGroup]])
-###
+
+      ###
+
       local.ClassificationRegion.col.bg.var[[1]]<<-if (all(unlist(local.ClassificationRegion.col.bg.var[-1])==local.ClassificationRegion.col.bg.var[[2]])) local.ClassificationRegion.col.bg.var[[2]] else text2hex("SystemButtonFace")
       tkconfigure(labelD1,background=local.ClassificationRegion.col.bg.var[[WhichGroup]])
       }
 
-      local.points.pch.var<-NULL
-      local.points.cex.var<-NULL
-      local.points.col.fg.var<-NULL
-      local.points.col.bg.var<-NULL
-      local.points.label.font.var<-NULL
-      local.points.label.cex.var<-NULL
-      local.points.label.col.var<-NULL
-      local.points.label.HorizOffset.var<-NULL
-      local.points.label.VertOffset.var<-NULL
+    local.points.pch.var<-NULL
+    local.points.cex.var<-NULL
+    local.points.col.fg.var<-NULL
+    local.points.col.bg.var<-NULL
+    local.points.label.font.var<-NULL
+    local.points.label.cex.var<-NULL
+    local.points.label.col.var<-NULL
+    local.points.label.HorizOffset.var<-NULL
+    local.points.label.VertOffset.var<-NULL
 
-      local.SampleGroupMeans.pch.var<-NULL
-      local.SampleGroupMeans.cex.var<-NULL
-      local.SampleGroupMeans.col.fg.var<-NULL
-      local.SampleGroupMeans.col.bg.var<-NULL
-      local.SampleGroupMeans.label.font.var<-NULL
-      local.SampleGroupMeans.label.cex.var<-NULL
-      local.SampleGroupMeans.label.col.var<-NULL
-      local.SampleGroupMeans.label.HorizOffset.var<-NULL
-      local.SampleGroupMeans.label.VertOffset.var<-NULL
+    local.SampleGroupMeans.pch.var<-NULL
+    local.SampleGroupMeans.cex.var<-NULL
+    local.SampleGroupMeans.col.fg.var<-NULL
+    local.SampleGroupMeans.col.bg.var<-NULL
+    local.SampleGroupMeans.label.font.var<-NULL
+    local.SampleGroupMeans.label.cex.var<-NULL
+    local.SampleGroupMeans.label.col.var<-NULL
+    local.SampleGroupMeans.label.HorizOffset.var<-NULL
+    local.SampleGroupMeans.label.VertOffset.var<-NULL
 
-      local.ConvexHullAlphaBag.lty.var<-NULL
-      local.ConvexHullAlphaBag.lwd.var<-NULL
-      local.ConvexHullAlphaBag.col.fg.var<-NULL
-      local.ConvexHullAlphaBag.col.bg.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.pch.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.cex.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.col.fg.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.col.bg.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.label.font.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.label.cex.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.label.col.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var<-NULL
-      local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var<-NULL
+    local.ConvexHullAlphaBag.lty.var<-NULL
+    local.ConvexHullAlphaBag.lwd.var<-NULL
+    local.ConvexHullAlphaBag.col.fg.var<-NULL
+    local.ConvexHullAlphaBag.col.bg.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.pch.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.cex.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.col.fg.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.col.bg.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.font.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.cex.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.col.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var<-NULL
 
-      local.ClassificationRegion.col.bg.var<-NULL
+    local.ClassificationRegion.col.bg.var<-NULL
 
     initialise<-function()
       {
@@ -1732,11 +1947,15 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     if (g>1) for (i in bpar$groups.label.text) tkinsert(listbox1,"end",i)
     tkselect(listbox1,"set",WhichGroupInitially-1)
 
-    notebook<-tk2notebook(top,tabs=NULL) # Changed for R2.7
-###
+    notebook<-tk2notebook(top,tabs=NULL) # Changed for R 2.7.0
+
+    ###
+
     notebook.A<-tk2frame(notebook)
     tkadd(notebook,notebook.A,text="Points")
+
     ###
+
     frameA1<-tkwidget(notebook.A,"TitleFrame",text="Plotting character")
     tkplace(frameA1,relx=.05,relwidth=.90,y=10,height=105,"in"=notebook.A)
 
@@ -1780,7 +1999,9 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
         if (WhichGroup==1) for (temp1 in 2:(g+1)) local.points.col.bg.var[[temp1]]<<-local.points.col.bg.var[[1]]
         }
       })
+
     ###
+
     frameA2<-tkwidget(notebook.A,"TitleFrame",text="Label")
     tkplace(frameA2,relx=.05,relwidth=.90,y=130,height=125,"in"=notebook.A)
 
@@ -1817,10 +2038,14 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     tkplace(tk2label(frameA2,text="Vertical offset"),x=11,y=100,"in"=frameA2)
     entryA4<-tk2entry(frameA2,textvariable=local.points.label.VertOffset.var[[WhichGroup]],justify="right",takefocus=FALSE)
     tkplace(entryA4,relx=.95,y=100,height=18,relwidth=.125,"in"=frameA2,anchor="ne")
-###
+
+    ###
+
     notebook.B<-tk2frame(notebook)
     tkadd(notebook,notebook.B,text="Sample group means")
+    
     ###
+
     frameB1<-tkwidget(notebook.B,"TitleFrame",text="Plotting character")
     tkplace(frameB1,relx=.05,relwidth=.90,y=10,height=105,"in"=notebook.B)
 
@@ -1864,7 +2089,9 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
         if (WhichGroup==1) for (temp1 in 2:(g+1)) local.SampleGroupMeans.col.bg.var[[temp1]]<<-local.SampleGroupMeans.col.bg.var[[1]]
         }
       })
+
     ###
+
     frameB2<-tkwidget(notebook.B,"TitleFrame",text="Label")
     tkplace(frameB2,relx=.05,relwidth=.90,y=130,height=125,"in"=notebook.B)
 
@@ -1901,9 +2128,13 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     tkplace(tk2label(frameB2,text="Vertical offset"),x=11,y=100,"in"=frameB2)
     entryB4<-tk2entry(frameB2,textvariable=local.SampleGroupMeans.label.VertOffset.var[[WhichGroup]],justify="right",takefocus=FALSE)
     tkplace(entryB4,relx=.95,y=100,height=18,relwidth=.125,"in"=frameB2,anchor="ne")
-###
+
+    ###
+
     notebook.C<-tk2frame(notebook)
     tkadd(notebook,notebook.C,text="Convex hulls / Alpha-bags")
+
+    ###
 
     frameC1<-tkwidget(notebook.C,"TitleFrame",text="Region")
     tkplace(frameC1,relx=.05,relwidth=.90,y=10,height=105,"in"=notebook.C)
@@ -1948,7 +2179,9 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
         if (WhichGroup==1) for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.col.bg.var[[temp1]]<<-local.ConvexHullAlphaBag.col.bg.var[[1]]
         }
       })
+
     ###
+
     frameC2<-tkwidget(notebook.C,"TitleFrame",text="Tukey median: plotting character")
     tkplace(frameC2,relx=.05,relwidth=.90,y=130,height=105,"in"=notebook.C)
 
@@ -1992,7 +2225,9 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
         if (WhichGroup==1) for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.TukeyMedian.col.bg.var[[temp1]]<<-local.ConvexHullAlphaBag.TukeyMedian.col.bg.var[[1]]
         }
       })
+
     ###
+
     frameC3<-tkwidget(notebook.C,"TitleFrame",text="Tukey median: label")
     tkplace(frameC3,relx=.05,relwidth=.90,y=250,height=125,"in"=notebook.C)
 
@@ -2029,9 +2264,13 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     tkplace(tk2label(frameC3,text="Vertical offset"),x=11,y=100,"in"=frameC3)
     entryC5<-tk2entry(frameC3,textvariable=local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[WhichGroup]],justify="right",takefocus=FALSE)
     tkplace(entryC5,relx=.95,y=100,height=18,relwidth=.125,"in"=frameC3,anchor="ne")
-###
+
+    ###
+
     notebook.D<-tk2frame(notebook)
     tkadd(notebook,notebook.D,text="Classification regions")
+
+    ###
 
     frameD1<-tkwidget(notebook.D,"TitleFrame",text="Region")
     tkplace(frameD1,relx=.05,relwidth=.90,y=10,height=45,"in"=notebook.D)
@@ -2051,7 +2290,8 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
         }
       })
 
-###
+    ###
+
     button1<-tk2button(top,text="OK",width=10,command=onOK)
     button2<-tk2button(top,text="Cancel",width=10,command=onCancel)
     button3<-tk2button(top,text="Defaults",width=10,command=onDefaults)
@@ -2065,7 +2305,6 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     tkplace(button3,relx=.05,rely=.99,anchor="sw")
 
     tkselect(notebook,WhichTabInitially-1)
-    #######################################################
 
     tkbind(listbox1,"<<ListboxSelect>>",ChangeGroup)
     tkbind(top,"<Escape>",onCancel)
@@ -2093,6 +2332,10 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
   local.GUI.func()
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Format.Axes}{Menu bar (functions): Format: Axes\\0ldots}{Axes\\0ldots} BEGINLISTING")
 
 Format.Axes.cmd<-function(WhichAxisInitially=1)
   {
@@ -2248,8 +2491,12 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
     if (p>1) for (i in bpar$axes.label.text) tkinsert(listbox1,"end",i)
     tkselect(listbox1,"set",WhichAxisInitially-1)
 
+    ###
+
     frameA<-tk2frame(top,relief="groove",borderwidth="1.5p")
-###
+
+    ###
+
     frameA1<-tkwidget(top,"TitleFrame",text="Axis")
     tkplace(frameA1,relx=.05,relwidth=.90,y=10,height=85,"in"=frameA)
 
@@ -2278,7 +2525,9 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
         if (WhichAxis==1) for (temp1 in 2:(p+1)) local.axes.col.var[[temp1]]<<-local.axes.col.var[[1]]
         }
       })
+
     ###
+
     frameA2<-tkwidget(top,"TitleFrame",text="Ticks")
     tkplace(frameA2,relx=.05,relwidth=.90,y=105,height=125,"in"=frameA)
 
@@ -2315,7 +2564,9 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
     tkplace(tk2label(frameA2,text="Relative length"),x=11,y=100,"in"=frameA2)
     entryA4<-tk2entry(frameA2,textvariable=local.axes.tick.RelLength.var[[WhichAxis]],justify="right",takefocus=FALSE)
     tkplace(entryA4,relx=.95,y=100,height=18,relwidth=.125,"in"=frameA2,anchor="ne")
+
     ###
+
     frameA3<-tkwidget(top,"TitleFrame",text="Markers")
     tkplace(frameA3,relx=.05,relwidth=.90,y=240,height=105,"in"=frameA)
 
@@ -2350,6 +2601,7 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
     tkplace(entryA6,relx=.95,y=80,height=18,relwidth=.125,"in"=frameA3,anchor="ne")
 
     ###
+
     frameA4<-tkwidget(top,"TitleFrame",text="Label")
     tkplace(frameA4,relx=.05,relwidth=.90,y=355,height=105,"in"=frameA)
 
@@ -2387,6 +2639,7 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
       })
 
     ###
+
     button1<-tk2button(top,text="OK",width=10,command=onOK)
     button2<-tk2button(top,text="Cancel",width=10,command=onCancel)
     button3<-tk2button(top,text="Defaults",width=10,command=onDefaults)
@@ -2399,8 +2652,6 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
     tkplace(button3,relx=.05,rely=.99,anchor="sw")
 
     tkplace(frameA,relx=.3,rely=.05,relwidth=.67,relheight=.88,"in"=top)
-
-    #######################################################
 
     tkbind(listbox1,"<<ListboxSelect>>",ChangeGroup)
     tkbind(top,"<Escape>",onCancel)
@@ -2427,8 +2678,11 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
     }
 
   local.GUI.func()
-
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Format.Interpolation}{Menu bar (functions): Format: Interpolation\\0ldots}{Interpolation\\0ldots} BEGINLISTING")
 
 Format.Interaction.cmd<-function()
   {
@@ -2515,6 +2769,7 @@ Format.Interaction.cmd<-function()
     local.interaction.highlight.ShowValues.digits.var<-tclVar(bpar$interaction.highlight.ShowValues.digits)
 
   ###
+
   frame1<-tkwidget(top,"TitleFrame",text="Prediction")
   tkplace(frame1,relx=.05,relwidth=.90,y=10,height=165,"in"=top)
 
@@ -2567,6 +2822,7 @@ Format.Interaction.cmd<-function()
     })
 
   ###
+
   frame2<-tkwidget(top,"TitleFrame",text="Highlighted axis")
   tkplace(frame2,relx=.05,relwidth=.90,y=190,height=185,"in"=top)
 
@@ -2632,7 +2888,8 @@ Format.Interaction.cmd<-function()
   spinbox4<-tkwidget(frame2,"SpinBox",textvariable=local.interaction.highlight.ShowValues.digits.var,editable=FALSE,values=0:8,justify="right")
   tkplace(spinbox4,relx=.95,y=160,height=18,relwidth=.125,"in"=frame2,anchor="ne")
 
-#
+  ###
+
   button1<-tk2button(top,text="Defaults",width=10,command=onDefaults)
   button2<-tk2button(top,text="OK",width=10,command=onOK)
   button3<-tk2button(top,text="Cancel",width=10,command=onCancel)
@@ -2663,6 +2920,10 @@ Format.Interaction.cmd<-function()
 
   tkwait.window(top)
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Format.DiagnosticTabs}{Menu bar (functions): Format: Diagnostic tabs\\0ldots}{Diagnostic tabs\\0ldots} BEGINLISTING")
 
 Format.DiagnosticTabs.cmd<-function()
   {
@@ -2761,33 +3022,34 @@ Format.DiagnosticTabs.cmd<-function()
     tkdestroy(top)
     }
 
-    local.DiagnosticTabs.convergence.lty.var<-tclVar(bpar$DiagnosticTabs.convergence.lty)
-    local.DiagnosticTabs.convergence.lwd.var<-tclVar(bpar$DiagnosticTabs.convergence.lwd)
-    local.DiagnosticTabs.convergence.col.var<-text2hex(bpar$DiagnosticTabs.convergence.col)
+  local.DiagnosticTabs.convergence.lty.var<-tclVar(bpar$DiagnosticTabs.convergence.lty)
+  local.DiagnosticTabs.convergence.lwd.var<-tclVar(bpar$DiagnosticTabs.convergence.lwd)
+  local.DiagnosticTabs.convergence.col.var<-text2hex(bpar$DiagnosticTabs.convergence.col)
 
-    local.DiagnosticTabs.predictivities.axes.pch.var<-tclVar(bpar$DiagnosticTabs.predictivities.axes.pch)
-    local.DiagnosticTabs.predictivities.cex.var<-tclVar(bpar$DiagnosticTabs.predictivities.cex)
-    local.DiagnosticTabs.predictivities.label.font.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.font)
-    local.DiagnosticTabs.predictivities.label.cex.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.cex)
-    local.DiagnosticTabs.predictivities.label.HorizOffset.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.HorizOffset)
-    local.DiagnosticTabs.predictivities.label.VertOffset.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.VertOffset)
+  local.DiagnosticTabs.predictivities.axes.pch.var<-tclVar(bpar$DiagnosticTabs.predictivities.axes.pch)
+  local.DiagnosticTabs.predictivities.cex.var<-tclVar(bpar$DiagnosticTabs.predictivities.cex)
+  local.DiagnosticTabs.predictivities.label.font.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.font)
+  local.DiagnosticTabs.predictivities.label.cex.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.cex)
+  local.DiagnosticTabs.predictivities.label.HorizOffset.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.HorizOffset)
+  local.DiagnosticTabs.predictivities.label.VertOffset.var<-tclVar(bpar$DiagnosticTabs.predictivities.label.VertOffset)
 
-    local.DiagnosticTabs.ShepardDiagram.pch.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.pch)
-    local.DiagnosticTabs.ShepardDiagram.cex.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.cex)
-    local.DiagnosticTabs.ShepardDiagram.col.fg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.col.fg)
-    local.DiagnosticTabs.ShepardDiagram.col.bg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.col.bg)
-    local.DiagnosticTabs.ShepardDiagram.disparities.lty.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.lty)
-    local.DiagnosticTabs.ShepardDiagram.disparities.lwd.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.lwd)
-    local.DiagnosticTabs.ShepardDiagram.disparities.col.line.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.disparities.col.line)
-    local.DiagnosticTabs.ShepardDiagram.disparities.pch.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.pch)
-    local.DiagnosticTabs.ShepardDiagram.disparities.cex.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.cex)
-    local.DiagnosticTabs.ShepardDiagram.disparities.col.fg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.disparities.col.fg)
-    local.DiagnosticTabs.ShepardDiagram.disparities.col.bg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.disparities.col.bg)
-    local.DiagnosticTabs.ShepardDiagram.WorstFittingPointPairs.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.WorstFittingPointPairs)
+  local.DiagnosticTabs.ShepardDiagram.pch.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.pch)
+  local.DiagnosticTabs.ShepardDiagram.cex.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.cex)
+  local.DiagnosticTabs.ShepardDiagram.col.fg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.col.fg)
+  local.DiagnosticTabs.ShepardDiagram.col.bg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.col.bg)
+  local.DiagnosticTabs.ShepardDiagram.disparities.lty.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.lty)
+  local.DiagnosticTabs.ShepardDiagram.disparities.lwd.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.lwd)
+  local.DiagnosticTabs.ShepardDiagram.disparities.col.line.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.disparities.col.line)
+  local.DiagnosticTabs.ShepardDiagram.disparities.pch.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.pch)
+  local.DiagnosticTabs.ShepardDiagram.disparities.cex.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.disparities.cex)
+  local.DiagnosticTabs.ShepardDiagram.disparities.col.fg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.disparities.col.fg)
+  local.DiagnosticTabs.ShepardDiagram.disparities.col.bg.var<-text2hex(bpar$DiagnosticTabs.ShepardDiagram.disparities.col.bg)
+  local.DiagnosticTabs.ShepardDiagram.WorstFittingPointPairs.var<-tclVar(bpar$DiagnosticTabs.ShepardDiagram.WorstFittingPointPairs)
 
-    local.DiagnosticTabs.predictions.digits.var<-tclVar(bpar$DiagnosticTabs.predictions.digits)
+  local.DiagnosticTabs.predictions.digits.var<-tclVar(bpar$DiagnosticTabs.predictions.digits)
 
-###
+  ###
+
   frame1<-tkwidget(top,"TitleFrame",text="Convergence")
   tkplace(frame1,relx=.05,relwidth=.90,y=10,height=85,"in"=top)
 
@@ -2813,7 +3075,8 @@ Format.DiagnosticTabs.cmd<-function()
       }
     })
 
-###
+  ###
+
   frame2<-tkwidget(top,"TitleFrame",text="Predictivities")
   tkplace(frame2,relx=.05,relwidth=.90,y=110,height=145,"in"=top)
 
@@ -2841,7 +3104,8 @@ Format.DiagnosticTabs.cmd<-function()
   entry5<-tk2entry(frame2,textvariable=local.DiagnosticTabs.predictivities.label.VertOffset.var,justify="right",takefocus=FALSE)
   tkplace(entry5,relx=.95,y=120,height=18,relwidth=.125,"in"=frame2,anchor="ne")
 
-###
+  ###
+
   frame3<-tkwidget(top,"TitleFrame",text="Shepard diagram")
   tkplace(frame3,relx=.05,relwidth=.90,y=270,height=265,"in"=top)
 
@@ -2943,7 +3207,8 @@ Format.DiagnosticTabs.cmd<-function()
   spinbox7<-tkwidget(frame3,"SpinBox",textvariable=local.DiagnosticTabs.ShepardDiagram.WorstFittingPointPairs.var,editable=FALSE,values=c(0:10),justify="right")
   tkplace(spinbox7,relx=.95,y=240,height=18,relwidth=.125,"in"=frame3,anchor="ne")
 
-###
+  ###
+
   frame4<-tkwidget(top,"TitleFrame",text="Predictions")
   tkplace(frame4,relx=.05,relwidth=.90,y=550,height=45,"in"=top)
 
@@ -2951,7 +3216,8 @@ Format.DiagnosticTabs.cmd<-function()
   spinbox8<-tkwidget(frame4,"SpinBox",textvariable=local.DiagnosticTabs.predictions.digits.var,editable=FALSE,values=c(0:8),justify="right")
   tkplace(spinbox8,relx=.95,y=20,height=18,relwidth=.125,"in"=frame4,anchor="ne")
 
-###
+  ###
+
   button1<-tk2button(top,text="Defaults",width=10,command=onDefaults)
   button2<-tk2button(top,text="OK",width=10,command=onOK)
   button3<-tk2button(top,text="Cancel",width=10,command=onCancel)
@@ -2983,6 +3249,10 @@ Format.DiagnosticTabs.cmd<-function()
   tkwait.window(top)
   }
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Format.ResetAll}{Menu bar (functions): Format: Reset all\\0ldots}{Reset all\\0ldots} BEGINLISTING")
+
 Format.ResetAll.cmd<-function()
   {
   temp1<-tkmessageBox(icon="question",message="Are you sure? Clicking yes will reset all the graphical parameters\nof the Format menu to their original values.",parent=GUI.TopLevel,title="Reset all",type="yesno")
@@ -3005,8 +3275,11 @@ Format.ResetAll.cmd<-function()
   }
 
 ##############################################################################
-### JOINT ####################################################################
+### MENU BAR : FUNCTIONS : JOINT #############################################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.Joint}{Menu bar (functions): Joint}{Joint} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Joint.PCA}{Menu bar (functions): Joint: PCA}{PCA} BEGINLISTING")
 
 Joint.PCA.cmd<-function(FollowThrough=TRUE)
   {
@@ -3025,8 +3298,8 @@ Joint.PCA.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Joint.PCA.plot
   Biplot.predictions<<-Joint.PCA.predictions
   Biplot.interpolate<<-Joint.PCA.interpolate
-  Biplot.OverAxis<<-Joint.PCA.OverAxis
   Biplot.motion<<-Joint.PCA.motion
+  Biplot.OverAxis<<-Joint.PCA.OverAxis
   Biplot.LeftClick<<-Joint.PCA.LeftClick
   Biplot.LeftRelease<<-Joint.PCA.LeftRelease
   Biplot.DoubleLeftClick<<-Joint.PCA.DoubleLeftClick
@@ -3036,7 +3309,10 @@ Joint.PCA.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Biplot.Axes.FollowThrough.cmd()
   }
 
+# cat("ENDLISTING The default PCA biplot title. BEGINLISTING")
 Joint.PCA.title<-"PCA biplot"
+
+# cat("ENDLISTING Calculation of the basic PCA biplot quantities. BEGINLISTING")
 Joint.PCA.determine<-function()
   {
   temp1<-eigen(t(Biplot.Xtransformed)%*%Biplot.Xtransformed,symmetric=TRUE)
@@ -3057,17 +3333,23 @@ Joint.PCA.determine<-function()
   AxesTab.predictivities<<-colSums(Xhat^2)/colSums(Biplot.Xtransformed^2)
   AxesTab.predictivities1dim<<-colSums(Xhat1^2)/colSums(Biplot.Xtransformed^2)
   }
+
+# cat("ENDLISTING Setting of the plug-in mechanisms for PCA biplots. BEGINLISTING")
 Joint.PCA.layout<-NULL # included in plot
 Joint.PCA.plot<-function(screen=TRUE) Biplot.linear.plot(screen)
 Joint.PCA.predictions<-function() Biplot.linear.predictions()
 Joint.PCA.interpolate<-function(ToInterpolate) Biplot.linear.interpolate(ToInterpolate)
-Joint.PCA.OverAxis<-function() Biplot.linear.OverAxis()
 Joint.PCA.motion<-function(x,y) Biplot.general.motion(x,y)
+Joint.PCA.OverAxis<-function() Biplot.linear.OverAxis()
 Joint.PCA.LeftClick<-function(x,y) Biplot.general.LeftClick(x,y)
 Joint.PCA.LeftRelease<-function(x,y) Biplot.general.LeftRelease(x,y)
 Joint.PCA.DoubleLeftClick<-NULL
 Joint.PCA.RightClick<-function(x,y) Biplot.general.RightClick(x,y)
 Joint.PCA.plot3D<-function() Biplot.linear.plot3D()
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Joint.CovarianceCorrelation}{Menu bar (functions): Joint: Covariance/Correlation}{Covariance/Correlation} BEGINLISTING")
 
 Joint.CovarianceCorrelation.cmd<-function(FollowThrough=TRUE)
   {
@@ -3084,8 +3366,8 @@ Joint.CovarianceCorrelation.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Joint.CovarianceCorrelation.plot
   Biplot.predictions<<-Joint.CovarianceCorrelation.predictions
   Biplot.interpolate<<-Joint.CovarianceCorrelation.interpolate
-  Biplot.OverAxis<<-Joint.CovarianceCorrelation.OverAxis
   Biplot.motion<<-Joint.CovarianceCorrelation.motion
+  Biplot.OverAxis<<-Joint.CovarianceCorrelation.OverAxis
   Biplot.LeftClick<<-Joint.CovarianceCorrelation.LeftClick
   Biplot.LeftRelease<<-Joint.CovarianceCorrelation.LeftRelease
   Biplot.DoubleLeftClick<<-Joint.CovarianceCorrelation.DoubleLeftClick
@@ -3122,6 +3404,10 @@ Joint.CovarianceCorrelation.DoubleLeftClick<-NULL
 Joint.CovarianceCorrelation.RightClick<-function(x,y) Biplot.general.RightClick(x,y)
 Joint.CovarianceCorrelation.plot3D<-function() Biplot.linear.plot3D()
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Joint.CVA}{Menu bar (functions): Joint: CVA}{CVA} BEGINLISTING")
+
 Joint.CVA.cmd<-function(FollowThrough=TRUE)
   {
   View.ClipAround.var<<-tclVar("0")
@@ -3139,8 +3425,8 @@ Joint.CVA.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Joint.CVA.plot
   Biplot.predictions<<-Joint.CVA.predictions
   Biplot.interpolate<<-Joint.CVA.interpolate
-  Biplot.OverAxis<<-Joint.CVA.OverAxis
   Biplot.motion<<-Joint.CVA.motion
+  Biplot.OverAxis<<-Joint.CVA.OverAxis
   Biplot.LeftClick<<-Joint.CVA.LeftClick
   Biplot.LeftRelease<<-Joint.CVA.LeftRelease
   Biplot.DoubleLeftClick<<-Joint.CVA.DoubleLeftClick
@@ -3198,8 +3484,27 @@ Joint.CVA.RightClick<-function(x,y) Biplot.general.RightClick(x,y)
 Joint.CVA.plot3D<-function() Biplot.linear.plot3D()
 
 ##############################################################################
-### POINTS ###################################################################
+### MENU BAR : FUNCTIONS : POINTS ############################################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.Points}{Menu bar (functions): Points}{Points} BEGINLISTING")
+
+Points.var<-tclVar("0")
+Points.skipped<-FALSE
+
+Points.FollowThrough.cmd<-function()
+  {
+  tkconfigure(Other.ProgressBar.pb,value=3/6*100)
+  .Tcl("update")
+  switch(tclvalue(Biplot.Axes.var),
+    "10"=Axes.None.cmd(),
+    "11"=Axes.Regression.cmd(),
+    "12"=Axes.Procrustes.cmd(),
+    "13"=Axes.CircularNonLinear.cmd())
+  }
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Points.DistanceMetric}{Menu bar (functions): Points: Distance metric}{Distance metric} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Pythagoras}{Menu bar (functions): Points: Distance metric: Pythagoras}{Pythagoras} BEGINLISTING")
 
 Points.DistanceMetric.Pythagoras.func<-function(X,Y)
   { # If Y is not missing, X must be a vector.
@@ -3219,6 +3524,9 @@ Points.DistanceMetric.Pythagoras.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
   }
 
+#######################################
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.SquareRootOfManhattan}{Menu bar (functions): Points: Distance metric: Square-root-of-Manhattan}{Square-root-of-Manhattan} BEGINLISTING")
+
 Points.DistanceMetric.SquareRootOfManhattan.func<-function(X,Y)
   { # If Y is missing, X must be a vector.
   if (missing(Y)) as.matrix(dist(X,method="manhattan"))^.5
@@ -3236,6 +3544,9 @@ Points.DistanceMetric.SquareRootOfManhattan.cmd<-function(FollowThrough=TRUE)
   Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
   if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
   }
+
+#######################################
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Clark}{Menu bar (functions): Points: Distance metric: Clark}{Clark} BEGINLISTING")
 
 Points.DistanceMetric.Clark.func<-function(X,Y)
   { # If Y is missing, X must be a vector.
@@ -3267,6 +3578,10 @@ Points.DistanceMetric.Clark.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
   }
 
+#######################################
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Mahalanobis}{Menu bar (functions): Points: Distance metric: Mahalanobis}{Mahalanobis} BEGINLISTING")
+
 Points.DistanceMetric.Mahalanobis.func<-function(X,Y)
   { # If Y is missing, X must be a vector.
   temp1<-svd(cov(Biplot.Xtransformed))
@@ -3288,6 +3603,8 @@ Points.DistanceMetric.Mahalanobis.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
   }
 
+#######################################
+
 Points.DistanceMetric.var<-tclVar("0")
 Points.DistanceMetric.func<-NULL
 Points.DistanceMetric.derivfunc<-NULL
@@ -3297,7 +3614,7 @@ Points.DistanceMetric.DistanceMatrix<-NULL
 
 Points.DistanceMetric.FollowThrough.cmd<-function()
   {
-  tkconfigure(ControlButtons.ProgressBar.pb,value=2/6*100)
+  tkconfigure(Other.ProgressBar.pb,value=2/6*100)
   .Tcl("update")
   switch(tclvalue(Points.var),
     "0"=Points.PCO.cmd(),
@@ -3305,6 +3622,11 @@ Points.DistanceMetric.FollowThrough.cmd<-function()
     "11"=Points.MDS.MonotoneRegression.cmd(),
     "12"=Points.MDS.MonotoneSplineTransformation.autcmd())
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Points.PCO}{Menu bar (functions): Points: PCO}{PCO} BEGINLISTING")
+
 
 Points.PCO.cmd<-function(FollowThrough=TRUE)
   {
@@ -3338,6 +3660,10 @@ Points.PCO.cmd<-function(FollowThrough=TRUE)
   PointsTab.update<<-TRUE
   if (FollowThrough) Points.FollowThrough.cmd()
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Points.MDS}{Menu bar (functions): Points: MDS}{MDS} BEGINLISTING")
 
 Points.MDS.cmd<-function()
   {
@@ -3404,7 +3730,7 @@ Points.MDS.cmd<-function()
     		r<-dist-M[,-j]%*%as.matrix(b[-j])
         b[j]<-max(0,sum(M[,j]*r)/sum(M[,j]^2))
         }
-      if (max(abs(b-oldb))<boptions$MDS.convergence || ControlButtons.Stop.var) break
+      if (max(abs(b-oldb))<boptions$MDS.convergence || Other.Stop.var) break
       oldb<-b
       }
 
@@ -3464,8 +3790,8 @@ Points.MDS.cmd<-function()
   ConvergenceTab.points.StressVector<<-Stressfunc(Z,Points.DistanceMetric.DisparityMatrix)
 
   betahat<-1
-  ControlButtons.Stop.var<<-FALSE
-  tkconfigure(ControlButtons.Stop.but,state="normal")
+  Other.Stop.var<<-FALSE
+  tkconfigure(Other.Stop.but,state="normal")
   tcl(DiagnosticTabs.nb,"tab",0,state="normal")
 
   for (i in 1:boptions$MDS.MaximumIterations)
@@ -3474,7 +3800,7 @@ Points.MDS.cmd<-function()
    	Points.DistanceMetric.DisparityMatrix<<-Transformation(Biplot.Y)
     ConvergenceTab.points.StressVector<<-c(ConvergenceTab.points.StressVector,Stressfunc(Biplot.Y,Points.DistanceMetric.DisparityMatrix))
 
-    if (tclvalue(ControlButtons.LiveUpdates.var)=="1" && i%%boptions$IterationsToLiveUpdate==0)
+    if (tclvalue(Other.LiveUpdates.var)=="1" && i%%boptions$IterationsToLiveUpdate==0)
       {
       if (tclvalue(Additional.ConvexHull.var)=="1") Additional.ConvexHull.autcmd()
       if (tclvalue(Additional.AlphaBag.var)=="1") Additional.AlphaBag.autcmd()
@@ -3485,11 +3811,11 @@ Points.MDS.cmd<-function()
       }
 
     stresschange<-(ConvergenceTab.points.StressVector[length(ConvergenceTab.points.StressVector)-1]-ConvergenceTab.points.StressVector[length(ConvergenceTab.points.StressVector)])/ConvergenceTab.points.StressVector[length(ConvergenceTab.points.StressVector)-1]
-    if (stresschange>0 & stresschange<boptions$MDS.convergence || ControlButtons.Stop.var) break # The >=0 is there to take into account that there can be an increase in stress when constraints are first applied. This shouldn't cause the algorithm to stop.
+    if (stresschange>0 & stresschange<boptions$MDS.convergence || Other.Stop.var) break # The >=0 is there to take into account that there can be an increase in stress when constraints are first applied. This shouldn't cause the algorithm to stop.
     Z<-Biplot.Y
     }
 
-  tkconfigure(ControlButtons.Stop.but,state="disabled")
+  tkconfigure(Other.Stop.but,state="disabled")
 
   if (tclvalue(Points.MDS.InTermsOfPrincipalAxes.var)=="1")
     {
@@ -3507,8 +3833,13 @@ Points.MDS.cmd<-function()
   PointsTab.update<<-TRUE
   }
 
+#######################################
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.RandomInitialConfiguration}{Menu bar (functions): Points: MDS: Random initial configuration}{Random initial configuration} BEGINLISTING")
+
 Points.MDS.RandomInitialConfiguration.var<-tclVar("0")
-Points.MDS.algorithm.var<-tclVar("0")
+
+#######################################
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.IdentityTransformation}{Menu bar (functions): Points: MDS: Identity transformation}{Identity transformation} BEGINLISTING")
 
 Points.MDS.IdentityTransformation.cmd<-function(FollowThrough=TRUE)
   {
@@ -3528,6 +3859,10 @@ Points.MDS.IdentityTransformation.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Points.FollowThrough.cmd()
   }
 
+#######################################
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.MonotoneRegression}{Menu bar (functions): Points: MDS: Monotone regression}{Monotone regression} BEGINLISTING")
+
 Points.MDS.MonotoneRegression.cmd<-function(FollowThrough=TRUE)
   {
   if (tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
@@ -3545,6 +3880,10 @@ Points.MDS.MonotoneRegression.cmd<-function(FollowThrough=TRUE)
 
   if (FollowThrough) Points.FollowThrough.cmd()
   }
+
+#######################################
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.MonotoneSplineTransformation}{Menu bar (functions): Points: MDS: Monotone spline transformation\\0ldots}{Monotone spline transformation\\0ldots} BEGINLISTING")
 
 Points.MDS.MonotoneSplineTransformation.AllKnots<-2
 Points.MDS.MonotoneSplineTransformation.degree<-2
@@ -3660,26 +3999,38 @@ Points.MDS.MonotoneSplineTransformation.autcmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Points.FollowThrough.cmd()
   }
 
+#######################################
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.PrimaryApproachToTies}{Menu bar (functions): Points: MDS: Primary approach to ties}{Primary approach to ties} BEGINLISTING")
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.PrimaryApproachToTies}{Menu bar (functions): Points: MDS: Secondary approach to ties}{Secondary approach to ties} BEGINLISTING")
+
 Points.MDS.ApproachToTies.var<-tclVar("-1")
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.MDS.InTermsOfPrincipalAxes}{Menu bar (functions): Points: MDS: In terms of principal axes}{In terms of principal axes} BEGINLISTING")
 Points.MDS.InTermsOfPrincipalAxes.var<-tclVar("0")
 
-Points.var<-tclVar("0")
-Points.skipped<-FALSE
 
-Points.FollowThrough.cmd<-function()
+
+##############################################################################
+### MENU BAR : FUNCTIONS : AXES ##############################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.Axes}{Menu bar (functions): Axes}{Axes} BEGINLISTING")
+
+Biplot.Axes.var<-tclVar("0")
+Biplot.Axes.FollowThrough.cmd<-function()
   {
-  tkconfigure(ControlButtons.ProgressBar.pb,value=3/6*100)
+  tkconfigure(Other.ProgressBar.pb,value=4/6*100)
   .Tcl("update")
-  switch(tclvalue(Biplot.Axes.var),
-    "10"=Axes.None.cmd(),
-    "11"=Axes.Regression.cmd(),
-    "12"=Axes.Procrustes.cmd(),
-    "13"=Axes.CircularNonLinear.cmd())
+  if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") Additional.Interpolate.ANewSample.autcmd()
+  if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Additional.Interpolate.SampleGroupMeans.autcmd()
+  if (tclvalue(Additional.ConvexHull.var)=="1") Additional.ConvexHull.autcmd()
+  if (tclvalue(Additional.AlphaBag.var)=="1") Additional.AlphaBag.autcmd()
+#  if (tclvalue(Additional.PointDensities.var)=="1") Additional.PointDensities.autcmd() # See notes below.
+#  if (tclvalue(Additional.ClassificationRegion.var)=="1") Additional.ClassificationRegion.autcmd() # See notes below.
+  Additional.FollowThrough.cmd()
   }
 
-##############################################################################
-### AXES #####################################################################
-##############################################################################
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Axes.None}{Menu bar (functions): Axes: None}{None} BEGINLISTING")
 
 Axes.None.cmd<-function(FollowThrough=TRUE)
   {
@@ -3710,8 +4061,8 @@ Axes.None.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Axes.None.plot
   Biplot.predictions<<-Axes.None.predictions
   Biplot.interpolate<<-Axes.None.interpolate
-  Biplot.OverAxis<<-Axes.None.OverAxis
   Biplot.motion<<-Axes.None.motion
+  Biplot.OverAxis<<-Axes.None.OverAxis
   Biplot.LeftClick<<-Axes.None.LeftClick
   Biplot.LeftRelease<<-Axes.None.LeftRelease
   Biplot.DoubleLeftClick<<-Axes.None.DoubleLeftClick
@@ -3785,7 +4136,7 @@ Axes.None.plot<-function(screen=TRUE)
   if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
     else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=temp.labels,labels.cex=temp.labels.cex,HorizOffset=temp.HorizOffset,VertOffset=temp.VertOffset))
   do.call("mynewplot",arglist)
-  if (tclvalue(View.ShowDisplaySpaceAxes.var)=="1")
+  if (tclvalue(View.CalibrateDisplaySpaceAxes.var)=="1")
     {
     axis(side=1,cex.axis=.75)
     axis(side=2,cex.axis=.75)
@@ -3800,8 +4151,8 @@ Axes.None.plot<-function(screen=TRUE)
 
   if ((tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") && Additional.ConvexHullAlphaBag.for!=0 && tclvalue(Additional.PointDensities.var)=="0" && tclvalue(Additional.ClassificationRegion.var)=="0") Biplot.plot.ConvexHullAlphaBag.bg()
 
-  if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-  if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+  if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+  if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
   if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
   if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
   if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
@@ -3811,8 +4162,9 @@ Axes.None.plot<-function(screen=TRUE)
   }
 
 Axes.None.predictions<-function() NULL
+
 Axes.None.interpolate<-function() NULL
-Axes.None.OverAxis<-function() NULL
+
 Axes.None.motion<-function(x,y)
   {
   if (as.numeric(tclvalue(Biplot.Axes.var))<10) Y<-Biplot.Y_
@@ -3835,6 +4187,9 @@ Axes.None.motion<-function(x,y)
         }
       }
   }
+
+Axes.None.OverAxis<-function() NULL
+
 Axes.None.LeftClick<-function(x,y)
   {
   Biplot.XY.move<<-Biplot.XY.RightClick<<-Biplot.ConvertCoordinates(x,y)
@@ -3844,7 +4199,9 @@ Axes.None.LeftClick<-function(x,y)
     Kraal.moving.status<<-TRUE
     }
   }
+
 Axes.None.DoubleLeftClick<-NULL
+
 Axes.None.LeftRelease<-function(x,y)
   {
   temp.XY<-Biplot.ConvertCoordinates(x,y)
@@ -3882,7 +4239,7 @@ Axes.None.plot3D<-function()
   rgl.light()
 
   # points
-  if (tclvalue(ControlButtons.HidePoints.var)=="0")
+  if (tclvalue(Other.HidePoints.var)=="0")
     {
     for (temp1 in groups.in)
       {
@@ -3912,6 +4269,10 @@ Axes.None.plot3D<-function()
     }
   }
 
+#######################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Axes.Regression}{Menu bar (functions): Axes: Regression}{Regression} BEGINLISTING")
+
 Axes.Regression.cmd<-function(FollowThrough=TRUE)
   {
   View.ClipAround.var<<-tclVar("0")
@@ -3940,8 +4301,8 @@ Axes.Regression.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Axes.Regression.plot
   Biplot.predictions<<-Axes.Regression.predictions
   Biplot.interpolate<<-Axes.Regression.interpolate
-  Biplot.OverAxis<<-Axes.Regression.OverAxis
   Biplot.motion<<-Axes.Regression.motion
+  Biplot.OverAxis<<-Axes.Regression.OverAxis
   Biplot.LeftClick<<-Axes.Regression.LeftClick
   Biplot.LeftRelease<<-Axes.Regression.LeftRelease
   Biplot.DoubleLeftClick<<-Axes.Regression.DoubleLeftClick
@@ -3950,7 +4311,9 @@ Axes.Regression.cmd<-function(FollowThrough=TRUE)
 
   if (FollowThrough) Biplot.Axes.FollowThrough.cmd()
   }
+
 Axes.Regression.title<-"Regression biplot"
+
 Axes.Regression.determine<-function()
   {
   Biplot.B<<-t(solve(t(Biplot.Y)%*%Biplot.Y)%*%t(Biplot.Y)%*%Biplot.Xtransformed)
@@ -3958,17 +4321,20 @@ Axes.Regression.determine<-function()
   Biplot.Binterpolate<<-Biplot.B
   }
 
-Axes.Regression.layout<-NULL # included in plot
+Axes.Regression.layout<-NULL # Included in plot
 Axes.Regression.plot<-function(screen=TRUE) Biplot.linear.plot(screen)
 Axes.Regression.predictions<-function() Biplot.linear.predictions()
 Axes.Regression.interpolate<-function(ToInterpolate) Biplot.linear.interpolate(ToInterpolate)
-Axes.Regression.OverAxis<-function() Biplot.linear.OverAxis()
 Axes.Regression.motion<-function(x,y) Biplot.general.motion(x,y)
+Axes.Regression.OverAxis<-function() Biplot.linear.OverAxis()
 Axes.Regression.LeftClick<-function(x,y) Biplot.general.LeftClick(x,y)
 Axes.Regression.DoubleLeftClick<-NULL
 Axes.Regression.LeftRelease<-function(x,y) Biplot.general.LeftRelease(x,y)
 Axes.Regression.RightClick<-function(x,y) Biplot.general.RightClick(x,y)
 Axes.Regression.plot3D<-function() Biplot.linear.plot3D()
+
+#######################################
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Axes.Procrustes}{Menu bar (functions): Axes: Procrustes}{Procrustes} BEGINLISTING")
 
 Axes.Procrustes.cmd<-function(FollowThrough=TRUE)
   {
@@ -3998,8 +4364,8 @@ Axes.Procrustes.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Axes.Procrustes.plot
   Biplot.predictions<<-Axes.Procrustes.predictions
   Biplot.interpolate<<-Axes.Procrustes.interpolate
-  Biplot.OverAxis<<-Axes.Procrustes.OverAxis
   Biplot.motion<<-Axes.Procrustes.motion
+  Biplot.OverAxis<<-Axes.Procrustes.OverAxis
   Biplot.LeftClick<<-Axes.Procrustes.LeftClick
   Biplot.LeftRelease<<-Axes.Procrustes.LeftRelease
   Biplot.DoubleLeftClick<<-Axes.Procrustes.DoubleLeftClick
@@ -4047,7 +4413,7 @@ Axes.Procrustes.determine.interpolative<-function()
     Astar<-ProcrustesFit(X=Xold,Y=Y,translate=FALSE)$"Reflection/rotation matrix A"
     X<-Xold%*%Astar*rhostar
     ConvergenceTab.axes.StressVector<-c(ConvergenceTab.axes.StressVector,sum((X[,-(1:temp1)]-Y[,-(1:temp1)])^2))
-    if (abs(ConvergenceTab.axes.StressVector[length(ConvergenceTab.axes.StressVector)-1]-ConvergenceTab.axes.StressVector[length(ConvergenceTab.axes.StressVector)])< boptions$Procrustes.convergence || ControlButtons.Stop.var) break
+    if (abs(ConvergenceTab.axes.StressVector[length(ConvergenceTab.axes.StressVector)-1]-ConvergenceTab.axes.StressVector[length(ConvergenceTab.axes.StressVector)])< boptions$Procrustes.convergence || Other.Stop.var) break
     Y[,-(1:temp1)]<-X[,-(1:temp1)]
     }
 
@@ -4071,19 +4437,20 @@ Axes.Procrustes.determine<-function()
     }
     else
       { # Interpolation
-      ControlButtons.Stop.var<<-FALSE
-      tkconfigure(ControlButtons.Stop.but,state="normal")
+      Other.Stop.var<<-FALSE
+      tkconfigure(Other.Stop.but,state="normal")
       temp1<-Axes.Procrustes.determine.interpolative()
       Biplot.B<<-temp1[[1]]
       Biplot.B3D<<-temp1[[2]]
       Biplot.Binterpolate<<-Biplot.B
-      tkconfigure(ControlButtons.Stop.but,state="disabled")
+      tkconfigure(Other.Stop.but,state="disabled")
       }
   }
 
 Axes.Procrustes.layout<-NULL
 Axes.Procrustes.plot<-function(screen=TRUE) Biplot.linear.plot(screen)
 Axes.Procrustes.predictions<-function() Biplot.linear.predictions()
+
 Axes.Procrustes.interpolate<-function(ToInterpolate)
   {
   temp1<-SettingsBox.transformation.func(IN=c(ToInterpolate),ARow=TRUE)
@@ -4092,13 +4459,18 @@ Axes.Procrustes.interpolate<-function(ToInterpolate)
   temp2<-sweep(B,1,temp1,"*")
   colSums(temp2)
   }
-Axes.Procrustes.OverAxis<-function() Biplot.linear.OverAxis()
+
 Axes.Procrustes.motion<-function(x,y) Biplot.general.motion(x,y)
+Axes.Procrustes.OverAxis<-function() Biplot.linear.OverAxis()
 Axes.Procrustes.LeftClick<-function(x,y) Biplot.general.LeftClick(x,y)
 Axes.Procrustes.LeftRelease<-function(x,y) Biplot.general.LeftRelease(x,y)
 Axes.Procrustes.DoubleLeftClick<-NULL
 Axes.Procrustes.RightClick<-function(x,y) Biplot.general.RightClick(x,y)
 Axes.Procrustes.plot3D<-function() Biplot.linear.plot3D()
+
+#######################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Axes.CircularNonLinear}{Menu bar (functions): Axes: Circular non-linear}{Circular non-linear} BEGINLISTING")
 
 Axes.CircularNonLinear.cmd<-function(FollowThrough=TRUE)
   {
@@ -4132,8 +4504,8 @@ Axes.CircularNonLinear.cmd<-function(FollowThrough=TRUE)
   Biplot.plot<<-Axes.CircularNonLinear.plot
   Biplot.predictions<<-Axes.CircularNonLinear.predictions
   Biplot.interpolate<<-Axes.CircularNonLinear.interpolate
-  Biplot.OverAxis<<-Axes.CircularNonLinear.OverAxis
   Biplot.motion<<-Axes.CircularNonLinear.motion
+  Biplot.OverAxis<<-Axes.CircularNonLinear.OverAxis
   Biplot.LeftClick<<-Axes.CircularNonLinear.LeftClick
   Biplot.LeftRelease<<-Axes.CircularNonLinear.LeftRelease
   Biplot.DoubleLeftClick<<-Axes.CircularNonLinear.DoubleLeftClick
@@ -4356,14 +4728,18 @@ Axes.CircularNonLinear.predictions<-function(ToProject=Biplot.points.WhereHighli
   }
 
 Axes.CircularNonLinear.interpolate<-function(ToInterpolate) Biplot.NonLinear.interpolate(ToInterpolate)
-Axes.CircularNonLinear.OverAxis<-function() Biplot.NonLinear.OverAxis()
 Axes.CircularNonLinear.motion<-function(x,y) Biplot.general.motion(x,y)
+Axes.CircularNonLinear.OverAxis<-function() Biplot.NonLinear.OverAxis()
 Axes.CircularNonLinear.LeftClick<-function(x,y) Biplot.general.LeftClick(x,y)
 Axes.CircularNonLinear.LeftRelease<-function(x,y) Biplot.general.LeftRelease(x,y)
 Axes.CircularNonLinear.DoubleLeftClick<-NULL
 Axes.CircularNonLinear.RightClick<-function(x,y) Biplot.general.RightClick(x,y)
 Axes.CircularNonLinear.NotEmbeddable<-NULL
 Axes.CircularNonLinear.plot3D<-function() Biplot.NonLinear.plot3D()
+
+#######################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Axes.Default}{Menu bar (functions): Axes: Default}{Default} BEGINLISTING")
 
 Axes.Default.cmd<-function()
   {
@@ -4373,25 +4749,26 @@ Axes.Default.cmd<-function()
     "2"={ Biplot.Axes.var<<-tclVar("13"); Axes.CircularNonLinear.cmd() },
     "3"={ Biplot.Axes.var<<-tclVar("10"); Axes.None.cmd() })
     else Axes.Regression.cmd()
-  }
+  }
+##############################################################################
+### MENU BAR : FUNCTIONS : ADDITIONAL ########################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.Additional}{Menu bar (functions): Additional}{Additional} BEGINLISTING")
 
-Biplot.Axes.var<-tclVar("0")
-Biplot.Axes.FollowThrough.cmd<-function()
+Additional.FollowThrough.cmd<-function()
   {
-  tkconfigure(ControlButtons.ProgressBar.pb,value=4/6*100)
+  tkconfigure(Other.ProgressBar.pb,value=5/6*100)
   .Tcl("update")
-  if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") Additional.Interpolate.ANewSample.autcmd()
-  if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Additional.Interpolate.SampleGroupMeans.autcmd()
-  if (tclvalue(Additional.ConvexHull.var)=="1") Additional.ConvexHull.autcmd()
-  if (tclvalue(Additional.AlphaBag.var)=="1") Additional.AlphaBag.autcmd()
-#  if (tclvalue(Additional.PointDensities.var)=="1") Additional.PointDensities.autcmd() # See notes below.
-#  if (tclvalue(Additional.ClassificationRegion.var)=="1") Additional.ClassificationRegion.autcmd() # See notes below.
-  Additional.FollowThrough.cmd()
+  Biplot.replot()
+  if (ConvergenceTab.update) ConvergenceTab.replot()
+  if (PointsTab.update) PointsTab.replot()
+  if (GroupsTab.update) GroupsTab.replot()
+  if (AxesTab.update) AxesTab.replot()
   }
 
-##############################################################################
-### ADDITIONAL ###############################################################
-##############################################################################
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Additional.Interpolate}{Menu bar (functions): Additional: Interpolate}{Interpolate} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Additional.Interpolate.ANewSample}{Menu bar (functions): Additional: Interpolate: A new sample\\0ldots}{A new sample\\0ldots} BEGINLISTING")
 
 Additional.Interpolate.ANewSample.cmd<-function()
   {
@@ -4467,6 +4844,7 @@ Additional.Interpolate.ANewSample.cmd<-function()
       local.ANewSample.label.VertOffset.var<-tclVar(bpar$ANewSample.label.VertOffset)
 
       ###
+
       frame_1<-tkwidget(top_,"TitleFrame",text="Plotting character")
       tkplace(frame_1,relx=.05,relwidth=.90,y=10,height=105,"in"=top_)
 
@@ -4505,7 +4883,9 @@ Additional.Interpolate.ANewSample.cmd<-function()
           tkconfigure(label_2,background=local.ANewSample.col.bg.var)
           }
         })
+
       ###
+
       frame_2<-tkwidget(top_,"TitleFrame",text="Label")
       tkplace(frame_2,relx=.05,relwidth=.90,y=130,height=125,"in"=top_)
 
@@ -4652,6 +5032,10 @@ Additional.Interpolate.ANewSample.autcmd<-function(FollowThrough=TRUE)
 Additional.Interpolate.ANewSample.values<-matrix(colMeans(Data[samples.in,variables.in]),ncol=1)
 Additional.Interpolate.ANewSample.coordinates<-NULL
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Additional.Interpolate.SampleGroupMeans}{Menu bar (functions): Additional: Interpolate: Sample group means\\0ldots}{Sample group means\\0ldots} BEGINLISTING")
+
 Additional.Interpolate.SampleGroupMeans.cmd<-function()
   {
   local.GUI.func<-function()
@@ -4790,6 +5174,10 @@ Additional.Interpolate.SampleGroupMeans.for<-0
 Additional.Interpolate.SampleGroupMeans.label.text<-NULL
 Additional.Interpolate.SampleGroupMeans.coordinates<-NULL
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Additional.ConvexHulls}{Menu bar (functions): Additional: Convex hulls\\0ldots}{Convex hulls\\0ldots} BEGINLISTING")
+
 Additional.ConvexHull.cmd<-function()
   {
   local.GUI.func<-function()
@@ -4898,6 +5286,10 @@ Additional.ConvexHull.autcmd<-function(FollowThrough=TRUE)
 
 Additional.ConvexHullAlphaBag.for<-0
 Additional.ConvexHullAlphaBag.coordinates<-NULL
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Additional.AlphaBags}{Menu bar (functions): Additional: Alpha-bags\\0ldots}{Alpha-bags\\0ldots} BEGINLISTING")
 
 Additional.AlphaBag.cmd<-function()
   {
@@ -5125,6 +5517,10 @@ Additional.ConvexHullAlphaBag.ShowTukeyMedian<-TRUE
 Additional.ConvexHullAlphaBag.TukeyMedian.coordinates<-NULL
 Additional.ConvexHullAlphaBag.TukeyMedian.label.text<-NULL
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Additional.Point densities}{Menu bar (functions): Additional: Point densities\\0ldots}{Point densities\\0ldots} BEGINLISTING")
+
 Additional.PointDensities.cmd<-function()
   {
   local.GUI.func<-function()
@@ -5267,6 +5663,10 @@ Additional.PointDensities.palette<-7
 Additional.PointDensities.NumberOfColours<-5
 Additional.PointDensities.estimate<-NULL
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Additional.ClassificationRegions}{Menu bar (functions): Additional: Classification regions\\0ldots}{Classification regions\\0ldots} BEGINLISTING")
+
 Additional.ClassificationRegion.cmd<-function()
   {
   local.GUI.func<-function()
@@ -5375,6 +5775,10 @@ Additional.ClassificationRegion.autcmd<-function(FollowThrough=TRUE) # `Addition
     else image(xseq,yseq,class.region,add=TRUE,col=bpar$gClassificationRegion.col.bg)
   }
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Additional.ClearAll}{Menu bar (functions): Additional: Clear all}{Clear all} BEGINLISTING")
+
 Additional.ClearAll.cmd<-function(FollowThrough=TRUE)
   {
   Additional.Interpolate.ANewSample.var<<-tclVar("0")
@@ -5385,35 +5789,35 @@ Additional.ClearAll.cmd<-function(FollowThrough=TRUE)
   Additional.ClassificationRegion.var<<-tclVar("0")
   }
 
-Additional.FollowThrough.cmd<-function()
-  {
-  tkconfigure(ControlButtons.ProgressBar.pb,value=5/6*100)
-  .Tcl("update")
-  Biplot.replot()
-  if (ConvergenceTab.update) ConvergenceTab.replot()
-  if (PointsTab.update) PointsTab.replot()
-  if (GroupsTab.update) GroupsTab.replot()
-  if (AxesTab.update) AxesTab.replot()
-  }
+##############################################################################
+### MENU BAR : FUNCTIONS : HELP ##############################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.Functions.Help}{Menu bar (functions): Help}{Help} BEGINLISTING")
 
-##############################################################################
-### HELP #####################################################################
-##############################################################################
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Help.ManualInPDF}{Menu bar (functions): Help: Manual (in PDF)}{Manual (in PDF)} BEGINLISTING")
 
 Help.Manual.cmd<-function()
   {
   shell.exec(as.character(paste(system.file(package="BiplotGUI"),"/doc/BiplotGUIManual.pdf",sep="")))
   }
 
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Help.Homepage}{Menu bar (functions): Help: Homepage}{Homepage} BEGINLISTING")
+
 Help.HomePage.cmd<-function()
   {
   shell.exec("http://biplotgui.r-forge.r-project.org")
   }
 
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Help.ReportABug}{Menu bar (functions): Help: Report a bug}{Report a bug} BEGINLISTING")
+
 Help.ReportABug.cmd<-function()
   {
   shell.exec("http://r-forge.r-project.org/tracker/?group_id=225")
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Help.ShowPopUpHelp}{Menu bar (functions): Help: Show pop-up help}{Show pop-up help} BEGINLISTING")
 
 Help.ShowPopUpHelp.var<-tclVar("0")
 Help.ShowPopUpHelp.cmd<-function()
@@ -5422,14 +5826,14 @@ Help.ShowPopUpHelp.cmd<-function()
     {
     mytktip(BiplotRegion.image,"The biplot in the biplot region. For context-specific options, right click on a point, on an axis, on empty space inside the biplot, or outside the biplot. Points and axes may be temporarily removed from consideration by dragging them from the biplot into the kraal.")#,"*Pop-up help such as this may be enabled or disabled by clicking 'Help : Show pop-up help' or by pressing F1.","*For more help, including known issues, see `BiplotGUIManual.pdf', included in the 'doc' subdirectory of the package installation directory.")
 
-    mytktip(ControlButtons.frame,"Other")
-    mytktip(ControlButtons.External.but,"Display the current biplot region in an external window.")
-    mytktip(ControlButtons.Hide.but,"Hide or unhide components of the current biplot.")
-    mytktip(ControlButtons.LiveUpdates.chk,"Toggle between showing periodic live updates of the biplot region and diagnostic graphs while iterating, and showing a single update after the final iteration. Applicable to MDS and interpolative Procrustes. Showing live updates may impair performance, especially when many additional descriptors are shown.")
-    mytktip(ControlButtons.Stop.but,"Stop iterating and proceed with the current ordination. Applicable to MDS and interpolative Procrustes.")
-    mytktip(ControlButtons.ReturnPoints.but,"Return all points currently in the kraal to the biplot.")
-    mytktip(ControlButtons.ReturnAxes.but,"Return all axes currently in the kraal to the biplot.")
-    mytktip(ControlButtons.ReturnAll.but,"Return all points and axes currently in the kraal to the biplot.")
+    mytktip(Other.frame,"Other")
+    mytktip(Other.External.but,"Display the current biplot region in an external window.")
+    mytktip(Other.Hide.but,"Hide or unhide components of the current biplot.")
+    mytktip(Other.LiveUpdates.chk,"Toggle between showing periodic live updates of the biplot region and diagnostic graphs while iterating, and showing a single update after the final iteration. Applicable to MDS and interpolative Procrustes. Showing live updates may impair performance, especially when many additional descriptors are shown.")
+    mytktip(Other.Stop.but,"Stop iterating and proceed with the current ordination. Applicable to MDS and interpolative Procrustes.")
+    mytktip(Other.ReturnPoints.but,"Return all points currently in the kraal to the biplot.")
+    mytktip(Other.ReturnAxes.but,"Return all axes currently in the kraal to the biplot.")
+    mytktip(Other.ReturnAll.but,"Return all points and axes currently in the kraal to the biplot.")
 
     mytktip(SettingsBox.frame,"The settings box")
     mytktip(SettingsBox.transformation.combo,"Select a data transformation. All biplots are based on the transformed data, but the biplot axes are always calibrated in terms of the units of the original variables. 'Centre' sets variable means to zero; 'scale' sets variable standard deviations to one; `unitise' sets variable maxima to one and variable minima to zero; `log' is the natural logarithm. Components of the transformation are performed in the order in which they are listed. Data are always centred. Log-transformations are available only when the non-kraal variable values of the non-kraal samples are all positive.")
@@ -5449,15 +5853,15 @@ Help.ShowPopUpHelp.cmd<-function()
       {
       mytktip(BiplotRegion.image,"")
 
-      mytktip(ControlButtons.frame,"")
-      mytktip(ControlButtons.External.but,"")
-      mytktip(ControlButtons.Hide.but,"")
-      mytktip(ControlButtons.ProgressBar.pb,"")
-      mytktip(ControlButtons.LiveUpdates.chk,"")
-      mytktip(ControlButtons.Stop.but,"")
-      mytktip(ControlButtons.ReturnPoints.but,"")
-      mytktip(ControlButtons.ReturnAxes.but,"")
-      mytktip(ControlButtons.ReturnAll.but,"")
+      mytktip(Other.frame,"")
+      mytktip(Other.External.but,"")
+      mytktip(Other.Hide.but,"")
+      mytktip(Other.ProgressBar.pb,"")
+      mytktip(Other.LiveUpdates.chk,"")
+      mytktip(Other.Stop.but,"")
+      mytktip(Other.ReturnPoints.but,"")
+      mytktip(Other.ReturnAxes.but,"")
+      mytktip(Other.ReturnAll.but,"")
 
       mytktip(SettingsBox.frame,"")
       mytktip(SettingsBox.transformation.combo,"")
@@ -5474,19 +5878,27 @@ Help.ShowPopUpHelp.cmd<-function()
       }
   }
 
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Help.About}{Menu bar (functions): Help: About\\0ldots}{About\\0ldots} BEGINLISTING")
+
 Help.About.cmd<-function()
   {
   tkmessageBox(title="About",parent=GUI.TopLevel,message="Anthony la Grange\n<amlg at sun.ac.za>\n\nVersion 0.0-3\n\nDistributed under the GPL-3 license available from \nhttp://www.r-project.org/Licenses/",icon="info",type="ok")
   }
 
-##############################################################################
-### MENU #####################################################################
-##############################################################################
+#####################################################################################################################
+### MENU BAR : GUI ##################################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.MenuBar.GUI}{Menu bar (GUI)}{GUI} BEGINLISTING")
 
 MenuBar.menu<-tk2menu(GUI.TopLevel)
 tkconfigure(GUI.TopLevel,menu=MenuBar.menu)
 
 ##############################################################################
+### MENU BAR : GUI : FILE ####################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.File}{Menu bar (GUI): File}{File} BEGINLISTING")
 
 MenuBar.File<-tk2menu(MenuBar.menu,tearoff=FALSE)
 
@@ -5580,6 +5992,10 @@ tkadd(MenuBar.File,"command",label="Exit",underline="1",command=function()
 tkadd(MenuBar.menu,"cascade",label="File",underline="0",menu=MenuBar.File)
 
 ##############################################################################
+### MENU BAR : GUI : VIEW ####################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.View}{Menu bar (GUI): View}{View} BEGINLISTING")
+
 
 MenuBar.View<-tk2menu(MenuBar.menu,tearoff=FALSE)
 tkadd(MenuBar.View,"checkbutton",label="Show title",underline="5",variable=View.ShowTitle.var,command=function()
@@ -5651,25 +6067,29 @@ tkadd(MenuBar.View,"separator")
 tkadd(MenuBar.View,"command",label="Show next legend entries",underline="5",accelerator="Ctrl++",command=function()
   {
   GUI.BindingsOff()
-  Legend.NextPage.cmd()
+  View.ShowNextLegendEntries.cmd()
   GUI.BindingsOn()
   })
 tkadd(MenuBar.View,"command",label="Show previous legend entries",underline="5",accelerator="Ctrl+-",command=function()
   {
   GUI.BindingsOff()
-  Legend.PrevPage.cmd()
+  View.ShowPreviousLegendEntries.cmd()
   GUI.BindingsOn()
   })
 tkadd(MenuBar.View,"separator")
-tkadd(MenuBar.View,"checkbutton",label="Calibrate display space axes",underline="6",variable=View.ShowDisplaySpaceAxes.var,command=function()
+tkadd(MenuBar.View,"checkbutton",label="Calibrate display space axes",underline="6",variable=View.CalibrateDisplaySpaceAxes.var,command=function()
   {
   GUI.BindingsOff()
-  View.ShowDisplaySpaceAxes.cmd()
+  View.CalibrateDisplaySpaceAxes.cmd()
   GUI.BindingsOn()
   })
 tkadd(MenuBar.menu,"cascade",label="View",underline="0",menu=MenuBar.View)
 
 ##############################################################################
+### MENU BAR : GUI : FORMAT ##################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.Format}{Menu bar (GUI): Format}{Format} BEGINLISTING")
+
 
 MenuBar.Format<-tk2menu(MenuBar.menu,tearoff=FALSE)
 tkadd(MenuBar.Format,"command",label="Title...",underline="0",command=function()
@@ -5712,6 +6132,9 @@ tkadd(MenuBar.Format,"command",label="Reset all...",underline="0",accelerator="C
 tkadd(MenuBar.menu,"cascade",label="Format",underline="1",menu=MenuBar.Format)
 
 ##############################################################################
+### MENU BAR : GUI : JOINT ###################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.Joint}{Menu bar (GUI): Joint}{Joint} BEGINLISTING")
 
 MenuBar.Joint<-tk2menu(MenuBar.menu,tearoff=FALSE)
 tkadd(MenuBar.Joint,"radiobutton",label="PCA",underline="0",variable=Biplot.Axes.var,value="0",accelerator="1",command=function()
@@ -5736,6 +6159,9 @@ tkadd(MenuBar.Joint,"radiobutton",label="CVA",underline="1",variable=Biplot.Axes
 tkadd(MenuBar.menu,"cascade",label="Joint",underline="0",menu=MenuBar.Joint)
 
 ##############################################################################
+### MENU BAR : GUI : POINTS ##################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.Points}{Menu bar (GUI): Points}{Points} BEGINLISTING")
 
 MenuBar.Points<-tk2menu(MenuBar.menu,tearoff=FALSE)
 MenuBar.Points.DistanceMetric<-tk2menu(MenuBar.menu,tearoff=FALSE)
@@ -5801,6 +6227,9 @@ tkadd(MenuBar.Points,"cascade",label="MDS",underline="0",menu=MenuBar.Points.MDS
 tkadd(MenuBar.menu,"cascade",label="Points",underline="0",menu=MenuBar.Points)
 
 ##############################################################################
+### MENU BAR : GUI : AXES ####################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.Axes}{Menu bar (GUI): Axes}{Axes} BEGINLISTING")
 
 MenuBar.Axes<-tk2menu(MenuBar.menu,tearoff=FALSE)
 tkadd(MenuBar.Axes,"radiobutton",label="None",underline="0",variable=Biplot.Axes.var,value="10",accelerator="0",command=function()
@@ -5839,6 +6268,9 @@ tkadd(MenuBar.Axes,"command",label="Default",underline="0",command=function()
 tkadd(MenuBar.menu,"cascade",label="Axes",underline="0",menu=MenuBar.Axes)
 
 ##############################################################################
+### MENU BAR : GUI : ADDITIONAL ##############################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.Additional}{Menu bar (GUI): Additional}{Additional} BEGINLISTING")
 
 MenuBar.Additional<-tk2menu(MenuBar.menu,tearoff=FALSE)
 MenuBar.Additional.Interpolate<-tk2menu(MenuBar.menu,tearoff=FALSE)
@@ -5898,6 +6330,9 @@ tkadd(MenuBar.Additional,"command",label="Clear all",underline="1",accelerator="
 tkadd(MenuBar.menu,"cascade",label="Additional",underline="0",menu=MenuBar.Additional)
 
 ##############################################################################
+### MENU BAR : GUI : HELP ####################################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.MenuBar.GUI.Help}{Menu bar (GUI): Help}{Help} BEGINLISTING")
 
 MenuBar.Help<-tk2menu(MenuBar.menu,tearoff=FALSE)
 tkadd(MenuBar.Help,"command",label="Manual (in PDF)",underline="0",accelerator="F1",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.Manual.cmd)
@@ -5922,10 +6357,17 @@ tkadd(MenuBar.menu,"cascade",label="Help",underline="0",menu=MenuBar.Help)
 ### BIPLOT REGION ###################################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.BiplotRegion}{Biplot region}{Biplot region} BEGINLISTING")
+
+#####################################################################################################################
+### BIPLOT REGION : FUNCTIONS #######################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.BiplotRegion.Functions}{Biplot region (functions)}{Functions} BEGINLISTING")
 
 ##############################################################################
-### BIPLOT REGION ############################################################
+### BIPLOT REGION : FUNCTIONS : INITIALISATION ###############################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.Functions.Initialisation}{Biplot region (functions): Initialisation}{Initialisation} BEGINLISTING")
 
 BiplotRegion.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
 tkplace(BiplotRegion.frame,relx=.005,rely=.04,relwidth=.6,relheight=.905,"in"=GUI.TopLevel)
@@ -5936,7 +6378,7 @@ BiplotRegion.VerticalScale.func<-function() as.numeric(tkwinfo("height",BiplotRe
 BiplotRegion.image<-tkrplot(GUI.TopLevel,fun=function()
   {
   par(mar=c(0,0,0,0),"bg"="white")
-plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
+  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
   },hscale=BiplotRegion.HorizontalScale.func(),vscale=BiplotRegion.VerticalScale.func())
 tkplace(BiplotRegion.image,"in"=BiplotRegion.frame,relwidth=1,relheight=1)
 GUI.WindowWidth<-as.numeric(tkwinfo("width",GUI.TopLevel))
@@ -5945,10 +6387,77 @@ GUI.WindowHeight<-as.numeric(tkwinfo("height",GUI.TopLevel))
 BiplotRegion.LegendFraction<-NULL
 
 ##############################################################################
-### BIPLOT ###################################################################
+### BIPLOT REGION : FUNCTIONS : BIPLOT #######################################
 ##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.Functions.Biplot}{Biplot region (functions): Biplot}{Biplot} BEGINLISTING")
 
 Biplot.par<-NULL
+
+Biplot.title<-NULL
+Biplot.title.default<-NULL
+Biplot.determine<-NULL
+Biplot.layout<-NULL
+Biplot.plot<-function() NULL
+Biplot.replot<-function() tkrreplot(BiplotRegion.image,fun=Biplot.plot,hscale=BiplotRegion.HorizontalScale.func(),vscale=BiplotRegion.VerticalScale.func()) # Requires work in Unix-alike.
+Biplot.predictions<-NULL
+Biplot.interpolate<-NULL
+Biplot.motion<-NULL
+Biplot.OverAxis<-NULL
+Biplot.LeftClick<-NULL
+Biplot.LeftRelease<-NULL
+Biplot.DoubleLeftClick<-NULL
+Biplot.RightClick<-NULL
+Biplot.plot3D<-NULL
+
+Biplot.Xtransformed<-NULL
+Biplot.Yfull<-NULL
+Biplot.Yfull_<-NULL
+Biplot.Y<-NULL
+Biplot.Y_<-NULL
+Biplot.Y3D<-NULL
+Y3D<-NULL
+Biplot.Y3D_<-NULL
+Biplot.Yinitial<-NULL
+Biplot.Bfull_<-NULL
+Biplot.B<-NULL
+Biplot.B_<-NULL
+Biplot.B3D<-NULL
+Biplot.B3D_<-NULL
+Biplot.Binterpolate_<-NULL
+Biplot.Binterpolate<-NULL
+Biplot.Bclassify<-NULL
+Biplot.axis<-NULL
+Biplot.axis3D<-NULL
+Biplot.AxisInterpolate<-NULL
+Biplot.O<-NULL
+Biplot.O3D<-NULL
+Biplot.variable<-NULL
+
+Biplot.points.mode<-tclVar("0")
+Biplot.xy<-c(0,0)
+Biplot.XY.move<-c(0,0)
+Biplot.XY.LeftClick<-c(0,0)
+Biplot.XY.RightClick<-c(0,0)
+Biplot.points.WhereHighlight<-NULL
+Biplot.points.WhichHighlight<-NULL
+Biplot.points.WhereClosestOnAxis<-NULL
+Biplot.points.WhichClosestOnAxis<-NULL
+
+Biplot.axes.var<-NULL
+Biplot.axes.mode<-0
+Biplot.axes.WhichHighlight<-0
+Biplot.WasInside<-FALSE
+
+Biplot.moved<-NULL
+Biplot.moving.status<-NULL
+Biplot.moving.which<-NULL
+
+Biplot.zoom.mode<-0
+Biplot.xlimtouse<-NULL
+Biplot.ylimtouse<-NULL
+
+##############################################################################
+
 Biplot.ConvertCoordinates<-function(xin,yin)
   {
   width<-as.numeric(tclvalue(tkwinfo("width",BiplotRegion.image)))
@@ -5964,48 +6473,495 @@ Biplot.ConvertCoordinates<-function(xin,yin)
   c((x-plotregionstartxprop)/(plotregionendxprop-plotregionstartxprop)*(Biplot.par$usr[2]-Biplot.par$usr[1])+Biplot.par$usr[1],(y-plotregionstartyprop)/(plotregionendyprop-plotregionstartyprop)*(Biplot.par$usr[4]-Biplot.par$usr[3])+Biplot.par$usr[3])
   }
 
-Biplot.title<-NULL
-Biplot.title.default<-NULL
-Biplot.determine<-NULL
-Biplot.layout<-NULL
+##############################################################################
 
-Biplot.plot<-function()
+Biplot.linear.plot<-function(screen=TRUE)
   {
-  NULL
+
+  DrawLinearBiplotAxisOnly<-function(from=c(0,0),to,axis.lty,axis.lwd,axis.col,axis.label,axis.label.cex,axis.label.las,axis.label.col,axis.label.font)
+    {
+    corners<-rbind(c(par("usr")[1],par("usr")[3]),c(par("usr")[1],par("usr")[4]),c(par("usr")[2],par("usr")[4]),c(par("usr")[2],par("usr")[3]))
+    ReferenceAngles<-apply(corners,1,function(a) atan2(y=a[2]-from[2],x=a[1]-from[1]))
+    ReferenceAngles<-ifelse(ReferenceAngles<0,ReferenceAngles+2*pi,ReferenceAngles)
+    angle1<-atan2(y=to[2]-from[2],x=to[1]-from[1])
+    if (angle1<0) angle1<-angle1+2*pi
+    f1<-function(angle)
+      {
+      side<-5-rank(c(angle,ReferenceAngles),ties.method="min")[1]
+      if (side==0) side<-4
+      switch(side,
+        {temp1<-tan(3*pi/2-angle)*(par("usr")[3]-from[2]); c(temp1+from[1],par("usr")[3],side,temp1+from[1])},
+        {temp1<-tan(angle)*(par("usr")[1]-from[1]); c(par("usr")[1],temp1+from[2],side,temp1+from[2])},
+        {temp1<-tan(pi/2-angle)*(par("usr")[4]-from[2]); c(temp1+from[1],par("usr")[4],side,temp1+from[1])},
+        {temp1<-tan(angle)*(par("usr")[2]-from[1]); c(par("usr")[2],temp1+from[2],side,temp1+from[2])} )
+      }
+    temp2<-f1(angle1)
+    segments(x0=from[1],y0=from[2],x1=temp2[1],y1=temp2[2],lty=axis.lty,lwd=axis.lwd,col=axis.col)
+    if (tclvalue(View.AxisLabels.var)=="1") mtext(text=axis.label,side=temp2[3],at=temp2[4],cex=axis.label.cex,las=axis.label.las,line=.25,col=axis.label.col,font=axis.label.font)
+    angle2<-angle1-pi
+    if(angle2<0) angle2<-angle2+2*pi
+    temp3<-f1(angle2)
+    segments(x0=from[1],y0=from[2],x1=temp3[1],y1=temp3[2],lty=axis.lty,lwd=axis.lwd,col=axis.col)
+    angle1
+    }
+
+  DrawLinearBiplotAxis<-function(i)
+    {
+    if (Biplot.axes.mode==0)
+      {
+      temp1<-bpar$axes.col[variables.in[i]]
+      temp2<-bpar$axes.tick.col[variables.in[i]]
+      temp3<-bpar$axes.marker.col[variables.in[i]]
+      temp4<-bpar$axes.label.col[variables.in[i]]
+      }
+      else if (variables.in[i]==Biplot.axes.WhichHighlight) temp1<-temp2<-temp3<-temp4<-bpar$interaction.highlight.axes.col.fg
+
+    angle<-DrawLinearBiplotAxisOnly(to=B[i,],axis.lty=bpar$axes.lty[variables.in[i]],axis.lwd=bpar$axes.lwd[variables.in[i]],axis.col=temp1,axis.label=bpar$axes.label.text[variables.in[i]],axis.label.cex=bpar$axes.label.cex[variables.in[i]],axis.label.las=bpar$axes.label.las[variables.in[i]],axis.label.col=temp4,axis.label.font=bpar$axes.label.font[variables.in[i]])
+    mu<-SettingsBox.transformation.func(IN=pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]),WhichCol=i)
+
+    PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
+    ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+    PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
+
+    Coord<-t(sapply(mu,function(a) B[i,]*a))
+    if (tclvalue(tkget(SettingsBox.action.combo))=="Predict") Coord<-Coord/sum(B[i,]^2)
+      else if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: centroid") Coord<-Coord*p.in
+    tickbottomCoord<-sweep(Coord,2,RotationMatrix(angle)%*%c(0,-axes.tick.AbsLength[variables.in[i]]),"+")
+    ticktopCoord<-sweep(Coord,2,RotationMatrix(angle)%*%c(0,axes.tick.AbsLength[variables.in[i]]),"+")
+    segments(x0=tickbottomCoord[,1],y0=tickbottomCoord[,2],x1=ticktopCoord[,1],y1=ticktopCoord[,2],lty=bpar$axes.tick.lty[variables.in[i]],lwd=bpar$axes.tick.lwd[variables.in[i]],col=temp2)
+
+    f1<-function(angle)
+      {
+      if (angle<=0) angle<-angle+2*pi
+      switch(ceiling(angle/pi*4),angle/pi*4,1,1,-(angle-.75*pi)/pi*4+1,-(angle-pi)/pi*4,-1,-1,(angle-1.75*pi)/pi*4-1)
+      }
+    markersCoord<-sweep(Coord,2,RotationMatrix(angle)%*%c(0,-axes.tick.AbsLength[i]-bpar$axes.marker.RelOffset[variables.in[i]]*(par("usr")[2]-par("usr")[1])),"+")+cbind(f1(angle)*.5*strwidth(PrettyMarkersCharacter,cex=bpar$axes.marker.cex[variables.in[i]]),f1(angle-pi/2)*.5*strheight(PrettyMarkersCharacter,cex=bpar$axes.marker.cex[variables.in[i]]))
+    text(markersCoord,labels=PrettyMarkersCharacter,font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]],col=temp3,adj=.5)
+    }
+
+  if (as.numeric(tclvalue(Biplot.Axes.var))<10)
+    {
+    Y<-Biplot.Y_
+    B<-Biplot.B_
+    }
+    else
+      {
+      Y<-Biplot.Y
+      B<-Biplot.B
+      }
+
+  if (Biplot.zoom.mode==1 && (Biplot.xlimtouse[1]>0 || Biplot.xlimtouse[2]<0 || Biplot.ylimtouse[1]>0 || Biplot.ylimtouse[2]<0)) View.AxisLabels.var<<-tclVar("2")
+
+  if (Legend.yes())
+    {
+    if (screen) layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(4*BiplotRegion.VerticalScale.func()-1.1,1.1))
+      else layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(8-1.1,1.1))
+    par(mar=c(0,0,0,0),bg="white")
+    plot(.5,.5,bty="n",type="n",xaxt="n",yaxt="n",xlab="",ylab="",xaxs="i",yaxs="i",xlim=c(0,1),ylim=c(0,1))
+    Legend.func()
+    par(mar=c(1,4,4,4))
+    }
+    else par(mar=c(2,4,2,4))
+
+  par(pty="s",bg="white")
+
+  temp.Y1<-Y[,1]
+  temp.Y2<-Y[,2]
+  temp.pch<-bparp$points.pch[samples.in]
+  temp.cex<-bparp$points.cex[samples.in]
+  temp.col<-bparp$points.col.fg[samples.in]
+  temp.bg<-bparp$points.col.bg[samples.in]
+  temp.labels<-bparp$points.label.text[samples.in]
+  temp.labels.cex<-bparp$points.label.cex[samples.in]
+  temp.HorizOffset<-bparp$points.label.HorizOffset[samples.in]
+  temp.VertOffset<-bparp$points.label.VertOffset[samples.in]
+  if (tclvalue(Additional.Interpolate.ANewSample.var)=="1")
+    {
+    temp.Y1<-c(temp.Y1,Additional.Interpolate.ANewSample.coordinates[1])
+    temp.Y2<-c(temp.Y2,Additional.Interpolate.ANewSample.coordinates[2])
+    temp.pch<-c(temp.pch,bpar$ANewSample.pch)
+    temp.cex<-c(temp.cex,bpar$ANewSample.cex)
+    temp.col<-c(temp.col,bpar$ANewSample.col.fg)
+    temp.bg<-c(temp.bg,bpar$ANewSample.col.bg)
+    if (bpar$ANewSample.LabelsInBiplot) temp.labels<-c(temp.labels,bpar$ANewSample.label.text)
+      else temp.labels<-c(temp.labels,NA)
+    temp.labels.cex<-c(temp.labels.cex,bpar$ANewSample.label.cex)
+    temp.HorizOffset<-c(temp.HorizOffset,bpar$ANewSample.label.HorizOffset)
+    temp.VertOffset<-c(temp.VertOffset,bpar$ANewSample.label.VertOffset)
+    }
+  if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1")
+    {
+    temp.Y1<-c(temp.Y1,Additional.Interpolate.SampleGroupMeans.coordinates[,1])
+    temp.Y2<-c(temp.Y2,Additional.Interpolate.SampleGroupMeans.coordinates[,2])
+    temp.pch<-c(temp.pch,bpar$gSampleGroupMeans.pch[groups.in])
+    temp.cex<-c(temp.cex,bpar$gSampleGroupMeans.cex[groups.in])
+    temp.col<-c(temp.col,bpar$gSampleGroupMeans.col.fg[groups.in])
+    temp.bg<-c(temp.bg,bpar$gSampleGroupMeans.col.bg[groups.in])
+    if (bpar$SampleGroupMeans.LabelsInBiplot) temp.labels<-c(temp.labels,Additional.Interpolate.SampleGroupMeans.label.text)
+      else temp.labels<-c(temp.labels,rep(NA,g.in))
+    temp.labels.cex<-c(temp.labels.cex,bpar$gSampleGroupMeans.label.cex[groups.in])
+    temp.HorizOffset<-c(temp.HorizOffset,bpar$gSampleGroupMeans.label.HorizOffset[groups.in])
+    temp.VertOffset<-c(temp.VertOffset,bpar$gSampleGroupMeans.label.VertOffset[groups.in])
+    }
+
+  arglist<-list(x=temp.Y1,y=temp.Y2,pch=temp.pch,cex=temp.cex,col=temp.col,bg=temp.bg,xaxt="n",yaxt="n")
+  if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
+    else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=temp.labels,labels.cex=temp.labels.cex,HorizOffset=temp.HorizOffset,VertOffset=temp.VertOffset))
+  do.call("mynewplot",arglist)
+  if (tclvalue(View.CalibrateDisplaySpaceAxes.var)=="1")
+    {
+    axis(side=1,cex.axis=.75)
+    axis(side=2,cex.axis=.75)
+    }
+  Biplot.par<<-par()
+  Biplot.par$strwidthx<<-strwidth("x")
+  Biplot.par$strheightx<<-strheight("x")
+  if (tclvalue(View.ShowTitle.var)=="1") title(Biplot.title,line=1.75)
+
+  if (tclvalue(Additional.PointDensities.var)=="1") Additional.PointDensities.autcmd()
+  if (tclvalue(Additional.ClassificationRegion.var)=="1") Additional.ClassificationRegion.autcmd()
+
+  if ((tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") && Additional.ConvexHullAlphaBag.for!=0 && tclvalue(Additional.PointDensities.var)=="0" && tclvalue(Additional.ClassificationRegion.var)=="0") Biplot.plot.ConvexHullAlphaBag.bg()
+
+  RotationMatrix<-function(angle) matrix(c(cos(angle),sin(angle),-sin(angle),cos(angle)),ncol=2)
+  axes.tick.AbsLength<-bpar$axes.tick.RelLength*(par("usr")[2]-par("usr")[1])
+
+  if (tclvalue(Other.HideAxes.var)=="0")
+    if (Biplot.axes.mode==0) # All axes shown
+      {
+      for (i in 1:p.in) DrawLinearBiplotAxis(i)
+      if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+      if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+      if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
+      if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
+      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
+      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
+      }
+      else # One axis highlighted
+        {
+        for (i in which(variables.in!=Biplot.axes.WhichHighlight)) DrawLinearBiplotAxisOnly(to=B[i,],axis.lty=bpar$axes.lty[variables.in[i]],axis.lwd=bpar$.axes.lwd[variables.in[i]],axis.col=bpar$interaction.highlight.axes.col.bg,axis.label=bpar$axes.label.text[variables.in[i]],axis.label.cex=bpar$axes.label.cex[variables.in[i]],axis.label.las=bpar$axes.label.las[variables.in[i]],axis.label.col=bpar$interaction.highlight.axes.col.bg,axis.label.font=1)
+        if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointValues.var)=="1") text(Y[,1]+bpar$interaction.highlight.ShowValues.HorizOffset*strwidth("x",cex=bpar$interaction.highlight.ShowValues.cex),Y[,2]+bpar$interaction.highlight.ShowValues.VertOffset*strheight("x",cex=bpar$interaction.highlight.ShowValues.cex),labels=format(round(Data[samples.in,Biplot.axes.WhichHighlight],bpar$interaction.highlight.ShowValues.digits),nsmall=bpar$interaction.highlight.ShowValues.digits),font=bpar$interaction.highlight.ShowValues.font,cex=bpar$interaction.highlight.ShowValues.cex,col=bpar$interaction.highlight.ShowValues.col)
+        if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+        if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+        if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
+        if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
+        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
+        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
+        DrawLinearBiplotAxis(which(variables.in==Biplot.axes.WhichHighlight))
+        }
+        else # Axes are hidden
+          {
+          if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+          if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+          if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
+          if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
+          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
+          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
+          }
+
+  if (tclvalue(tkget(SettingsBox.action.combo))=="Predict" && tclvalue(Biplot.points.mode)%in%c("1","2"))
+    {
+    if (Biplot.axes.mode==0)
+      {
+      segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[,1],y1=Biplot.points.WhereClosestOnAxis[,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
+      points(Biplot.points.WhereClosestOnAxis,pch=bpar$interaction.prediction.pch,cex=bpar$interaction.prediction.cex,col=bpar$axes.col)
+      }
+      else
+        {
+        segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
+        points(Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],pch=bpar$interaction.prediction.pch[Biplot.axes.WhichHighlight],cex=bpar$interaction.prediction.cex[Biplot.axes.WhichHighlight],col=bpar$interaction.highlight.axes.col.fg)
+        }
+    }
+
+  box(which="plot",lty="solid")
   }
 
-Biplot.replot<-function() tkrreplot(BiplotRegion.image,fun=Biplot.plot,hscale=BiplotRegion.HorizontalScale.func(),vscale=BiplotRegion.VerticalScale.func()) # Needs Linux work
+#######################################
 
-Biplot.predictions<-NULL
-Biplot.interpolate<-NULL
-Biplot.OverAxis<-NULL
-Biplot.motion<-NULL
-Biplot.LeftClick<-NULL
-Biplot.LeftRelease<-NULL
-Biplot.DoubleLeftClick<-NULL
-Biplot.RightClick<-NULL
-Biplot.plot3D<-NULL
+Biplot.NonLinear.determine.interpolative<-function()
+  {
+  temp0<-matrix(0,nrow=n.in,ncol=n.in)
+  temp0[cbind(1:n.in,1:n.in)]<-1
+  temp0<-temp0-1/n.in
+  D<--.5*Points.DistanceMetric.DissimilarityMatrix^2
+  B<-temp0%*%D%*%temp0
+  eigenB<-eigen(B,symmetric=TRUE)
+  eigenB$vectors<-(apply(eigenB$vectors,2,function(x) x*sign(x[which.max(abs(x))])))
+  rB<-sum(eigenB$values>eps)
+  if (any(eigenB$values/max(eigenB$values)<(-eps)))
+    {
+    tkmessageBox(title="Circular non-linear",parent=GUI.TopLevel,message="The configuration cannot be embedded into the display space.\nA regression biplot will be shown instead.",icon="warning",type="ok")
+    Axes.CircularNonLinear.NotEmbeddable<<-TRUE
+    return()
+    }
+    else Axes.CircularNonLinear.NotEmbeddable<<-FALSE
 
-Biplot.axes.var<-NULL
+  LambdaInv<-diag(eigenB$values[1:rB]^-1)
+  V<-eigenB$vectors[,1:rB]
+  Biplot.Yfull<-V%*%diag(eigenB$values[1:rB]^.5)
+  Biplot.Y<<-Biplot.Yfull[,1:2]
+  Biplot.Y3D<<-Biplot.Yfull[,1:3]
+
+  d<-function(x) -.5*(Points.DistanceMetric.func(x,Biplot.Xtransformed))^2
+  if (substr(tclvalue(tkget(SettingsBox.transformation.combo)),start=1,stop=3)=="Log") Biplot.O3D<<-as.vector((LambdaInv%*%t(Biplot.Yfull)%*%(d(SettingsBox.transformation.func(exp(colMeans(log(Data[samples.in,variables.in]))),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))[1:3]
+    else Biplot.O3D<<-as.vector((LambdaInv%*%t(Biplot.Yfull)%*%(d(SettingsBox.transformation.func(colMeans(Data[samples.in,variables.in]),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))[1:3]
+  Biplot.O<<-Biplot.O3D[1:2]
+
+  local.Biplot.variable<-temp5<-temp6<-temp7<-temp8<-list()
+
+  for (i in 1:p.in)
+    {
+    PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
+    PrettyMarkersIncrement<-PrettyMarkers[2]-PrettyMarkers[1]
+    PrettyMarkersTemp<-PrettyMarkers[PrettyMarkers-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10>=min(Data[samples.in,variables.in[i]]) & PrettyMarkers+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10<=max(Data[samples.in,variables.in[i]])]
+
+    markers<-zapsmall(seq(PrettyMarkers[1],PrettyMarkers[length(PrettyMarkers)],by=PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]))
+    PrettyMarkers<-PrettyMarkersTemp
+    ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+    PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
+
+    markers<-markers[markers-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10>=min(Data[samples.in,variables.in[i]]) & markers+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10<=max(Data[samples.in,variables.in[i]])]
+    markers<-zapsmall(c(min(markers)-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10,markers,max(markers)+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10))
+    PrettyMarkersIndex<-match(PrettyMarkers,markers)
+
+    MarkersTransformed<-SettingsBox.transformation.func(markers,WhichCol=i)
+    s<-length(markers)
+    local.Biplot.variable<-c(local.Biplot.variable,list(list(markers=markers,PrettyMarkers=PrettyMarkers,PrettyMarkersCharacter=PrettyMarkersCharacter,PrettyMarkersIndex=PrettyMarkersIndex,MarkersTransformed=MarkersTransformed)))
+
+    if (substr(tclvalue(tkget(SettingsBox.transformation.combo)),start=1,stop=3)=="Log") temp2<-t(sapply(MarkersTransformed,function(j) LambdaInv%*%t(Biplot.Yfull)%*%(d(diag(p.in)[i,]*j+SettingsBox.transformation.func(exp(colMeans(log(Data[samples.in,variables.in]))),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))
+      else temp2<-t(sapply(MarkersTransformed,function(j) LambdaInv%*%t(Biplot.Yfull)%*%(d(diag(p.in)[i,]*j+SettingsBox.transformation.func(colMeans(Data[samples.in,variables.in]),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))
+    temp3<-sweep(sweep(temp2[,1:3],2,Biplot.O3D,"-")*1,2,Biplot.O3D,"+") # Interpolate: vector sum
+    temp4<-sweep(sweep(temp2[,1:3],2,Biplot.O3D,"-")*p.in,2,Biplot.O3D,"+") # Interpolate: centroid
+    temp5<-c(temp5,list(temp3[,1:2])) # Interpolate: vector sum 2D
+    temp6<-c(temp6,list(temp3)) # Interpolate: vector sum 3D
+    temp7<-c(temp7,list(temp4[,1:2])) # Interpolate: centroid 2D
+    temp8<-c(temp8,list(temp4)) # Interpolate: centroid 3D
+    }
+
+  Biplot.AxisInterpolate<<-temp5
+  if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: vector sum")
+    {
+    Biplot.variable<<-local.Biplot.variable
+    Biplot.axis<<-temp5
+    Biplot.axis3D<<-temp6
+    }
+    else if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: centroid")
+      {
+      Biplot.variable<<-local.Biplot.variable
+      Biplot.axis<<-temp7
+      Biplot.axis3D<<-temp8
+      }
+  }
+
+#######################################
+
+Biplot.NonLinear.layout<-function()
+  {
+  AxisInstruction<-list()
+  axes.tick.AbsLength<-bpar$axes.tick.RelLength*(Biplot.par$usr[2]-Biplot.par$usr[1])
+  RotationMatrix<-function(Angle) matrix(c(cos(Angle),sin(Angle),-sin(Angle),cos(Angle)),ncol=2)
+  fx<-function(Angle)
+    {
+    if (Angle<=0) Angle<-Angle+2*pi
+    switch(ceiling(Angle/pi*4),Angle/pi*4,1,1,-(Angle-.75*pi)/pi*4+1,-(Angle-pi)/pi*4,-1,-1,(Angle-1.75*pi)/pi*4-1)
+    }
+  for (i in 1:p.in)
+    {
+    AnglesBefore<-ifelse((AnglesBefore<-atan2(Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex+1,2]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,2],Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex+1,1]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,1]))<0,AnglesBefore+2*pi,AnglesBefore)
+    AnglesAfter<-ifelse((AnglesAfter<-atan2(Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,2]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex-1,2],Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,1]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex-1,1]))<0,AnglesAfter+2*pi,AnglesAfter)
+    Angles<-(AnglesBefore+AnglesAfter)/2
+    Angles<-ifelse(abs(AnglesAfter-AnglesBefore)>pi,Angles+pi,Angles)
+    Angles<-ifelse(Angles<0,Angles+2*pi,Angles)
+    BottomTickCoords<-NULL
+    TopTickCoords<-NULL
+    MarkerLabelCoords<-NULL
+    for (j in 1:length(Angles))
+      {
+      BottomTickCoords<-rbind(BottomTickCoords,c(RotationMatrix(Angles[j])%*%matrix(c(0,-axes.tick.AbsLength[variables.in[i]]),ncol=1))+Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex[j],])
+      TopTickCoords<-rbind(TopTickCoords,c(RotationMatrix(Angles[j])%*%matrix(c(0,axes.tick.AbsLength[variables.in[i]]),ncol=1))+Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex[j],])
+      MarkerLabelCoords<-rbind(MarkerLabelCoords,c(RotationMatrix(Angles[j])%*%matrix(c(0,-axes.tick.AbsLength[variables.in[i]]-bpar$axes.marker.RelOffset[variables.in[i]]*(Biplot.par$usr[2]-Biplot.par$usr[1])),ncol=1))+Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex[j],]+c(fx(Angles[j])*.5*strwidth(Biplot.variable[[i]]$PrettyMarkersCharacter[j],cex=bpar$axes.marker.cex[variables.in[i]]),fx(Angles[j]-pi/2)*.5*strheight(Biplot.variable[[i]]$PrettyMarkersCharacter[j],cex=bpar$axes.marker.cex[variables.in[i]])))
+      }
+    AxisInstruction<-c(AxisInstruction,list(list(BottomTickCoords=BottomTickCoords,TopTickCoords=TopTickCoords,MarkerLabelCoords=MarkerLabelCoords)))
+    }
+  AxisInstruction
+  }
+
+#######################################
+
+Biplot.NonLinear.plot<-function(screen=TRUE)
+  {
+  if (Legend.yes())
+    {
+    if (screen) layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(4*BiplotRegion.VerticalScale.func()-1.1,1.1))
+      else layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(8-1.1,1.1))
+    par(mar=c(0,0,0,0),bg="white")
+    plot(.5,.5,bty="n",type="n",xaxt="n",yaxt="n",xlab="",ylab="",xaxs="i",yaxs="i",xlim=c(0,1),ylim=c(0,1))
+    Legend.func()
+    par(mar=c(1,4,4,4))
+    }
+    else par(mar=c(2,4,2,4))
+
+  par(pty="s",bg="white")
+
+  Y<-Biplot.Y
+  temp.Y1<-Y[,1]
+  temp.Y2<-Y[,2]
+  temp.pch<-bparp$points.pch[samples.in]
+  temp.cex<-bparp$points.cex[samples.in]
+  temp.col<-bparp$points.col.fg[samples.in]
+  temp.bg<-bparp$points.col.bg[samples.in]
+  temp.labels<-bparp$points.label.text[samples.in]
+  temp.labels.cex<-bparp$points.label.cex[samples.in]
+  temp.HorizOffset<-bparp$points.label.HorizOffset[samples.in]
+  temp.VertOffset<-bparp$points.label.VertOffset[samples.in]
+  if (tclvalue(Additional.Interpolate.ANewSample.var)=="1")
+    {
+    temp.Y1<-c(temp.Y1,Additional.Interpolate.ANewSample.coordinates[1])
+    temp.Y2<-c(temp.Y2,Additional.Interpolate.ANewSample.coordinates[2])
+    temp.pch<-c(temp.pch,bpar$ANewSample.pch)
+    temp.cex<-c(temp.cex,bpar$ANewSample.cex)
+    temp.col<-c(temp.col,bpar$ANewSample.col.fg)
+    temp.bg<-c(temp.bg,bpar$ANewSample.col.bg)
+    if (bpar$ANewSample.LabelsInBiplot) temp.labels<-c(temp.labels,bpar$ANewSample.label.text)
+      else temp.labels<-c(temp.labels,NA)
+    temp.labels.cex<-c(temp.labels.cex,bpar$ANewSample.label.cex)
+    temp.HorizOffset<-c(temp.HorizOffset,bpar$ANewSample.label.HorizOffset)
+    temp.VertOffset<-c(temp.VertOffset,bpar$ANewSample.label.VertOffset)
+    }
+  if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1")
+    {
+    temp.Y1<-c(temp.Y1,Additional.Interpolate.SampleGroupMeans.coordinates[,1])
+    temp.Y2<-c(temp.Y2,Additional.Interpolate.SampleGroupMeans.coordinates[,2])
+    temp.pch<-c(temp.pch,bpar$gSampleGroupMeans.pch[groups.in])
+    temp.cex<-c(temp.cex,bpar$gSampleGroupMeans.cex[groups.in])
+    temp.col<-c(temp.col,bpar$gSampleGroupMeans.col.fg[groups.in])
+    temp.bg<-c(temp.bg,bpar$gSampleGroupMeans.col.bg[groups.in])
+    if (bpar$SampleGroupMeans.LabelsInBiplot) temp.labels<-c(temp.labels,Additional.Interpolate.SampleGroupMeans.label.text)
+      else temp.labels<-c(temp.labels,rep(NA,g.in))
+    temp.labels.cex<-c(temp.labels.cex,bpar$gSampleGroupMeans.label.cex[groups.in])
+    temp.HorizOffset<-c(temp.HorizOffset,bpar$gSampleGroupMeans.label.HorizOffset[groups.in])
+    temp.VertOffset<-c(temp.VertOffset,bpar$gSampleGroupMeans.label.VertOffset[groups.in])
+    }
+
+  if (tclvalue(View.ClipAround.var)=="0")
+    {
+    arglist<-list(x=temp.Y1,y=temp.Y2,pch=temp.pch,cex=temp.cex,col=temp.col,bg=temp.bg,xaxt="n",yaxt="n")
+    if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
+      else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=temp.labels,labels.cex=temp.labels.cex,HorizOffset=temp.HorizOffset,VertOffset=temp.VertOffset))
+    }
+    else
+      {
+      AllAxesMat<-cbind(unlist(lapply(Biplot.axis,function(x) x[,1])),unlist(lapply(Biplot.axis,function(x) x[,2])))
+      nrowAllAxesMat<-nrow(AllAxesMat)
+      arglist<-list(x=c(temp.Y1,AllAxesMat[,1]),y=c(temp.Y2,AllAxesMat[,2]),xaxt="n",yaxt="n")
+      if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
+        else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=c(temp.labels,rep(NA,nrowAllAxesMat)),labels.cex=c(temp.labels.cex,rep(1,nrowAllAxesMat)),HorizOffset=c(temp.HorizOffset,rep(0,nrowAllAxesMat)),VertOffset=c(temp.VertOffset,rep(0,nrowAllAxesMat))))
+      }
+  do.call("mynewplot",arglist)
+  if (tclvalue(View.CalibrateDisplaySpaceAxes.var)=="1")
+    {
+    axis(side=1,cex.axis=.75)
+    axis(side=2,cex.axis=.75)
+    }
+  Biplot.par<<-par()
+  Biplot.par$strwidthx<<-strwidth("x")
+  Biplot.par$strheightx<<-strheight("x")
+  if (tclvalue(View.ShowTitle.var)=="1") title(Biplot.title,line=1.75)
+
+  if (tclvalue(Additional.PointDensities.var)=="1") Additional.PointDensities.autcmd()
+  if (tclvalue(Additional.ClassificationRegion.var)=="1") Additional.ClassificationRegion.autcmd()
+
+  if ((tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") && Additional.ConvexHullAlphaBag.for!=0 && tclvalue(Additional.PointDensities.var)=="0" && tclvalue(Additional.ClassificationRegion.var)=="0") Biplot.plot.ConvexHullAlphaBag.bg()
+
+  AxisInstruction<-Biplot.NonLinear.layout()
+
+  if (tclvalue(Other.HideAxes.var)=="0")
+    if (Biplot.axes.mode==0) # All axes shown
+      {
+      for (i in 1:p.in)
+        {
+        lines(Biplot.axis[[i]],lty=bpar$axes.col.lty[variables.in[i]],lwd=bpar$axes.col.lwd[variables.in[i]],col=bpar$axes.col[variables.in[i]])
+        segments(x0=AxisInstruction[[i]]$BottomTickCoords[,1],y0=AxisInstruction[[i]]$BottomTickCoords[,2],x1=AxisInstruction[[i]]$TopTickCoords[,1],y1=AxisInstruction[[i]]$TopTickCoords[,2],lty=bpar$axes.tick.lty[variables.in[i]],lwd=bpar$axes.tick.lwd[variables.in[i]],col=bpar$axes.tick.col[variables.in[i]])
+        text(AxisInstruction[[i]]$MarkerLabelCoords,labels=Biplot.variable[[i]]$PrettyMarkersCharacter,font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]],col=bpar$axes.marker.col[variables.in[i]])
+        }
+      if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+      if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+      if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
+      if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
+      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
+      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
+      }
+      else # One axis highlighted
+        {
+        for (i in which(variables.in!=Biplot.axes.WhichHighlight)) lines(Biplot.axis[[i]],lty=bpar$axes.col.lty[variables.in[i]],lwd=bpar$axes.col.lwd[variables.in[i]],col=bpar$interaction.highlight.axes.col.bg)
+        if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointValues.var)=="1") text(Y[,1]+bpar$interaction.highlight.ShowValues.HorizOffset*strwidth("x",cex=bpar$interaction.highlight.ShowValues.cex),Y[,2]+bpar$interaction.highlight.ShowValues.VertOffset*strheight("x",cex=bpar$interaction.highlight.ShowValues.cex),labels=format(round(Data[samples.in,Biplot.axes.WhichHighlight],bpar$interaction.highlight.ShowValues.digits),nsmall=bpar$interaction.highlight.ShowValues.digits),font=bpar$interaction.highlight.ShowValues.font,cex=bpar$interaction.highlight.ShowValues.cex,col=bpar$interaction.highlight.ShowValues.col)
+        if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+        if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+        if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
+        if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
+        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
+        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
+        i<-which(variables.in==Biplot.axes.WhichHighlight)
+        lines(Biplot.axis[[i]],lty=bpar$axes.col.lty[variables.in[i]],lwd=bpar$axes.col.lwd[variables.in[i]],col=bpar$interaction.highlight.axes.col.fg)
+        segments(x0=AxisInstruction[[i]]$BottomTickCoords[,1],y0=AxisInstruction[[i]]$BottomTickCoords[,2],x1=AxisInstruction[[i]]$TopTickCoords[,1],y1=AxisInstruction[[i]]$TopTickCoords[,2],lty=bpar$axes.tick.lty[variables.in[i]],lwd=bpar$axes.tick.lwd[variables.in[i]],col=bpar$interaction.highlight.axes.col.fg)
+        text(AxisInstruction[[i]]$MarkerLabelCoords,labels=Biplot.variable[[i]]$PrettyMarkersCharacter,font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]],col=bpar$interaction.highlight.axes.col.fg)
+        }
+        else # Axes are hidden
+          {
+          if (tclvalue(Other.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
+          if (tclvalue(Other.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
+          if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
+          if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
+          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
+          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
+          }
+
+  if (tclvalue(tkget(SettingsBox.action.combo))=="Predict" && tclvalue(Biplot.points.mode)%in%c("1","2"))
+    {
+    symbols(((Biplot.points.WhereHighlight+Axes.CircularNonLinear.g[1:2])/2)[1],((Biplot.points.WhereHighlight+Axes.CircularNonLinear.g[1:2])/2)[2],circles=(sum((Biplot.points.WhereHighlight-Axes.CircularNonLinear.g[1:2])^2))^.5/2,add=TRUE,inches=FALSE,lwd=bpar$interaction.prediction.circle.lwd,fg=bpar$interaction.prediction.circle.col)
+    if (Biplot.axes.mode==0)
+      {
+      segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[,1],y1=Biplot.points.WhereClosestOnAxis[,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
+      points(Biplot.points.WhereClosestOnAxis,pch=bpar$interaction.prediction.pch,cex=bpar$interaction.prediction.cex,col=bpar$axes.col)
+      }
+      else
+        {
+        segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
+        points(Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],pch=bpar$interaction.prediction.pch[Biplot.axes.WhichHighlight],cex=bpar$interaction.prediction.cex[Biplot.axes.WhichHighlight],col=bpar$interaction.highlight.axes.col.fg)
+        }
+    }
+
+  box(which="plot",lty="solid")
+  }
 
 ##############################################################################
 
-Biplot.WasInside<-FALSE
-Biplot.legend.inside<-FALSE
-
-Biplot.OverPoint<-function()
-  {
-  if (as.numeric(tclvalue(Biplot.Axes.var))<10) Y<-Biplot.Y_
-    else Y<-Biplot.Y
-  min(PythagorasDistance(matrix(Biplot.XY.move,nrow=1),Y))<min(Biplot.par$strwidthx,Biplot.par$strheightx)/1.75
-  }
-
-Biplot.linear.OverAxis<-function()
+Biplot.linear.predictions<-function()
   {
   if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
     else B<-Biplot.B
-  min(PythagorasDistance(matrix(Biplot.XY.move,nrow=1),t(apply(B,1,function(x) x%*%t(x)%*%Biplot.XY.move/sum(x^2)))))<min(Biplot.par$strwidthx,Biplot.par$strheightx)/1.75 # Work out algebraic equivalent.
+  Biplot.points.WhereClosestOnAxis<<-t(apply(B,1,function(x) x%*%t(x)%*%Biplot.points.WhereHighlight/sum(x^2)))
+  Biplot.points.WhichClosestOnAxis<<-SettingsBox.BackTransformation.func(Biplot.points.WhereClosestOnAxis[,1]/apply(B,1,function(x) x[1]/sum(x^2)),ARow=TRUE)
   }
+
+#######################################
+
+Biplot.linear.interpolate<-function(ToInterpolate)
+  {
+  if (as.numeric(tclvalue(Biplot.Axes.var))<10) Binterpolate<-Biplot.Binterpolate_
+    else Binterpolate<-Biplot.Binterpolate
+  temp1<-SettingsBox.transformation.func(IN=c(ToInterpolate),ARow=TRUE) # The behaviour is correct for the log-transformations. If colMeans(Data) values are interpolated, the interpolated point isn't at (0,0). It would have been if had interpolated exp(colMeans(log(Data)).
+  temp2<-sweep(Binterpolate,1,temp1,"*")
+  colSums(temp2)
+  }
+
+Biplot.NonLinear.interpolate<-function(ToInterpolate)
+  {
+  if (is.null(Biplot.AxisInterpolate)) Biplot.NonLinear.determine.interpolative()
+  colSums(t(sapply(1:p.in,function(x) Biplot.AxisInterpolate[[x]][which.min(abs(ToInterpolate[x]-Biplot.variable[[x]]$markers)),])))
+  }
+
+##############################################################################
 
 Biplot.general.motion<-function(x,y)
   {
@@ -6038,7 +6994,7 @@ Biplot.general.motion<-function(x,y)
       PredictionsTab.update()
       Biplot.replot()
       }
-      if (tclvalue(Biplot.points.mode)=="0" && (Biplot.OverPoint() || tclvalue(ControlButtons.HideAxes.var)=="0" && Biplot.OverAxis() || Kraal.moving.status)) tkconfigure(GUI.TopLevel,cursor="hand2")
+      if (tclvalue(Biplot.points.mode)=="0" && (Biplot.OverPoint() || tclvalue(Other.HideAxes.var)=="0" && Biplot.OverAxis() || Kraal.moving.status)) tkconfigure(GUI.TopLevel,cursor="hand2")
         else if (tclvalue(Biplot.points.mode)%in%c("1","2")) tkconfigure(GUI.TopLevel,cursor="tcross")
           else tkconfigure(GUI.TopLevel,cursor="arrow")
     }
@@ -6053,6 +7009,60 @@ Biplot.general.motion<-function(x,y)
         }
       }
   }
+
+##############################################################################
+
+Biplot.OverPoint<-function()
+  {
+  if (as.numeric(tclvalue(Biplot.Axes.var))<10) Y<-Biplot.Y_
+    else Y<-Biplot.Y
+  min(PythagorasDistance(matrix(Biplot.XY.move,nrow=1),Y))<min(Biplot.par$strwidthx,Biplot.par$strheightx)/1.75
+  }
+
+##############################################################################
+
+Biplot.linear.OverAxis<-function()
+  {
+  if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
+    else B<-Biplot.B
+  min(PythagorasDistance(matrix(Biplot.XY.move,nrow=1),t(apply(B,1,function(x) x%*%t(x)%*%Biplot.XY.move/sum(x^2)))))<min(Biplot.par$strwidthx,Biplot.par$strheightx)/1.75 # Work out algebraic equivalent.
+  }
+
+Biplot.NonLinear.OverAxis<-function()
+  {
+  temp0<-unlist(lapply(Biplot.axis,function(mat)
+    {
+    temp1<-nrow(mat)
+    temp2<-sweep(-mat[-temp1,],2,Biplot.XY.move,"+") # m-a
+    temp3<-diff(mat) #b-a
+    temp4<-rowSums(temp3*temp2)
+    temp5<-rowSums(temp3^2)
+    temp6<-ifelse(abs(temp5)<eps,0,temp4/temp5)
+    temp6<-sapply(temp6,function(x) min(max(0,x),1))
+    min(rowSums(temp2^2)-temp6^2*temp5)
+    }))
+    sqrt(min(temp0))<min(Biplot.par$strwidthx,Biplot.par$strheightx)/1.75
+  }
+
+##############################################################################
+
+Biplot.general.LeftClick<-function(x,y)
+  {
+  Biplot.XY.move<<-Biplot.XY.RightClick<<-Biplot.ConvertCoordinates(x,y)
+
+  if (Biplot.OverPoint())
+    {
+    Kraal.moving.type<<-"point"
+    Kraal.moving.status<<-TRUE
+    }
+    else if (Biplot.OverAxis())
+      {
+      Kraal.moving.type<<-"axis"
+      Kraal.moving.status<<-TRUE
+      }
+  }
+
+##############################################################################
 
 Biplot.general.LeftRelease<-function(x,y)
   {
@@ -6074,7 +7084,505 @@ Biplot.general.LeftRelease<-function(x,y)
   tkconfigure(GUI.TopLevel,cursor="arrow")
   }
 
+##############################################################################
+
 Biplot.general.DoubleLeftClick<-NULL
+
+##############################################################################
+
+Biplot.general.RightClick<-function(x,y)
+  {
+  Biplot.xy<<-c(x,y)
+  Biplot.XY.RightClick<<-Biplot.ConvertCoordinates(x,y)
+  if (Biplot.par$usr[1]<=Biplot.XY.RightClick[1] && Biplot.XY.RightClick[1]<=Biplot.par$usr[2] && Biplot.par$usr[3]<=Biplot.XY.RightClick[2] && Biplot.XY.RightClick[2]<=Biplot.par$usr[4])
+    { # Inside biplot
+    if (tclvalue(Biplot.points.mode)=="0" && Biplot.OverPoint()) tkpopup(Biplot.RightClickOnPoint.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image)))
+      else if (tclvalue(Biplot.points.mode)=="0" && tclvalue(Other.HideAxes.var)=="0" && Biplot.OverAxis()) tkpopup(Biplot.RightClickOnAxis.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image)))
+        else tkpopup(Biplot.RightClickInside.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image)))
+    }
+    else tkpopup(Biplot.RightClickOutside.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image))) # Outside biplot
+  }
+
+##############################################################################
+
+Biplot.plot.SampleGroupMeans<-function()
+  {
+  switch(as.character(Additional.Interpolate.SampleGroupMeans.for),
+    "-1"=
+      {
+      if (g==1)
+        {
+        temp1<-bpar$gSampleGroupMeans.pch
+        temp2<-bpar$gSampleGroupMeans.cex
+        temp3<-bpar$gSampleGroupMeans.col.fg
+        temp4<-bpar$gSampleGroupMeans.col.bg
+        temp5<-bpar$gSampleGroupMeans.label.font
+        temp6<-bpar$gSampleGroupMeans.label.cex
+        temp7<-bpar$gSampleGroupMeans.label.col
+        temp8<-bpar$gSampleGroupMeans.label.HorizOffset
+        temp9<-bpar$gSampleGroupMeans.label.VertOffset
+        }
+        else
+          {
+          temp1<-22
+          temp2<-2
+          temp3<-"black"
+          temp4<-"black"
+          temp5<-2
+          temp6<-1
+          temp7<-"black"
+          temp8<-0
+          temp9<--1
+          }
+      },
+    "0"=
+      {
+      temp1<-bpar$gSampleGroupMeans.pch[groups.in]
+      temp2<-bpar$gSampleGroupMeans.cex[groups.in]
+      temp3<-bpar$gSampleGroupMeans.col.fg[groups.in]
+      temp4<-bpar$gSampleGroupMeans.col.bg[groups.in]
+      temp5<-bpar$gSampleGroupMeans.label.font[groups.in]
+      temp6<-bpar$gSampleGroupMeans.label.cex[groups.in]
+      temp7<-bpar$gSampleGroupMeans.label.col[groups.in]
+      temp8<-bpar$gSampleGroupMeans.label.HorizOffset[groups.in]
+      temp9<-bpar$gSampleGroupMeans.label.VertOffset[groups.in]
+      },
+    {
+    temp1<-bpar$gSampleGroupMeans.pch[Additional.Interpolate.SampleGroupMeans.for]
+    temp2<-bpar$gSampleGroupMeans.cex[Additional.Interpolate.SampleGroupMeans.for]
+    temp3<-bpar$gSampleGroupMeans.col.fg[Additional.Interpolate.SampleGroupMeans.for]
+    temp4<-bpar$gSampleGroupMeans.col.bg[Additional.Interpolate.SampleGroupMeans.for]
+    temp5<-bpar$gSampleGroupMeans.label.font[Additional.Interpolate.SampleGroupMeans.for]
+    temp6<-bpar$gSampleGroupMeans.label.cex[Additional.Interpolate.SampleGroupMeans.for]
+    temp7<-bpar$gSampleGroupMeans.label.col[Additional.Interpolate.SampleGroupMeans.for]
+    temp8<-bpar$gSampleGroupMeans.label.HorizOffset[Additional.Interpolate.SampleGroupMeans.for]
+    temp9<-bpar$gSampleGroupMeans.label.VertOffset[Additional.Interpolate.SampleGroupMeans.for]
+    })
+
+  if (bpar$SampleGroupMeans.LabelsInBiplot)
+    {
+    text(Additional.Interpolate.SampleGroupMeans.coordinates[,1]+temp8*strwidth("x",cex=temp6),Additional.Interpolate.SampleGroupMeans.coordinates[,2]+temp9*strheight("x",cex=temp6),labels=Additional.Interpolate.SampleGroupMeans.label.text,font=temp5,cex=temp6,col=temp7)
+  }
+  points(Additional.Interpolate.SampleGroupMeans.coordinates[,1],Additional.Interpolate.SampleGroupMeans.coordinates[,2],pch=temp1,cex=temp2,col=temp3,bg=temp4)
+  }
+
+##############################################################################
+
+Biplot.plot.ConvexHullAlphaBag.bg<-function()
+  {
+  if (Additional.ConvexHullAlphaBag.for==-1)
+    {
+    if (g==1) temp1<-bpar$gConvexHullAlphaBag.col.bg
+      else temp1<-hcl(0,0,90)
+    }
+    else temp1<-bpar$gConvexHullAlphaBag.col.bg[Additional.ConvexHullAlphaBag.for]
+  polygon(Additional.ConvexHullAlphaBag.coordinates[[1]],col=temp1,border=NA)
+  }
+
+Biplot.plot.ConvexHullAlphaBag.fg<-function()
+  {
+  switch(as.character(Additional.ConvexHullAlphaBag.for),
+    "-1"=
+      {
+      if (g==1)
+        {
+        temp1<-bpar$gConvexHullAlphaBag.lty
+        temp2<-bpar$gConvexHullAlphaBag.lwd
+        temp3<-bpar$gConvexHullAlphaBag.col.fg
+        }
+        else
+          {
+          temp1<-1
+          temp2<-4
+          temp3<-hcl(0,0,60)
+          }
+      },
+    "0"=
+      {
+      temp1<-bpar$gConvexHullAlphaBag.lty[groups.in]
+      temp2<-bpar$gConvexHullAlphaBag.lwd[groups.in]
+      temp3<-bpar$gConvexHullAlphaBag.col.fg[groups.in]
+      },
+    {
+    temp1<-bpar$gConvexHullAlphaBag.lty[Additional.ConvexHullAlphaBag.for]
+    temp2<-bpar$gConvexHullAlphaBag.lwd[Additional.ConvexHullAlphaBag.for]
+    temp3<-bpar$gConvexHullAlphaBag.col.fg[Additional.ConvexHullAlphaBag.for]
+    })
+  sapply(1:length(temp1),function(x) lines(Additional.ConvexHullAlphaBag.coordinates[[x]],lty=temp1[x],lwd=temp2[x],col=temp3[x]))
+
+  if (tclvalue(Additional.AlphaBag.var)=="1" && Additional.ConvexHullAlphaBag.ShowTukeyMedian)
+    {
+    switch(as.character(Additional.ConvexHullAlphaBag.for),
+    "-1"=
+      {
+      if (g==1)
+        {
+        temp4<-bpar$gConvexHullAlphaBag.TukeyMedian.pch
+        temp5<-bpar$gConvexHullAlphaBag.TukeyMedian.cex
+        temp6<-bpar$gConvexHullAlphaBag.TukeyMedian.col.fg
+        temp7<-bpar$gConvexHullAlphaBag.TukeyMedian.col.bg
+        temp8<-bpar$gConvexHullAlphaBag.TukeyMedian.label.font
+        temp9<-bpar$gConvexHullAlphaBag.TukeyMedian.label.cex
+        temp10<-bpar$gConvexHullAlphaBag.TukeyMedian.label.col
+        temp11<-bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset
+        temp12<-bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset
+        }
+        else
+          {
+          temp4<-0
+          temp5<-2
+          temp6<-hcl(0,0,60)
+          temp7<-NA
+          temp8<-3
+          temp9<-1
+          temp10<-hcl(0,0,60)
+          temp11<-0
+          temp12<--1
+          }
+      },
+    "0"=
+      {
+      temp4<-bpar$gConvexHullAlphaBag.TukeyMedian.pch[groups.in]
+      temp5<-bpar$gConvexHullAlphaBag.TukeyMedian.cex[groups.in]
+      temp6<-bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[groups.in]
+      temp7<-bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[groups.in]
+      temp8<-bpar$gConvexHullAlphaBag.TukeyMedian.label.font[groups.in]
+      temp9<-bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[groups.in]
+      temp10<-bpar$gConvexHullAlphaBag.TukeyMedian.label.col[groups.in]
+      temp11<-bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[groups.in]
+      temp12<-bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[groups.in]
+      },
+    {
+    temp4<-bpar$gConvexHullAlphaBag.TukeyMedian.pch[Additional.ConvexHullAlphaBag.for]
+    temp5<-bpar$gConvexHullAlphaBag.TukeyMedian.cex[Additional.ConvexHullAlphaBag.for]
+    temp6<-bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[Additional.ConvexHullAlphaBag.for]
+    temp7<-bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[Additional.ConvexHullAlphaBag.for]
+    temp8<-bpar$gConvexHullAlphaBag.TukeyMedian.label.font[Additional.ConvexHullAlphaBag.for]
+    temp9<-bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[Additional.ConvexHullAlphaBag.for]
+    temp10<-bpar$gConvexHullAlphaBag.TukeyMedian.label.col[Additional.ConvexHullAlphaBag.for]
+    temp11<-bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[Additional.ConvexHullAlphaBag.for]
+    temp12<-bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[Additional.ConvexHullAlphaBag.for]
+    })
+
+    if (bpar$ConvexHullAlphaBag.TukeyMedian.LabelsInBiplot) text(Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,1]+temp11*strwidth("x",cex=temp9),Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,2]+temp12*strheight("x",cex=temp9),labels=Additional.ConvexHullAlphaBag.TukeyMedian.label.text,font=temp8,cex=temp9,col=temp10)
+    points(Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,1],Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,2],pch=temp4,cex=temp5,col=temp6,bg=temp7)
+    }
+  }
+
+##############################################################################
+
+Biplot.ZoomIn.cmd<-function()
+  {
+  Biplot.zoom.mode<<-1
+  propleft<-.5
+  propbottom<-.5
+  Biplot.xlimtouse<<-c(Biplot.XY.RightClick[1]-propleft*(Biplot.par$usr[2]-Biplot.par$usr[1])/sqrt(1.5),Biplot.XY.RightClick[1]+(1-propleft)*(Biplot.par$usr[2]-Biplot.par$usr[1])/sqrt(1.5))
+  Biplot.ylimtouse<<-c(Biplot.XY.RightClick[2]-propbottom*(Biplot.par$usr[4]-Biplot.par$usr[3])/sqrt(1.5),Biplot.XY.RightClick[2]+(1-propbottom)*(Biplot.par$usr[4]-Biplot.par$usr[3])/sqrt(1.5))
+  tkwm.title(GUI.TopLevel,paste("BiplotGUI -",Biplot.title.default,"(zoomed)"))
+  Biplot.replot()
+  }
+
+Biplot.ZoomOut.cmd<-function()
+  {
+  Biplot.zoom.mode<<-1
+  propleft<-.5
+  propbottom<-.5
+  Biplot.xlimtouse<<-c(Biplot.XY.RightClick[1]-propleft*(Biplot.par$usr[2]-Biplot.par$usr[1])*sqrt(1.5),Biplot.XY.RightClick[1]+(1-propleft)*(Biplot.par$usr[2]-Biplot.par$usr[1])*sqrt(1.5))
+  Biplot.ylimtouse<<-c(Biplot.XY.RightClick[2]-propbottom*(Biplot.par$usr[4]-Biplot.par$usr[3])*sqrt(1.5),Biplot.XY.RightClick[2]+(1-propbottom)*(Biplot.par$usr[4]-Biplot.par$usr[3])*sqrt(1.5))
+  tkwm.title(GUI.TopLevel,paste("BiplotGUI -",Biplot.title.default,"(zoomed)"))
+  Biplot.replot()
+  }
+
+Biplot.ResetZoom.cmd<-function()
+  {
+  Biplot.zoom.mode<<-0
+  Biplot.xlimtouse<<-NULL
+  Biplot.ylimtouse<<-NULL
+  tkwm.title(GUI.TopLevel,paste("BiplotGUI -",Biplot.title.default))
+  Biplot.replot()
+  }
+
+##############################################################################
+
+Biplot.DontPredict.cmd<-function()
+  {
+  tkconfigure(GUI.TopLevel,cursor="arrow")
+
+  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
+  dim(PredictionsTab.arrayR)<-c(p.in+1,4)
+  if (PredictionsTab.ColumnsUsed>=1)
+    {
+    ToClear<-paste(paste(PredictionsTab.arrayTcl,"(",c(outer(1:p.in,1:PredictionsTab.ColumnsUsed,function(x,y) paste(x,y,sep=","))),")",sep=""),collapse=" ")
+    .Tcl(paste("unset ",ToClear,sep=""))
+    }
+  PredictionsTab.ColumnsUsed<<-0
+  tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
+  .Tcl("update")
+  Biplot.replot()
+  }
+
+Biplot.PredictCursorPositions.cmd<-function()
+  {
+  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
+  dim(PredictionsTab.arrayR)<-c(p.in+1,4)
+  if (PredictionsTab.ColumnsUsed>=2)
+    {
+    ToClear<-paste(paste(PredictionsTab.arrayTcl,"(",c(outer(1:p.in,2:PredictionsTab.ColumnsUsed,function(x,y) paste(x,y,sep=","))),")",sep=""),collapse=" ")
+    .Tcl(paste("unset ",ToClear,sep=""))
+    }
+  PredictionsTab.ColumnsUsed<<-1
+  tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
+  .Tcl("update")
+  }
+
+Biplot.PredictPointsClosestToCursorPositions.cmd<-function()
+  {
+  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
+  dim(PredictionsTab.arrayR)<-c(p.in+1,4)
+  PredictionsTab.ColumnsUsed<<-3
+  tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
+  .Tcl("update")
+  }
+
+##############################################################################
+
+Biplot.Highlight.cmd<-function()
+  {
+  if (as.numeric(tclvalue(Biplot.Axes.var))<13)
+    {
+    if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
+      else B<-Biplot.B
+    Biplot.axes.WhichHighlight<<-variables.in[which.min(PythagorasDistance(matrix(Biplot.XY.RightClick,nrow=1),t(apply(B,1,function(x) x%*%t(x)%*%Biplot.XY.RightClick/sum(x^2)))))]
+    }
+    else
+      {
+      Biplot.axes.WhichHighlight<<-variables.in[which.min(unlist(lapply(Biplot.axis,function(mat)
+        {
+        temp1<-nrow(mat)
+        temp2<-sweep(-mat[-temp1,],2,Biplot.XY.RightClick,"+") # m-a
+        temp3<-diff(mat) #b-a
+        temp4<-rowSums(temp3*temp2)
+        temp5<-rowSums(temp3^2)
+        temp6<-ifelse(abs(temp5)<eps,0,temp4/temp5)
+        temp6<-sapply(temp6,function(x) min(max(0,x),1))
+        min(rowSums(temp2^2)-temp6^2*temp5)
+        })))]
+      }
+  Biplot.axes.mode<<-1
+  Biplot.replot()
+  if (tclvalue(Biplot.Axes.var)%in%c("0","2")) AxesTab.replot()
+  PredictionsTab.ArraySetup()
+  }
+
+Biplot.RemoveAxisHighlight.cmd<-function()
+  {
+  Biplot.axes.WhichHighlight<<-0
+  Biplot.axes.mode<<-0
+  tkentryconfigure(Biplot.RightClickInside.Menu,8,state="normal")
+  Biplot.replot()
+  if (tclvalue(Biplot.Axes.var)%in%c("0","2")) AxesTab.replot()
+  PredictionsTab.ArraySetup()
+  }
+
+##############################################################################
+
+Biplot.SendPointToKraal.cmd<-function()
+  {
+  if (as.numeric(tclvalue(Biplot.Axes.var))<10) Y<-Biplot.Y_
+    else Y<-Biplot.Y
+  Kraal.moving.type<<-"point"
+  Kraal.moving.which<<-samples.in[which.min(PythagorasDistance(matrix(Biplot.XY.RightClick,nrow=1),Y))]
+  Kraal.in.func()
+  }
+
+Biplot.SendAxisToKraal.cmd<-function()
+  {
+  if (p.in<=3)
+    {
+    tkmessageBox(title="Send to kraal",parent=GUI.TopLevel,message="At least three axes must be retained in the biplot.",icon="warning",type="ok")
+    tkfocus(GUI.TopLevel)
+    }
+    else
+      {
+      Kraal.moving.type<<-"axis"
+      if (as.numeric(tclvalue(Biplot.Axes.var))<13)
+        {
+        if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
+          else B<-Biplot.B
+        Kraal.moving.which<<-variables.in[which.min(PythagorasDistance(matrix(Biplot.XY.RightClick,nrow=1),t(apply(B,1,function(x) x%*%t(x)%*%Biplot.XY.RightClick/sum(x^2)))))]
+        }
+        else
+          {
+          Kraal.moving.which<<-variables.in[which.min(unlist(lapply(Biplot.axis,function(mat)
+            {
+            temp1<-nrow(mat)
+            temp2<-sweep(-mat[-temp1,],2,Biplot.XY.RightClick,"+") # m-a
+            temp3<-diff(mat) #b-a
+            temp4<-rowSums(temp3*temp2)
+            temp5<-rowSums(temp3^2)
+            temp6<-ifelse(abs(temp5)<eps,0,temp4/temp5)
+            temp6<-sapply(temp6,function(x) min(max(0,x),1))
+            min(rowSums(temp2^2)-temp6^2*temp5)
+            })))]
+          }
+      Kraal.in.func()
+      }
+  }
+
+##############################################################################
+
+Biplot.linear.plot3D<-function()
+  {
+  if (as.numeric(tclvalue(Biplot.Axes.var))<10)
+    {
+    Y3D<-Biplot.Y3D_
+    B3D<-Biplot.B3D_
+    }
+    else
+      {
+      Y3D<-Biplot.Y3D
+      B3D<-Biplot.B3D
+      }
+
+  dimensions<-1:3
+  if (!boptions$ReuseExternalWindows) rgl.open()
+  rgl.clear("all")
+  rgl.bg(sphere=TRUE,color=c("whitesmoke","gray90"),lit=FALSE)
+  rgl.light()
+  # points
+  if (tclvalue(Other.HidePoints.var)=="0")
+    {
+    for (temp1 in groups.in)
+      {
+      temp1b<-group[samples.in]==levels(group[samples.in])[temp1]
+      points3d(Y3D[temp1b,1],Y3D[temp1b,2],Y3D[temp1b,3],col=bparp$points.col.bg[samples.in[temp1b]],size=bparp$points.cex[samples.in[temp1b]][1]*8,alpha=.5)
+      }
+    if (tclvalue(View.ShowPointLabels.var)=="1") text3d(Y3D[,1],Y3D[,2],Y3D[,3],texts=bparp$points.label.text[samples.in],col=bparp$points.label.col[samples.in],family="sans",font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in])
+    }
+  # axes markers
+  if (tclvalue(Other.HideAxes.var)=="0")
+    {
+    radiustemp<-0
+    for (i in 1:p.in)
+      {
+      PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
+      ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+      PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
+
+      mu<-SettingsBox.transformation.func(IN=pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]),WhichCol=i)
+      WhichRemove<-which(abs(mu)==Inf)
+      if (length(WhichRemove)>0)
+        {
+        PrettyMarkers<-PrettyMarkers[-WhichRemove]
+        PrettyMarkersCharacter<-PrettyMarkersCharacter[-WhichRemove]
+        mu<-mu[-WhichRemove]
+        }
+      Coord<-t(sapply(mu,function(a) B3D[i,]*a))
+      if (tclvalue(tkget(SettingsBox.action.combo))=="Predict") Coord<-Coord/sum(B3D[i,]^2)
+        else if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: centroid") Coord<-Coord*p.in
+
+      if((temp0<-max(apply(Coord,1,function(x) sum(x^2)^.5)))>radiustemp) radiustemp<-temp0
+      text3d(Coord,texts=PrettyMarkersCharacter,col=bpar$axes.marker.col[variables.in[i]],family="sans",font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]])
+      }
+  # axes
+    radius<-max(apply(Y3D,1,function(x) sum(x^2)^.5),radiustemp)*1.1
+    axes<-sweep(B3D,1,1/apply(B3D,1,function(x) sum(x^2)^.5)*radius,"*")
+    temp2<-matrix(0,nrow=2*p.in,ncol=3)
+    temp2[seq(2,nrow(temp2),by=2)-1,]<--axes
+    temp2[seq(2,nrow(temp2),by=2),]<-axes
+    for (temp3 in 1:p.in) segments3d(temp2[(temp3*2-1):(temp3*2),],col=rep(bpar$axes.col[variables.in[temp3]],each=2),size=bpar$axes.lwd[variables.in[temp3]])
+    if (tclvalue(View.AxisLabels.var)!="0")
+      {
+      text3d(axes*1.02,texts=paste(bpar$axes.label.text[variables.in],"+",sep=""),family="sans",font=bpar$axes.label.font[variables.in],cex=bpar$axes.label.cex[variables.in],col=bpar$axes.label.col[variables.in])
+      text3d(-axes*1.02,texts=paste(bpar$axes.label.text[variables.in],"-",sep=""),family="sans",font=bpar$axes.label.font[variables.in],cex=bpar$axes.label.cex[variables.in],col=bpar$axes.label.col[variables.in])
+      }
+    }
+  # principal axes
+  aspect3d("iso")
+  lims<-par3d("bbox")
+  segments3d(matrix(c(lims[1],lims[3],lims[5],lims[2],lims[3],lims[5],lims[1],lims[3],lims[5],lims[1],lims[4],lims[5],lims[1],lims[3],lims[5],lims[1],lims[3],lims[6]),byrow=TRUE,ncol=3),col="gray60")
+  text3d(matrix(c((lims[1]+lims[2])/2,lims[3],lims[5],lims[1],(lims[3]+lims[4])/2,lims[5],lims[1],lims[3],(lims[5]+lims[6])/2),byrow=TRUE,nrow=3),texts=paste("Dimension ",dimensions),col="gray60",family="sans",font=1,cex=1)
+  # title
+  if (tclvalue(View.ShowTitle.var)=="1") title3d(Biplot.title,color="black",family="sans",font=2,cex=1)
+  # mouse
+  par3d(mouseMode=boptions$ThreeD.MouseButtonAction)
+  # light
+  light3d(theta=0,phi=15)
+  # fly-by
+  if (boptions$ThreeD.FlyBy)
+    {
+    start<-proc.time()[3]
+    while (proc.time()[3]-start<.75) {}
+    start<-proc.time()[3]
+    while ((i<-36*(proc.time()[3]-start))<360) rgl.viewpoint(i,15-(i-90)/4,zoom=(if(i<180)(i+1)^-.5 else (360-i+1)^-.5)) #zoom=1+(dnorm(i,mean=180,sd=100)))
+    rgl.viewpoint(zoom=1)
+    }
+  }
+
+#######################################
+
+Biplot.NonLinear.plot3D<-function()
+  {
+  if (tclvalue(tkget(SettingsBox.action.combo))=="Predict")
+    {
+    Axes.CircularNonLinear.determine(rho=3)
+    O3D<-Axes.CircularNonLinear.g
+    }
+    else O3D<-Biplot.O3D
+
+  dimensions<-1:3
+  if (!boptions$ReuseExternalWindows) rgl.open()
+  rgl.clear("all")
+  rgl.bg(sphere=TRUE,color=c("whitesmoke","gray90"),lit=FALSE)
+  rgl.light()
+  # points
+   if (tclvalue(Other.HidePoints.var)=="0")
+    {
+    for (temp1 in groups.in)
+      {
+      temp1b<-group[samples.in]==levels(group[samples.in])[temp1]
+      points3d(Y3D[temp1b,1],Y3D[temp1b,2],Y3D[temp1b,3],col=bparp$points.col.bg[samples.in[temp1b]],size=bparp$points.cex[samples.in[temp1b]][1]*8,alpha=.5)
+      }
+    if (tclvalue(View.ShowPointLabels.var)=="1") text3d(Y3D[,1],Y3D[,2],Y3D[,3],texts=bparp$points.label.text[samples.in],col=bparp$points.label.col[samples.in],family="sans",font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in])
+    }
+  # axes markers
+  if (tclvalue(Other.HideAxes.var)=="0") for (i in 1:p.in) text3d(Biplot.axis3D[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,],texts=Biplot.variable[[i]]$PrettyMarkersCharacter,col=bpar$axes.marker.col[variables.in[i]],family="sans",font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]])
+  # axes
+  if (tclvalue(Other.HideAxes.var)=="0")
+    {
+    for (i in 1:p.in) lines3d(Biplot.axis3D[[i]],col=bpar$axes.col[variables.in[i]],size=bpar$axes.lwd[variables.in[i]])
+    if (tclvalue(View.AxisLabels.var)!="0") for (i in 1:p.in) text3d(Biplot.axis3D[[i]][c(1,nrow(Biplot.axis3D[[i]])),],texts=paste(bpar$axes.label.text[variables.in[i]],c("-","+"),sep=""),col=bpar$axes.label.col[variables.in[i]],family="sans",font=bpar$axes.label.font[variables.in],cex=bpar$axes.label.cex[variables.in])
+    }
+  # centering around g or O
+  furthest<-max(unlist(lapply(Biplot.axis3D,function(x) max(abs(sweep(x,2,O3D,"-"))))),abs(sweep(Biplot.Y3D,2,O3D,"-")))
+  furthestmat<-matrix(c(O3D[1]+furthest,0,0,O3D[1]-furthest,0,0,0,O3D[2]+furthest,0,0,O3D[2]-furthest,0,0,0,O3D[3]+furthest,0,0,O3D[3]-furthest),ncol=3,byrow=TRUE)
+  points3d(furthestmat[,1],furthestmat[,2],furthestmat[,3],col="white")
+  # principal axes
+  aspect3d("iso")
+  lims<-par3d("bbox")
+  segments3d(matrix(c(lims[1],lims[3],lims[5],lims[2],lims[3],lims[5],lims[1],lims[3],lims[5],lims[1],lims[4],lims[5],lims[1],lims[3],lims[5],lims[1],lims[3],lims[6]),byrow=TRUE,ncol=3),col="gray60")
+  text3d(matrix(c((lims[1]+lims[2])/2,lims[3],lims[5],lims[1],(lims[3]+lims[4])/2,lims[5],lims[1],lims[3],(lims[5]+lims[6])/2),byrow=TRUE,nrow=3),texts=paste("Dimension ",dimensions),col="gray60",family="sans",font=1,cex=1)
+  # title
+  if (tclvalue(View.ShowTitle.var)=="1") title3d(Biplot.title,color="black",family="sans",font=2,cex=1)
+  # mouse
+  par3d("mouseMode"=boptions$ThreeD.MouseButtonAction)
+  # light
+  light3d(theta=0,phi=15)
+  # fly-by
+  if (boptions$ThreeD.FlyBy)
+    {
+    start<-proc.time()[3]
+    while (proc.time()[3]-start<.75) {}
+    start<-proc.time()[3]
+    while ((i<-36*(proc.time()[3]-start))<360) rgl.viewpoint(i,15-(i-90)/4,zoom=(if(i<180)(i+1)^-.5 else (360-i+1)^-.5))
+    rgl.viewpoint(zoom=1)
+    }
+  }
+
+##############################################################################
+### BIPLOT REGION : FUNCTIONS : LEGEND #######################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.Functions.Legend}{Biplot region (functions): Legend}{Legend} BEGINLISTING")
 
 Legend.par<-NULL
 Legend.ConvertCoordinates<-NULL
@@ -6095,6 +7603,8 @@ Legend.points.col<-NULL
 Legend.pt.bg<-NULL
 
 Legend.yes<-function() tclvalue(View.ShowGroupLabelsInLegend.var)=="1" || tclvalue(View.AxisLabels.var)=="2" || tclvalue(View.ShowAdditionalLabelsInLegend.var)=="1" && (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && !bpar$ANewSample.LabelsInBiplot || tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1" && !bpar$SampleGroupMeans.LabelsInBiplot || tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1" || tclvalue(Additional.ClassificationRegion.var)=="1")
+
+##############################################################################
 
 Legend.func<-function()
   {
@@ -6332,1016 +7842,16 @@ Legend.transpose<-function(temp1)
       c(t(temp3))
       }
 
-Legend.NextPage.cmd<-function()
-  {
-  if (Legend.CurrentPage<Legend.LastPage)
-    {
-    Legend.CurrentPage<<-Legend.CurrentPage+1
-    Biplot.replot()
-    }
-  }
 
-Legend.PrevPage.cmd<-function()
-  {
-  if (Legend.CurrentPage>1)
-    {
-    Legend.CurrentPage<<-Legend.CurrentPage-1
-    Biplot.replot()
-    }
-  }
-
-Biplot.plot.SampleGroupMeans<-function()
-  {
-  switch(as.character(Additional.Interpolate.SampleGroupMeans.for),
-    "-1"=
-      {
-      if (g==1)
-        {
-        temp1<-bpar$gSampleGroupMeans.pch
-        temp2<-bpar$gSampleGroupMeans.cex
-        temp3<-bpar$gSampleGroupMeans.col.fg
-        temp4<-bpar$gSampleGroupMeans.col.bg
-        temp5<-bpar$gSampleGroupMeans.label.font
-        temp6<-bpar$gSampleGroupMeans.label.cex
-        temp7<-bpar$gSampleGroupMeans.label.col
-        temp8<-bpar$gSampleGroupMeans.label.HorizOffset
-        temp9<-bpar$gSampleGroupMeans.label.VertOffset
-        }
-        else
-          {
-          temp1<-22
-          temp2<-2
-          temp3<-"black"
-          temp4<-"black"
-          temp5<-2
-          temp6<-1
-          temp7<-"black"
-          temp8<-0
-          temp9<--1
-          }
-      },
-    "0"=
-      {
-      temp1<-bpar$gSampleGroupMeans.pch[groups.in]
-      temp2<-bpar$gSampleGroupMeans.cex[groups.in]
-      temp3<-bpar$gSampleGroupMeans.col.fg[groups.in]
-      temp4<-bpar$gSampleGroupMeans.col.bg[groups.in]
-      temp5<-bpar$gSampleGroupMeans.label.font[groups.in]
-      temp6<-bpar$gSampleGroupMeans.label.cex[groups.in]
-      temp7<-bpar$gSampleGroupMeans.label.col[groups.in]
-      temp8<-bpar$gSampleGroupMeans.label.HorizOffset[groups.in]
-      temp9<-bpar$gSampleGroupMeans.label.VertOffset[groups.in]
-      },
-    {
-    temp1<-bpar$gSampleGroupMeans.pch[Additional.Interpolate.SampleGroupMeans.for]
-    temp2<-bpar$gSampleGroupMeans.cex[Additional.Interpolate.SampleGroupMeans.for]
-    temp3<-bpar$gSampleGroupMeans.col.fg[Additional.Interpolate.SampleGroupMeans.for]
-    temp4<-bpar$gSampleGroupMeans.col.bg[Additional.Interpolate.SampleGroupMeans.for]
-    temp5<-bpar$gSampleGroupMeans.label.font[Additional.Interpolate.SampleGroupMeans.for]
-    temp6<-bpar$gSampleGroupMeans.label.cex[Additional.Interpolate.SampleGroupMeans.for]
-    temp7<-bpar$gSampleGroupMeans.label.col[Additional.Interpolate.SampleGroupMeans.for]
-    temp8<-bpar$gSampleGroupMeans.label.HorizOffset[Additional.Interpolate.SampleGroupMeans.for]
-    temp9<-bpar$gSampleGroupMeans.label.VertOffset[Additional.Interpolate.SampleGroupMeans.for]
-    })
-
-  if (bpar$SampleGroupMeans.LabelsInBiplot)
-    {
-    text(Additional.Interpolate.SampleGroupMeans.coordinates[,1]+temp8*strwidth("x",cex=temp6),Additional.Interpolate.SampleGroupMeans.coordinates[,2]+temp9*strheight("x",cex=temp6),labels=Additional.Interpolate.SampleGroupMeans.label.text,font=temp5,cex=temp6,col=temp7)
-  }
-  points(Additional.Interpolate.SampleGroupMeans.coordinates[,1],Additional.Interpolate.SampleGroupMeans.coordinates[,2],pch=temp1,cex=temp2,col=temp3,bg=temp4)
-  }
-
-Biplot.plot.ConvexHullAlphaBag.bg<-function()
-  {
-  if (Additional.ConvexHullAlphaBag.for==-1)
-    {
-    if (g==1) temp1<-bpar$gConvexHullAlphaBag.col.bg
-      else temp1<-hcl(0,0,90)
-    }
-    else temp1<-bpar$gConvexHullAlphaBag.col.bg[Additional.ConvexHullAlphaBag.for]
-  polygon(Additional.ConvexHullAlphaBag.coordinates[[1]],col=temp1,border=NA)
-  }
-
-Biplot.plot.ConvexHullAlphaBag.fg<-function()
-  {
-  switch(as.character(Additional.ConvexHullAlphaBag.for),
-    "-1"=
-      {
-      if (g==1)
-        {
-        temp1<-bpar$gConvexHullAlphaBag.lty
-        temp2<-bpar$gConvexHullAlphaBag.lwd
-        temp3<-bpar$gConvexHullAlphaBag.col.fg
-        }
-        else
-          {
-          temp1<-1
-          temp2<-4
-          temp3<-hcl(0,0,60)
-          }
-      },
-    "0"=
-      {
-      temp1<-bpar$gConvexHullAlphaBag.lty[groups.in]
-      temp2<-bpar$gConvexHullAlphaBag.lwd[groups.in]
-      temp3<-bpar$gConvexHullAlphaBag.col.fg[groups.in]
-      },
-    {
-    temp1<-bpar$gConvexHullAlphaBag.lty[Additional.ConvexHullAlphaBag.for]
-    temp2<-bpar$gConvexHullAlphaBag.lwd[Additional.ConvexHullAlphaBag.for]
-    temp3<-bpar$gConvexHullAlphaBag.col.fg[Additional.ConvexHullAlphaBag.for]
-    })
-  sapply(1:length(temp1),function(x) lines(Additional.ConvexHullAlphaBag.coordinates[[x]],lty=temp1[x],lwd=temp2[x],col=temp3[x]))
-
-  if (tclvalue(Additional.AlphaBag.var)=="1" && Additional.ConvexHullAlphaBag.ShowTukeyMedian)
-    {
-    switch(as.character(Additional.ConvexHullAlphaBag.for),
-    "-1"=
-      {
-      if (g==1)
-        {
-        temp4<-bpar$gConvexHullAlphaBag.TukeyMedian.pch
-        temp5<-bpar$gConvexHullAlphaBag.TukeyMedian.cex
-        temp6<-bpar$gConvexHullAlphaBag.TukeyMedian.col.fg
-        temp7<-bpar$gConvexHullAlphaBag.TukeyMedian.col.bg
-        temp8<-bpar$gConvexHullAlphaBag.TukeyMedian.label.font
-        temp9<-bpar$gConvexHullAlphaBag.TukeyMedian.label.cex
-        temp10<-bpar$gConvexHullAlphaBag.TukeyMedian.label.col
-        temp11<-bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset
-        temp12<-bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset
-        }
-        else
-          {
-          temp4<-0
-          temp5<-2
-          temp6<-hcl(0,0,60)
-          temp7<-NA
-          temp8<-3
-          temp9<-1
-          temp10<-hcl(0,0,60)
-          temp11<-0
-          temp12<--1
-          }
-      },
-    "0"=
-      {
-      temp4<-bpar$gConvexHullAlphaBag.TukeyMedian.pch[groups.in]
-      temp5<-bpar$gConvexHullAlphaBag.TukeyMedian.cex[groups.in]
-      temp6<-bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[groups.in]
-      temp7<-bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[groups.in]
-      temp8<-bpar$gConvexHullAlphaBag.TukeyMedian.label.font[groups.in]
-      temp9<-bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[groups.in]
-      temp10<-bpar$gConvexHullAlphaBag.TukeyMedian.label.col[groups.in]
-      temp11<-bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[groups.in]
-      temp12<-bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[groups.in]
-      },
-    {
-    temp4<-bpar$gConvexHullAlphaBag.TukeyMedian.pch[Additional.ConvexHullAlphaBag.for]
-    temp5<-bpar$gConvexHullAlphaBag.TukeyMedian.cex[Additional.ConvexHullAlphaBag.for]
-    temp6<-bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[Additional.ConvexHullAlphaBag.for]
-    temp7<-bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[Additional.ConvexHullAlphaBag.for]
-    temp8<-bpar$gConvexHullAlphaBag.TukeyMedian.label.font[Additional.ConvexHullAlphaBag.for]
-    temp9<-bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[Additional.ConvexHullAlphaBag.for]
-    temp10<-bpar$gConvexHullAlphaBag.TukeyMedian.label.col[Additional.ConvexHullAlphaBag.for]
-    temp11<-bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[Additional.ConvexHullAlphaBag.for]
-    temp12<-bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[Additional.ConvexHullAlphaBag.for]
-    })
-
-    if (bpar$ConvexHullAlphaBag.TukeyMedian.LabelsInBiplot) text(Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,1]+temp11*strwidth("x",cex=temp9),Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,2]+temp12*strheight("x",cex=temp9),labels=Additional.ConvexHullAlphaBag.TukeyMedian.label.text,font=temp8,cex=temp9,col=temp10)
-    points(Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,1],Additional.ConvexHullAlphaBag.TukeyMedian.coordinates[,2],pch=temp4,cex=temp5,col=temp6,bg=temp7)
-    }
-  }
-
-Biplot.linear.plot<-function(screen=TRUE)
-  {
-
-  DrawLinearBiplotAxisOnly<-function(from=c(0,0),to,axis.lty,axis.lwd,axis.col,axis.label,axis.label.cex,axis.label.las,axis.label.col,axis.label.font)
-    {
-    corners<-rbind(c(par("usr")[1],par("usr")[3]),c(par("usr")[1],par("usr")[4]),c(par("usr")[2],par("usr")[4]),c(par("usr")[2],par("usr")[3]))
-    ReferenceAngles<-apply(corners,1,function(a) atan2(y=a[2]-from[2],x=a[1]-from[1]))
-    ReferenceAngles<-ifelse(ReferenceAngles<0,ReferenceAngles+2*pi,ReferenceAngles)
-    angle1<-atan2(y=to[2]-from[2],x=to[1]-from[1])
-    if (angle1<0) angle1<-angle1+2*pi
-    f1<-function(angle)
-      {
-      side<-5-rank(c(angle,ReferenceAngles),ties.method="min")[1]
-      if (side==0) side<-4
-      switch(side,
-        {temp1<-tan(3*pi/2-angle)*(par("usr")[3]-from[2]); c(temp1+from[1],par("usr")[3],side,temp1+from[1])},
-        {temp1<-tan(angle)*(par("usr")[1]-from[1]); c(par("usr")[1],temp1+from[2],side,temp1+from[2])},
-        {temp1<-tan(pi/2-angle)*(par("usr")[4]-from[2]); c(temp1+from[1],par("usr")[4],side,temp1+from[1])},
-        {temp1<-tan(angle)*(par("usr")[2]-from[1]); c(par("usr")[2],temp1+from[2],side,temp1+from[2])} )
-      }
-    temp2<-f1(angle1)
-    segments(x0=from[1],y0=from[2],x1=temp2[1],y1=temp2[2],lty=axis.lty,lwd=axis.lwd,col=axis.col)
-    if (tclvalue(View.AxisLabels.var)=="1") mtext(text=axis.label,side=temp2[3],at=temp2[4],cex=axis.label.cex,las=axis.label.las,line=.25,col=axis.label.col,font=axis.label.font)
-    angle2<-angle1-pi
-    if(angle2<0) angle2<-angle2+2*pi
-    temp3<-f1(angle2)
-    segments(x0=from[1],y0=from[2],x1=temp3[1],y1=temp3[2],lty=axis.lty,lwd=axis.lwd,col=axis.col)
-    angle1
-    }
-
-  DrawLinearBiplotAxis<-function(i)
-    {
-    if (Biplot.axes.mode==0)
-      {
-      temp1<-bpar$axes.col[variables.in[i]]
-      temp2<-bpar$axes.tick.col[variables.in[i]]
-      temp3<-bpar$axes.marker.col[variables.in[i]]
-      temp4<-bpar$axes.label.col[variables.in[i]]
-      }
-      else if (variables.in[i]==Biplot.axes.WhichHighlight) temp1<-temp2<-temp3<-temp4<-bpar$interaction.highlight.axes.col.fg
-
-    angle<-DrawLinearBiplotAxisOnly(to=B[i,],axis.lty=bpar$axes.lty[variables.in[i]],axis.lwd=bpar$axes.lwd[variables.in[i]],axis.col=temp1,axis.label=bpar$axes.label.text[variables.in[i]],axis.label.cex=bpar$axes.label.cex[variables.in[i]],axis.label.las=bpar$axes.label.las[variables.in[i]],axis.label.col=temp4,axis.label.font=bpar$axes.label.font[variables.in[i]])
-    mu<-SettingsBox.transformation.func(IN=pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]),WhichCol=i)
-
-    PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
-    ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
-    PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
-
-    Coord<-t(sapply(mu,function(a) B[i,]*a))
-    if (tclvalue(tkget(SettingsBox.action.combo))=="Predict") Coord<-Coord/sum(B[i,]^2)
-      else if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: centroid") Coord<-Coord*p.in
-    tickbottomCoord<-sweep(Coord,2,RotationMatrix(angle)%*%c(0,-axes.tick.AbsLength[variables.in[i]]),"+")
-    ticktopCoord<-sweep(Coord,2,RotationMatrix(angle)%*%c(0,axes.tick.AbsLength[variables.in[i]]),"+")
-    segments(x0=tickbottomCoord[,1],y0=tickbottomCoord[,2],x1=ticktopCoord[,1],y1=ticktopCoord[,2],lty=bpar$axes.tick.lty[variables.in[i]],lwd=bpar$axes.tick.lwd[variables.in[i]],col=temp2)
-
-    f1<-function(angle)
-      {
-      if (angle<=0) angle<-angle+2*pi
-      switch(ceiling(angle/pi*4),angle/pi*4,1,1,-(angle-.75*pi)/pi*4+1,-(angle-pi)/pi*4,-1,-1,(angle-1.75*pi)/pi*4-1)
-      }
-    markersCoord<-sweep(Coord,2,RotationMatrix(angle)%*%c(0,-axes.tick.AbsLength[i]-bpar$axes.marker.RelOffset[variables.in[i]]*(par("usr")[2]-par("usr")[1])),"+")+cbind(f1(angle)*.5*strwidth(PrettyMarkersCharacter,cex=bpar$axes.marker.cex[variables.in[i]]),f1(angle-pi/2)*.5*strheight(PrettyMarkersCharacter,cex=bpar$axes.marker.cex[variables.in[i]]))
-    text(markersCoord,labels=PrettyMarkersCharacter,font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]],col=temp3,adj=.5)
-    }
-
-  if (as.numeric(tclvalue(Biplot.Axes.var))<10)
-    {
-    Y<-Biplot.Y_
-    B<-Biplot.B_
-    }
-    else
-      {
-      Y<-Biplot.Y
-      B<-Biplot.B
-      }
-
-  if (Biplot.zoom.mode==1 && (Biplot.xlimtouse[1]>0 || Biplot.xlimtouse[2]<0 || Biplot.ylimtouse[1]>0 || Biplot.ylimtouse[2]<0)) View.AxisLabels.var<<-tclVar("2")
-
-  if (Legend.yes())
-    {
-    if (screen) layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(4*BiplotRegion.VerticalScale.func()-1.1,1.1))
-      else layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(8-1.1,1.1))
-    par(mar=c(0,0,0,0),bg="white")
-    plot(.5,.5,bty="n",type="n",xaxt="n",yaxt="n",xlab="",ylab="",xaxs="i",yaxs="i",xlim=c(0,1),ylim=c(0,1))
-    Legend.func()
-    par(mar=c(1,4,4,4))
-    }
-    else par(mar=c(2,4,2,4))
-
-  par(pty="s",bg="white")
-
-  temp.Y1<-Y[,1]
-  temp.Y2<-Y[,2]
-  temp.pch<-bparp$points.pch[samples.in]
-  temp.cex<-bparp$points.cex[samples.in]
-  temp.col<-bparp$points.col.fg[samples.in]
-  temp.bg<-bparp$points.col.bg[samples.in]
-  temp.labels<-bparp$points.label.text[samples.in]
-  temp.labels.cex<-bparp$points.label.cex[samples.in]
-  temp.HorizOffset<-bparp$points.label.HorizOffset[samples.in]
-  temp.VertOffset<-bparp$points.label.VertOffset[samples.in]
-  if (tclvalue(Additional.Interpolate.ANewSample.var)=="1")
-    {
-    temp.Y1<-c(temp.Y1,Additional.Interpolate.ANewSample.coordinates[1])
-    temp.Y2<-c(temp.Y2,Additional.Interpolate.ANewSample.coordinates[2])
-    temp.pch<-c(temp.pch,bpar$ANewSample.pch)
-    temp.cex<-c(temp.cex,bpar$ANewSample.cex)
-    temp.col<-c(temp.col,bpar$ANewSample.col.fg)
-    temp.bg<-c(temp.bg,bpar$ANewSample.col.bg)
-    if (bpar$ANewSample.LabelsInBiplot) temp.labels<-c(temp.labels,bpar$ANewSample.label.text)
-      else temp.labels<-c(temp.labels,NA)
-    temp.labels.cex<-c(temp.labels.cex,bpar$ANewSample.label.cex)
-    temp.HorizOffset<-c(temp.HorizOffset,bpar$ANewSample.label.HorizOffset)
-    temp.VertOffset<-c(temp.VertOffset,bpar$ANewSample.label.VertOffset)
-    }
-  if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1")
-    {
-    temp.Y1<-c(temp.Y1,Additional.Interpolate.SampleGroupMeans.coordinates[,1])
-    temp.Y2<-c(temp.Y2,Additional.Interpolate.SampleGroupMeans.coordinates[,2])
-    temp.pch<-c(temp.pch,bpar$gSampleGroupMeans.pch[groups.in])
-    temp.cex<-c(temp.cex,bpar$gSampleGroupMeans.cex[groups.in])
-    temp.col<-c(temp.col,bpar$gSampleGroupMeans.col.fg[groups.in])
-    temp.bg<-c(temp.bg,bpar$gSampleGroupMeans.col.bg[groups.in])
-    if (bpar$SampleGroupMeans.LabelsInBiplot) temp.labels<-c(temp.labels,Additional.Interpolate.SampleGroupMeans.label.text)
-      else temp.labels<-c(temp.labels,rep(NA,g.in))
-    temp.labels.cex<-c(temp.labels.cex,bpar$gSampleGroupMeans.label.cex[groups.in])
-    temp.HorizOffset<-c(temp.HorizOffset,bpar$gSampleGroupMeans.label.HorizOffset[groups.in])
-    temp.VertOffset<-c(temp.VertOffset,bpar$gSampleGroupMeans.label.VertOffset[groups.in])
-    }
-
-  arglist<-list(x=temp.Y1,y=temp.Y2,pch=temp.pch,cex=temp.cex,col=temp.col,bg=temp.bg,xaxt="n",yaxt="n")
-  if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
-    else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=temp.labels,labels.cex=temp.labels.cex,HorizOffset=temp.HorizOffset,VertOffset=temp.VertOffset))
-  do.call("mynewplot",arglist)
-  if (tclvalue(View.ShowDisplaySpaceAxes.var)=="1")
-    {
-    axis(side=1,cex.axis=.75)
-    axis(side=2,cex.axis=.75)
-    }
-  Biplot.par<<-par()
-  Biplot.par$strwidthx<<-strwidth("x")
-  Biplot.par$strheightx<<-strheight("x")
-  if (tclvalue(View.ShowTitle.var)=="1") title(Biplot.title,line=1.75)
-
-  if (tclvalue(Additional.PointDensities.var)=="1") Additional.PointDensities.autcmd()
-  if (tclvalue(Additional.ClassificationRegion.var)=="1") Additional.ClassificationRegion.autcmd()
-
-  if ((tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") && Additional.ConvexHullAlphaBag.for!=0 && tclvalue(Additional.PointDensities.var)=="0" && tclvalue(Additional.ClassificationRegion.var)=="0") Biplot.plot.ConvexHullAlphaBag.bg()
-
-  RotationMatrix<-function(angle) matrix(c(cos(angle),sin(angle),-sin(angle),cos(angle)),ncol=2)
-  axes.tick.AbsLength<-bpar$axes.tick.RelLength*(par("usr")[2]-par("usr")[1])
-
-  if (tclvalue(ControlButtons.HideAxes.var)=="0")
-    if (Biplot.axes.mode==0) # All axes shown
-      {
-      for (i in 1:p.in) DrawLinearBiplotAxis(i)
-      if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-      if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
-      if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
-      if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
-      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
-      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
-      }
-      else # One axis highlighted
-        {
-        for (i in which(variables.in!=Biplot.axes.WhichHighlight)) DrawLinearBiplotAxisOnly(to=B[i,],axis.lty=bpar$axes.lty[variables.in[i]],axis.lwd=bpar$.axes.lwd[variables.in[i]],axis.col=bpar$interaction.highlight.axes.col.bg,axis.label=bpar$axes.label.text[variables.in[i]],axis.label.cex=bpar$axes.label.cex[variables.in[i]],axis.label.las=bpar$axes.label.las[variables.in[i]],axis.label.col=bpar$interaction.highlight.axes.col.bg,axis.label.font=1)
-        if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointValues.var)=="1") text(Y[,1]+bpar$interaction.highlight.ShowValues.HorizOffset*strwidth("x",cex=bpar$interaction.highlight.ShowValues.cex),Y[,2]+bpar$interaction.highlight.ShowValues.VertOffset*strheight("x",cex=bpar$interaction.highlight.ShowValues.cex),labels=format(round(Data[samples.in,Biplot.axes.WhichHighlight],bpar$interaction.highlight.ShowValues.digits),nsmall=bpar$interaction.highlight.ShowValues.digits),font=bpar$interaction.highlight.ShowValues.font,cex=bpar$interaction.highlight.ShowValues.cex,col=bpar$interaction.highlight.ShowValues.col)
-        if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-        if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
-        if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
-        if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
-        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
-        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
-        DrawLinearBiplotAxis(which(variables.in==Biplot.axes.WhichHighlight))
-        }
-        else # Axes are hidden
-          {
-          if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-          if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
-          if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
-          if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
-          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
-          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
-          }
-
-  if (tclvalue(tkget(SettingsBox.action.combo))=="Predict" && tclvalue(Biplot.points.mode)%in%c("1","2"))
-    {
-    if (Biplot.axes.mode==0)
-      {
-      segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[,1],y1=Biplot.points.WhereClosestOnAxis[,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
-      points(Biplot.points.WhereClosestOnAxis,pch=bpar$interaction.prediction.pch,cex=bpar$interaction.prediction.cex,col=bpar$axes.col)
-      }
-      else
-        {
-        segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
-        points(Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],pch=bpar$interaction.prediction.pch[Biplot.axes.WhichHighlight],cex=bpar$interaction.prediction.cex[Biplot.axes.WhichHighlight],col=bpar$interaction.highlight.axes.col.fg)
-        }
-    }
-
-  box(which="plot",lty="solid")
-  }
-
-Biplot.linear.plot3D<-function()
-  {
-  if (as.numeric(tclvalue(Biplot.Axes.var))<10)
-    {
-    Y3D<-Biplot.Y3D_
-    B3D<-Biplot.B3D_
-    }
-    else
-      {
-      Y3D<-Biplot.Y3D
-      B3D<-Biplot.B3D
-      }
-
-  dimensions<-1:3
-  if (!boptions$ReuseExternalWindows) rgl.open()
-  rgl.clear("all")
-  rgl.bg(sphere=TRUE,color=c("whitesmoke","gray90"),lit=FALSE)
-  rgl.light()
-  # points
-  if (tclvalue(ControlButtons.HidePoints.var)=="0")
-    {
-    for (temp1 in groups.in)
-      {
-      temp1b<-group[samples.in]==levels(group[samples.in])[temp1]
-      points3d(Y3D[temp1b,1],Y3D[temp1b,2],Y3D[temp1b,3],col=bparp$points.col.bg[samples.in[temp1b]],size=bparp$points.cex[samples.in[temp1b]][1]*8,alpha=.5)
-      }
-    if (tclvalue(View.ShowPointLabels.var)=="1") text3d(Y3D[,1],Y3D[,2],Y3D[,3],texts=bparp$points.label.text[samples.in],col=bparp$points.label.col[samples.in],family="sans",font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in])
-    }
-  # axes markers
-  if (tclvalue(ControlButtons.HideAxes.var)=="0")
-    {
-    radiustemp<-0
-    for (i in 1:p.in)
-      {
-      PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
-      ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
-      PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
-
-      mu<-SettingsBox.transformation.func(IN=pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]),WhichCol=i)
-      WhichRemove<-which(abs(mu)==Inf)
-      if (length(WhichRemove)>0)
-        {
-        PrettyMarkers<-PrettyMarkers[-WhichRemove]
-        PrettyMarkersCharacter<-PrettyMarkersCharacter[-WhichRemove]
-        mu<-mu[-WhichRemove]
-        }
-      Coord<-t(sapply(mu,function(a) B3D[i,]*a))
-      if (tclvalue(tkget(SettingsBox.action.combo))=="Predict") Coord<-Coord/sum(B3D[i,]^2)
-        else if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: centroid") Coord<-Coord*p.in
-
-      if((temp0<-max(apply(Coord,1,function(x) sum(x^2)^.5)))>radiustemp) radiustemp<-temp0
-      text3d(Coord,texts=PrettyMarkersCharacter,col=bpar$axes.marker.col[variables.in[i]],family="sans",font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]])
-      }
-  # axes
-    radius<-max(apply(Y3D,1,function(x) sum(x^2)^.5),radiustemp)*1.1
-    axes<-sweep(B3D,1,1/apply(B3D,1,function(x) sum(x^2)^.5)*radius,"*")
-    temp2<-matrix(0,nrow=2*p.in,ncol=3)
-    temp2[seq(2,nrow(temp2),by=2)-1,]<--axes
-    temp2[seq(2,nrow(temp2),by=2),]<-axes
-    for (temp3 in 1:p.in) segments3d(temp2[(temp3*2-1):(temp3*2),],col=rep(bpar$axes.col[variables.in[temp3]],each=2),size=bpar$axes.lwd[variables.in[temp3]])
-    if (tclvalue(View.AxisLabels.var)!="0")
-      {
-      text3d(axes*1.02,texts=paste(bpar$axes.label.text[variables.in],"+",sep=""),family="sans",font=bpar$axes.label.font[variables.in],cex=bpar$axes.label.cex[variables.in],col=bpar$axes.label.col[variables.in])
-      text3d(-axes*1.02,texts=paste(bpar$axes.label.text[variables.in],"-",sep=""),family="sans",font=bpar$axes.label.font[variables.in],cex=bpar$axes.label.cex[variables.in],col=bpar$axes.label.col[variables.in])
-      }
-    }
-  # principal axes
-  aspect3d("iso")
-  lims<-par3d("bbox")
-  segments3d(matrix(c(lims[1],lims[3],lims[5],lims[2],lims[3],lims[5],lims[1],lims[3],lims[5],lims[1],lims[4],lims[5],lims[1],lims[3],lims[5],lims[1],lims[3],lims[6]),byrow=TRUE,ncol=3),col="gray60")
-  text3d(matrix(c((lims[1]+lims[2])/2,lims[3],lims[5],lims[1],(lims[3]+lims[4])/2,lims[5],lims[1],lims[3],(lims[5]+lims[6])/2),byrow=TRUE,nrow=3),texts=paste("Dimension ",dimensions),col="gray60",family="sans",font=1,cex=1)
-  # title
-  if (tclvalue(View.ShowTitle.var)=="1") title3d(Biplot.title,color="black",family="sans",font=2,cex=1)
-  # mouse
-  par3d(mouseMode=boptions$ThreeD.MouseButtonAction)
-  # light
-  light3d(theta=0,phi=15)
-  # fly-by
-  if (boptions$ThreeD.FlyBy)
-    {
-    start<-proc.time()[3]
-    while (proc.time()[3]-start<.75) {}
-    start<-proc.time()[3]
-    while ((i<-36*(proc.time()[3]-start))<360) rgl.viewpoint(i,15-(i-90)/4,zoom=(if(i<180)(i+1)^-.5 else (360-i+1)^-.5)) #zoom=1+(dnorm(i,mean=180,sd=100)))
-    rgl.viewpoint(zoom=1)
-    }
-  }
-
-Biplot.linear.predictions<-function()
-  {
-  if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
-    else B<-Biplot.B
-  Biplot.points.WhereClosestOnAxis<<-t(apply(B,1,function(x) x%*%t(x)%*%Biplot.points.WhereHighlight/sum(x^2)))
-  Biplot.points.WhichClosestOnAxis<<-SettingsBox.BackTransformation.func(Biplot.points.WhereClosestOnAxis[,1]/apply(B,1,function(x) x[1]/sum(x^2)),ARow=TRUE)
-  }
-
-Biplot.linear.interpolate<-function(ToInterpolate)
-  {
-  if (as.numeric(tclvalue(Biplot.Axes.var))<10) Binterpolate<-Biplot.Binterpolate_
-    else Binterpolate<-Biplot.Binterpolate
-  temp1<-SettingsBox.transformation.func(IN=c(ToInterpolate),ARow=TRUE) # The behaviour is correct for the log-transformations. If colMeans(Data) values are interpolated, the interpolated point isn't at (0,0). It would have been if had interpolated exp(colMeans(log(Data)).
-  temp2<-sweep(Binterpolate,1,temp1,"*")
-  colSums(temp2)
-  }
-
-Biplot.general.LeftClick<-function(x,y)
-  {
-  Biplot.XY.move<<-Biplot.XY.RightClick<<-Biplot.ConvertCoordinates(x,y)
-
-  if (Biplot.OverPoint())
-    {
-    Kraal.moving.type<<-"point"
-    Kraal.moving.status<<-TRUE
-    }
-    else if (Biplot.OverAxis())
-      {
-      Kraal.moving.type<<-"axis"
-      Kraal.moving.status<<-TRUE
-      }
-  }
-
-Biplot.general.RightClick<-function(x,y)
-  {
-  Biplot.xy<<-c(x,y)
-  Biplot.XY.RightClick<<-Biplot.ConvertCoordinates(x,y)
-  if (Biplot.par$usr[1]<=Biplot.XY.RightClick[1] && Biplot.XY.RightClick[1]<=Biplot.par$usr[2] && Biplot.par$usr[3]<=Biplot.XY.RightClick[2] && Biplot.XY.RightClick[2]<=Biplot.par$usr[4])
-    { # Inside biplot
-    if (tclvalue(Biplot.points.mode)=="0" && Biplot.OverPoint()) tkpopup(Biplot.RightClickOnPoint.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image)))
-      else if (tclvalue(Biplot.points.mode)=="0" && tclvalue(ControlButtons.HideAxes.var)=="0" && Biplot.OverAxis()) tkpopup(Biplot.RightClickOnAxis.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image)))
-        else tkpopup(Biplot.RightClickInside.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image)))
-    }
-    else tkpopup(Biplot.RightClickOutside.Menu,tclvalue(tkwinfo("pointerx",BiplotRegion.image)),tclvalue(tkwinfo("pointery",BiplotRegion.image))) # Outside biplot
-  }
-
-Biplot.NonLinear.OverAxis<-function()
-  {
-  temp0<-unlist(lapply(Biplot.axis,function(mat)
-    {
-    temp1<-nrow(mat)
-    temp2<-sweep(-mat[-temp1,],2,Biplot.XY.move,"+") # m-a
-    temp3<-diff(mat) #b-a
-    temp4<-rowSums(temp3*temp2)
-    temp5<-rowSums(temp3^2)
-    temp6<-ifelse(abs(temp5)<eps,0,temp4/temp5)
-    temp6<-sapply(temp6,function(x) min(max(0,x),1))
-    min(rowSums(temp2^2)-temp6^2*temp5)
-    }))
-    sqrt(min(temp0))<min(Biplot.par$strwidthx,Biplot.par$strheightx)/1.75
-  }
-
-Biplot.NonLinear.determine.interpolative<-function()
-  {
-  temp0<-matrix(0,nrow=n.in,ncol=n.in)
-  temp0[cbind(1:n.in,1:n.in)]<-1
-  temp0<-temp0-1/n.in
-  D<--.5*Points.DistanceMetric.DissimilarityMatrix^2
-  B<-temp0%*%D%*%temp0
-  eigenB<-eigen(B,symmetric=TRUE)
-  eigenB$vectors<-(apply(eigenB$vectors,2,function(x) x*sign(x[which.max(abs(x))])))
-  rB<-sum(eigenB$values>eps)
-  if (any(eigenB$values/max(eigenB$values)<(-eps)))
-    {
-    tkmessageBox(title="Circular non-linear",parent=GUI.TopLevel,message="The configuration cannot be embedded into the display space.\nA regression biplot will be shown instead.",icon="warning",type="ok")
-    Axes.CircularNonLinear.NotEmbeddable<<-TRUE
-    return()
-    }
-    else Axes.CircularNonLinear.NotEmbeddable<<-FALSE
-
-  LambdaInv<-diag(eigenB$values[1:rB]^-1)
-  V<-eigenB$vectors[,1:rB]
-  Biplot.Yfull<-V%*%diag(eigenB$values[1:rB]^.5)
-  Biplot.Y<<-Biplot.Yfull[,1:2]
-  Biplot.Y3D<<-Biplot.Yfull[,1:3]
-
-  d<-function(x) -.5*(Points.DistanceMetric.func(x,Biplot.Xtransformed))^2
-  if (substr(tclvalue(tkget(SettingsBox.transformation.combo)),start=1,stop=3)=="Log") Biplot.O3D<<-as.vector((LambdaInv%*%t(Biplot.Yfull)%*%(d(SettingsBox.transformation.func(exp(colMeans(log(Data[samples.in,variables.in]))),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))[1:3]
-    else Biplot.O3D<<-as.vector((LambdaInv%*%t(Biplot.Yfull)%*%(d(SettingsBox.transformation.func(colMeans(Data[samples.in,variables.in]),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))[1:3]
-  Biplot.O<<-Biplot.O3D[1:2]
-
-  local.Biplot.variable<-temp5<-temp6<-temp7<-temp8<-list()
-
-  for (i in 1:p.in)
-    {
-    PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
-    PrettyMarkersIncrement<-PrettyMarkers[2]-PrettyMarkers[1]
-    PrettyMarkersTemp<-PrettyMarkers[PrettyMarkers-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10>=min(Data[samples.in,variables.in[i]]) & PrettyMarkers+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10<=max(Data[samples.in,variables.in[i]])]
-
-    markers<-zapsmall(seq(PrettyMarkers[1],PrettyMarkers[length(PrettyMarkers)],by=PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]))
-    PrettyMarkers<-PrettyMarkersTemp
-    ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
-    PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
-
-    markers<-markers[markers-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10>=min(Data[samples.in,variables.in[i]]) & markers+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10<=max(Data[samples.in,variables.in[i]])]
-    markers<-zapsmall(c(min(markers)-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10,markers,max(markers)+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10))
-    PrettyMarkersIndex<-match(PrettyMarkers,markers)
-
-    MarkersTransformed<-SettingsBox.transformation.func(markers,WhichCol=i)
-    s<-length(markers)
-    local.Biplot.variable<-c(local.Biplot.variable,list(list(markers=markers,PrettyMarkers=PrettyMarkers,PrettyMarkersCharacter=PrettyMarkersCharacter,PrettyMarkersIndex=PrettyMarkersIndex,MarkersTransformed=MarkersTransformed)))
-
-    if (substr(tclvalue(tkget(SettingsBox.transformation.combo)),start=1,stop=3)=="Log") temp2<-t(sapply(MarkersTransformed,function(j) LambdaInv%*%t(Biplot.Yfull)%*%(d(diag(p.in)[i,]*j+SettingsBox.transformation.func(exp(colMeans(log(Data[samples.in,variables.in]))),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))
-      else temp2<-t(sapply(MarkersTransformed,function(j) LambdaInv%*%t(Biplot.Yfull)%*%(d(diag(p.in)[i,]*j+SettingsBox.transformation.func(colMeans(Data[samples.in,variables.in]),ARow=TRUE))-1/n.in*D%*%rep(1,n.in))))
-    temp3<-sweep(sweep(temp2[,1:3],2,Biplot.O3D,"-")*1,2,Biplot.O3D,"+") # Interpolate: vector sum
-    temp4<-sweep(sweep(temp2[,1:3],2,Biplot.O3D,"-")*p.in,2,Biplot.O3D,"+") # Interpolate: centroid
-    temp5<-c(temp5,list(temp3[,1:2])) # Interpolate: vector sum 2D
-    temp6<-c(temp6,list(temp3)) # Interpolate: vector sum 3D
-    temp7<-c(temp7,list(temp4[,1:2])) # Interpolate: centroid 2D
-    temp8<-c(temp8,list(temp4)) # Interpolate: centroid 3D
-    }
-
-  Biplot.AxisInterpolate<<-temp5
-  if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: vector sum")
-    {
-    Biplot.variable<<-local.Biplot.variable
-    Biplot.axis<<-temp5
-    Biplot.axis3D<<-temp6
-    }
-    else if (tclvalue(tkget(SettingsBox.action.combo))=="Interpolate: centroid")
-      {
-      Biplot.variable<<-local.Biplot.variable
-      Biplot.axis<<-temp7
-      Biplot.axis3D<<-temp8
-      }
-  }
-
-Biplot.NonLinear.layout<-function()
-  {
-  AxisInstruction<-list()
-  axes.tick.AbsLength<-bpar$axes.tick.RelLength*(Biplot.par$usr[2]-Biplot.par$usr[1])
-  RotationMatrix<-function(Angle) matrix(c(cos(Angle),sin(Angle),-sin(Angle),cos(Angle)),ncol=2)
-  fx<-function(Angle)
-    {
-    if (Angle<=0) Angle<-Angle+2*pi
-    switch(ceiling(Angle/pi*4),Angle/pi*4,1,1,-(Angle-.75*pi)/pi*4+1,-(Angle-pi)/pi*4,-1,-1,(Angle-1.75*pi)/pi*4-1)
-    }
-  for (i in 1:p.in)
-    {
-    AnglesBefore<-ifelse((AnglesBefore<-atan2(Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex+1,2]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,2],Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex+1,1]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,1]))<0,AnglesBefore+2*pi,AnglesBefore)
-    AnglesAfter<-ifelse((AnglesAfter<-atan2(Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,2]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex-1,2],Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,1]-Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex-1,1]))<0,AnglesAfter+2*pi,AnglesAfter)
-    Angles<-(AnglesBefore+AnglesAfter)/2
-    Angles<-ifelse(abs(AnglesAfter-AnglesBefore)>pi,Angles+pi,Angles)
-    Angles<-ifelse(Angles<0,Angles+2*pi,Angles)
-    BottomTickCoords<-NULL
-    TopTickCoords<-NULL
-    MarkerLabelCoords<-NULL
-    for (j in 1:length(Angles))
-      {
-      BottomTickCoords<-rbind(BottomTickCoords,c(RotationMatrix(Angles[j])%*%matrix(c(0,-axes.tick.AbsLength[variables.in[i]]),ncol=1))+Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex[j],])
-      TopTickCoords<-rbind(TopTickCoords,c(RotationMatrix(Angles[j])%*%matrix(c(0,axes.tick.AbsLength[variables.in[i]]),ncol=1))+Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex[j],])
-      MarkerLabelCoords<-rbind(MarkerLabelCoords,c(RotationMatrix(Angles[j])%*%matrix(c(0,-axes.tick.AbsLength[variables.in[i]]-bpar$axes.marker.RelOffset[variables.in[i]]*(Biplot.par$usr[2]-Biplot.par$usr[1])),ncol=1))+Biplot.axis[[i]][Biplot.variable[[i]]$PrettyMarkersIndex[j],]+c(fx(Angles[j])*.5*strwidth(Biplot.variable[[i]]$PrettyMarkersCharacter[j],cex=bpar$axes.marker.cex[variables.in[i]]),fx(Angles[j]-pi/2)*.5*strheight(Biplot.variable[[i]]$PrettyMarkersCharacter[j],cex=bpar$axes.marker.cex[variables.in[i]])))
-      }
-    AxisInstruction<-c(AxisInstruction,list(list(BottomTickCoords=BottomTickCoords,TopTickCoords=TopTickCoords,MarkerLabelCoords=MarkerLabelCoords)))
-    }
-  AxisInstruction
-  }
-
-Biplot.NonLinear.plot<-function(screen=TRUE)
-  {
-  if (Legend.yes())
-    {
-    if (screen) layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(4*BiplotRegion.VerticalScale.func()-1.1,1.1))
-      else layout(mat=matrix(c(2,2,1,1),ncol=2,byrow=TRUE),heights=c(8-1.1,1.1))
-    par(mar=c(0,0,0,0),bg="white")
-    plot(.5,.5,bty="n",type="n",xaxt="n",yaxt="n",xlab="",ylab="",xaxs="i",yaxs="i",xlim=c(0,1),ylim=c(0,1))
-    Legend.func()
-    par(mar=c(1,4,4,4))
-    }
-    else par(mar=c(2,4,2,4))
-
-  par(pty="s",bg="white")
-
-  Y<-Biplot.Y
-  temp.Y1<-Y[,1]
-  temp.Y2<-Y[,2]
-  temp.pch<-bparp$points.pch[samples.in]
-  temp.cex<-bparp$points.cex[samples.in]
-  temp.col<-bparp$points.col.fg[samples.in]
-  temp.bg<-bparp$points.col.bg[samples.in]
-  temp.labels<-bparp$points.label.text[samples.in]
-  temp.labels.cex<-bparp$points.label.cex[samples.in]
-  temp.HorizOffset<-bparp$points.label.HorizOffset[samples.in]
-  temp.VertOffset<-bparp$points.label.VertOffset[samples.in]
-  if (tclvalue(Additional.Interpolate.ANewSample.var)=="1")
-    {
-    temp.Y1<-c(temp.Y1,Additional.Interpolate.ANewSample.coordinates[1])
-    temp.Y2<-c(temp.Y2,Additional.Interpolate.ANewSample.coordinates[2])
-    temp.pch<-c(temp.pch,bpar$ANewSample.pch)
-    temp.cex<-c(temp.cex,bpar$ANewSample.cex)
-    temp.col<-c(temp.col,bpar$ANewSample.col.fg)
-    temp.bg<-c(temp.bg,bpar$ANewSample.col.bg)
-    if (bpar$ANewSample.LabelsInBiplot) temp.labels<-c(temp.labels,bpar$ANewSample.label.text)
-      else temp.labels<-c(temp.labels,NA)
-    temp.labels.cex<-c(temp.labels.cex,bpar$ANewSample.label.cex)
-    temp.HorizOffset<-c(temp.HorizOffset,bpar$ANewSample.label.HorizOffset)
-    temp.VertOffset<-c(temp.VertOffset,bpar$ANewSample.label.VertOffset)
-    }
-  if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1")
-    {
-    temp.Y1<-c(temp.Y1,Additional.Interpolate.SampleGroupMeans.coordinates[,1])
-    temp.Y2<-c(temp.Y2,Additional.Interpolate.SampleGroupMeans.coordinates[,2])
-    temp.pch<-c(temp.pch,bpar$gSampleGroupMeans.pch[groups.in])
-    temp.cex<-c(temp.cex,bpar$gSampleGroupMeans.cex[groups.in])
-    temp.col<-c(temp.col,bpar$gSampleGroupMeans.col.fg[groups.in])
-    temp.bg<-c(temp.bg,bpar$gSampleGroupMeans.col.bg[groups.in])
-    if (bpar$SampleGroupMeans.LabelsInBiplot) temp.labels<-c(temp.labels,Additional.Interpolate.SampleGroupMeans.label.text)
-      else temp.labels<-c(temp.labels,rep(NA,g.in))
-    temp.labels.cex<-c(temp.labels.cex,bpar$gSampleGroupMeans.label.cex[groups.in])
-    temp.HorizOffset<-c(temp.HorizOffset,bpar$gSampleGroupMeans.label.HorizOffset[groups.in])
-    temp.VertOffset<-c(temp.VertOffset,bpar$gSampleGroupMeans.label.VertOffset[groups.in])
-    }
-
-  if (tclvalue(View.ClipAround.var)=="0")
-    {
-    arglist<-list(x=temp.Y1,y=temp.Y2,pch=temp.pch,cex=temp.cex,col=temp.col,bg=temp.bg,xaxt="n",yaxt="n")
-    if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
-      else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=temp.labels,labels.cex=temp.labels.cex,HorizOffset=temp.HorizOffset,VertOffset=temp.VertOffset))
-    }
-    else
-      {
-      AllAxesMat<-cbind(unlist(lapply(Biplot.axis,function(x) x[,1])),unlist(lapply(Biplot.axis,function(x) x[,2])))
-      nrowAllAxesMat<-nrow(AllAxesMat)
-      arglist<-list(x=c(temp.Y1,AllAxesMat[,1]),y=c(temp.Y2,AllAxesMat[,2]),xaxt="n",yaxt="n")
-      if (Biplot.zoom.mode==1) arglist<-c(arglist,list(xlimtouse=Biplot.xlimtouse,ylimtouse=Biplot.ylimtouse,xaxs="i",yaxs="i"))
-        else if (tclvalue(View.ShowPointLabels.var)=="1") arglist<-c(arglist,list(fitaroundlabels=TRUE,.labels=c(temp.labels,rep(NA,nrowAllAxesMat)),labels.cex=c(temp.labels.cex,rep(1,nrowAllAxesMat)),HorizOffset=c(temp.HorizOffset,rep(0,nrowAllAxesMat)),VertOffset=c(temp.VertOffset,rep(0,nrowAllAxesMat))))
-      }
-  do.call("mynewplot",arglist)
-  if (tclvalue(View.ShowDisplaySpaceAxes.var)=="1")
-    {
-    axis(side=1,cex.axis=.75)
-    axis(side=2,cex.axis=.75)
-    }
-  Biplot.par<<-par()
-  Biplot.par$strwidthx<<-strwidth("x")
-  Biplot.par$strheightx<<-strheight("x")
-  if (tclvalue(View.ShowTitle.var)=="1") title(Biplot.title,line=1.75)
-
-  if (tclvalue(Additional.PointDensities.var)=="1") Additional.PointDensities.autcmd()
-  if (tclvalue(Additional.ClassificationRegion.var)=="1") Additional.ClassificationRegion.autcmd()
-
-  if ((tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") && Additional.ConvexHullAlphaBag.for!=0 && tclvalue(Additional.PointDensities.var)=="0" && tclvalue(Additional.ClassificationRegion.var)=="0") Biplot.plot.ConvexHullAlphaBag.bg()
-
-  AxisInstruction<-Biplot.NonLinear.layout()
-
-  if (tclvalue(ControlButtons.HideAxes.var)=="0")
-    if (Biplot.axes.mode==0) # All axes shown
-      {
-      for (i in 1:p.in)
-        {
-        lines(Biplot.axis[[i]],lty=bpar$axes.col.lty[variables.in[i]],lwd=bpar$axes.col.lwd[variables.in[i]],col=bpar$axes.col[variables.in[i]])
-        segments(x0=AxisInstruction[[i]]$BottomTickCoords[,1],y0=AxisInstruction[[i]]$BottomTickCoords[,2],x1=AxisInstruction[[i]]$TopTickCoords[,1],y1=AxisInstruction[[i]]$TopTickCoords[,2],lty=bpar$axes.tick.lty[variables.in[i]],lwd=bpar$axes.tick.lwd[variables.in[i]],col=bpar$axes.tick.col[variables.in[i]])
-        text(AxisInstruction[[i]]$MarkerLabelCoords,labels=Biplot.variable[[i]]$PrettyMarkersCharacter,font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]],col=bpar$axes.marker.col[variables.in[i]])
-        }
-      if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-      if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
-      if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
-      if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
-      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
-      if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
-      }
-      else # One axis highlighted
-        {
-        for (i in which(variables.in!=Biplot.axes.WhichHighlight)) lines(Biplot.axis[[i]],lty=bpar$axes.col.lty[variables.in[i]],lwd=bpar$axes.col.lwd[variables.in[i]],col=bpar$interaction.highlight.axes.col.bg)
-        if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointValues.var)=="1") text(Y[,1]+bpar$interaction.highlight.ShowValues.HorizOffset*strwidth("x",cex=bpar$interaction.highlight.ShowValues.cex),Y[,2]+bpar$interaction.highlight.ShowValues.VertOffset*strheight("x",cex=bpar$interaction.highlight.ShowValues.cex),labels=format(round(Data[samples.in,Biplot.axes.WhichHighlight],bpar$interaction.highlight.ShowValues.digits),nsmall=bpar$interaction.highlight.ShowValues.digits),font=bpar$interaction.highlight.ShowValues.font,cex=bpar$interaction.highlight.ShowValues.cex,col=bpar$interaction.highlight.ShowValues.col)
-        if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-        if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
-        if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
-        if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
-        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
-        if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
-        i<-which(variables.in==Biplot.axes.WhichHighlight)
-        lines(Biplot.axis[[i]],lty=bpar$axes.col.lty[variables.in[i]],lwd=bpar$axes.col.lwd[variables.in[i]],col=bpar$interaction.highlight.axes.col.fg)
-        segments(x0=AxisInstruction[[i]]$BottomTickCoords[,1],y0=AxisInstruction[[i]]$BottomTickCoords[,2],x1=AxisInstruction[[i]]$TopTickCoords[,1],y1=AxisInstruction[[i]]$TopTickCoords[,2],lty=bpar$axes.tick.lty[variables.in[i]],lwd=bpar$axes.tick.lwd[variables.in[i]],col=bpar$interaction.highlight.axes.col.fg)
-        text(AxisInstruction[[i]]$MarkerLabelCoords,labels=Biplot.variable[[i]]$PrettyMarkersCharacter,font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]],col=bpar$interaction.highlight.axes.col.fg)
-        }
-        else # Axes are hidden
-          {
-          if (tclvalue(ControlButtons.HidePoints.var)=="0" && tclvalue(View.ShowPointLabels.var)=="1") text(Y[,1]+bparp$points.label.HorizOffset[samples.in]*strwidth("x",cex=bparp$points.label.cex[samples.in]),Y[,2]+bparp$points.label.VertOffset[samples.in]*strheight("x",cex=bparp$points.label.cex[samples.in]),labels=bparp$points.label.text[samples.in],font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in],col=bparp$points.label.col[samples.in])
-          if (tclvalue(ControlButtons.HidePoints.var)=="0") points(Y,pch=bparp$points.pch[samples.in],cex=bparp$points.cex[samples.in],col=bparp$points.col.fg[samples.in],bg=bparp$points.col.bg[samples.in])
-          if (tclvalue(Additional.ConvexHull.var)=="1" || tclvalue(Additional.AlphaBag.var)=="1") Biplot.plot.ConvexHullAlphaBag.fg()
-          if (tclvalue(Additional.Interpolate.SampleGroupMeans.var)=="1") Biplot.plot.SampleGroupMeans()
-          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1" && bpar$ANewSample.LabelsInBiplot) text(Additional.Interpolate.ANewSample.coordinates[1]+bpar$ANewSample.label.HorizOffset*strwidth("x",cex=bpar$ANewSample.label.cex),Additional.Interpolate.ANewSample.coordinates[2]+bpar$ANewSample.label.VertOffset*strheight("x",cex=bpar$ANewSample.label.cex),labels=bpar$ANewSample.label.text,font=bpar$ANewSample.label.font,cex=bpar$ANewSample.label.cex,col=bpar$ANewSample.label.col)
-          if (tclvalue(Additional.Interpolate.ANewSample.var)=="1") points(Additional.Interpolate.ANewSample.coordinates[1],Additional.Interpolate.ANewSample.coordinates[2],pch=bpar$ANewSample.pch,cex=bpar$ANewSample.cex,col=bpar$ANewSample.col.fg,bg=bpar$ANewSample.col.bg)
-          }
-
-  if (tclvalue(tkget(SettingsBox.action.combo))=="Predict" && tclvalue(Biplot.points.mode)%in%c("1","2"))
-    {
-    symbols(((Biplot.points.WhereHighlight+Axes.CircularNonLinear.g[1:2])/2)[1],((Biplot.points.WhereHighlight+Axes.CircularNonLinear.g[1:2])/2)[2],circles=(sum((Biplot.points.WhereHighlight-Axes.CircularNonLinear.g[1:2])^2))^.5/2,add=TRUE,inches=FALSE,lwd=bpar$interaction.prediction.circle.lwd,fg=bpar$interaction.prediction.circle.col)
-    if (Biplot.axes.mode==0)
-      {
-      segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[,1],y1=Biplot.points.WhereClosestOnAxis[,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
-      points(Biplot.points.WhereClosestOnAxis,pch=bpar$interaction.prediction.pch,cex=bpar$interaction.prediction.cex,col=bpar$axes.col)
-      }
-      else
-        {
-        segments(x0=Biplot.points.WhereHighlight[1],y0=Biplot.points.WhereHighlight[2],x1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y1=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],lty=bpar$interaction.prediction.lty,lwd=bpar$interaction.prediction.lwd,col=bpar$interaction.prediction.col)
-        points(Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,1],y=Biplot.points.WhereClosestOnAxis[Biplot.axes.WhichHighlight,2],pch=bpar$interaction.prediction.pch[Biplot.axes.WhichHighlight],cex=bpar$interaction.prediction.cex[Biplot.axes.WhichHighlight],col=bpar$interaction.highlight.axes.col.fg)
-        }
-    }
-
-  box(which="plot",lty="solid")
-  }
-
-Biplot.NonLinear.interpolate<-function(ToInterpolate)
-  {
-  if (is.null(Biplot.AxisInterpolate)) Biplot.NonLinear.determine.interpolative()
-  colSums(t(sapply(1:p.in,function(x) Biplot.AxisInterpolate[[x]][which.min(abs(ToInterpolate[x]-Biplot.variable[[x]]$markers)),])))
-  }
-
-Biplot.NonLinear.plot3D<-function()
-  {
-  if (tclvalue(tkget(SettingsBox.action.combo))=="Predict")
-    {
-    Axes.CircularNonLinear.determine(rho=3)
-    O3D<-Axes.CircularNonLinear.g
-    }
-    else O3D<-Biplot.O3D
-
-  dimensions<-1:3
-  if (!boptions$ReuseExternalWindows) rgl.open()
-  rgl.clear("all")
-  rgl.bg(sphere=TRUE,color=c("whitesmoke","gray90"),lit=FALSE)
-  rgl.light()
-  # points
-   if (tclvalue(ControlButtons.HidePoints.var)=="0")
-    {
-    for (temp1 in groups.in)
-      {
-      temp1b<-group[samples.in]==levels(group[samples.in])[temp1]
-      points3d(Y3D[temp1b,1],Y3D[temp1b,2],Y3D[temp1b,3],col=bparp$points.col.bg[samples.in[temp1b]],size=bparp$points.cex[samples.in[temp1b]][1]*8,alpha=.5)
-      }
-    if (tclvalue(View.ShowPointLabels.var)=="1") text3d(Y3D[,1],Y3D[,2],Y3D[,3],texts=bparp$points.label.text[samples.in],col=bparp$points.label.col[samples.in],family="sans",font=bparp$points.label.font[samples.in],cex=bparp$points.label.cex[samples.in])
-    }
-  # axes markers
-  if (tclvalue(ControlButtons.HideAxes.var)=="0") for (i in 1:p.in) text3d(Biplot.axis3D[[i]][Biplot.variable[[i]]$PrettyMarkersIndex,],texts=Biplot.variable[[i]]$PrettyMarkersCharacter,col=bpar$axes.marker.col[variables.in[i]],family="sans",font=bpar$axes.marker.font[variables.in[i]],cex=bpar$axes.marker.cex[variables.in[i]])
-  # axes
-  if (tclvalue(ControlButtons.HideAxes.var)=="0")
-    {
-    for (i in 1:p.in) lines3d(Biplot.axis3D[[i]],col=bpar$axes.col[variables.in[i]],size=bpar$axes.lwd[variables.in[i]])
-    if (tclvalue(View.AxisLabels.var)!="0") for (i in 1:p.in) text3d(Biplot.axis3D[[i]][c(1,nrow(Biplot.axis3D[[i]])),],texts=paste(bpar$axes.label.text[variables.in[i]],c("-","+"),sep=""),col=bpar$axes.label.col[variables.in[i]],family="sans",font=bpar$axes.label.font[variables.in],cex=bpar$axes.label.cex[variables.in])
-    }
-  # centering around g or O
-  furthest<-max(unlist(lapply(Biplot.axis3D,function(x) max(abs(sweep(x,2,O3D,"-"))))),abs(sweep(Biplot.Y3D,2,O3D,"-")))
-  furthestmat<-matrix(c(O3D[1]+furthest,0,0,O3D[1]-furthest,0,0,0,O3D[2]+furthest,0,0,O3D[2]-furthest,0,0,0,O3D[3]+furthest,0,0,O3D[3]-furthest),ncol=3,byrow=TRUE)
-  points3d(furthestmat[,1],furthestmat[,2],furthestmat[,3],col="white")
-  # principal axes
-  aspect3d("iso")
-  lims<-par3d("bbox")
-  segments3d(matrix(c(lims[1],lims[3],lims[5],lims[2],lims[3],lims[5],lims[1],lims[3],lims[5],lims[1],lims[4],lims[5],lims[1],lims[3],lims[5],lims[1],lims[3],lims[6]),byrow=TRUE,ncol=3),col="gray60")
-  text3d(matrix(c((lims[1]+lims[2])/2,lims[3],lims[5],lims[1],(lims[3]+lims[4])/2,lims[5],lims[1],lims[3],(lims[5]+lims[6])/2),byrow=TRUE,nrow=3),texts=paste("Dimension ",dimensions),col="gray60",family="sans",font=1,cex=1)
-  # title
-  if (tclvalue(View.ShowTitle.var)=="1") title3d(Biplot.title,color="black",family="sans",font=2,cex=1)
-  # mouse
-  par3d("mouseMode"=boptions$ThreeD.MouseButtonAction)
-  # light
-  light3d(theta=0,phi=15)
-  # fly-by
-  if (boptions$ThreeD.FlyBy)
-    {
-    start<-proc.time()[3]
-    while (proc.time()[3]-start<.75) {}
-    start<-proc.time()[3]
-    while ((i<-36*(proc.time()[3]-start))<360) rgl.viewpoint(i,15-(i-90)/4,zoom=(if(i<180)(i+1)^-.5 else (360-i+1)^-.5))
-    rgl.viewpoint(zoom=1)
-    }
-  }
+#####################################################################################################################
+### BIPLOT REGION : GUI #############################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.BiplotRegion.GUI}{Biplot region (GUI)}{GUI} BEGINLISTING")
 
 ##############################################################################
-
-Biplot.points.mode<-tclVar("0")
-Biplot.xy<-c(0,0)
-Biplot.XY.move<-c(0,0)
-Biplot.XY.LeftClick<-c(0,0)
-Biplot.XY.RightClick<-c(0,0)
-Biplot.points.WhereHighlight<-NULL
-Biplot.points.WhichHighlight<-NULL
-Biplot.points.WhereClosestOnAxis<-NULL
-Biplot.points.WhichClosestOnAxis<-NULL
-
-Biplot.axes.mode<-0
-Biplot.axes.WhichHighlight<-0
-
+### BIPLOT REGION : GUI : INNER POP-UP MENU ##################################
 ##############################################################################
-
-Biplot.Xtransformed<-NULL
-Biplot.Yfull<-NULL
-Biplot.Yfull_<-NULL
-Biplot.Y<-NULL
-Biplot.Y_<-NULL
-Biplot.Y3D<-NULL
-Y3D<-NULL
-Biplot.Y3D_<-NULL
-Biplot.Yinitial<-NULL
-Biplot.Bfull_<-NULL
-Biplot.B<-NULL
-Biplot.B_<-NULL
-Biplot.B3D<-NULL
-Biplot.B3D_<-NULL
-Biplot.Binterpolate_<-NULL
-Biplot.Binterpolate<-NULL
-Biplot.Bclassify<-NULL
-Biplot.axis<-NULL
-Biplot.axis3D<-NULL
-Biplot.AxisInterpolate<-NULL
-Biplot.O<-NULL
-Biplot.O3D<-NULL
-Biplot.variable<-NULL
-
-##############################################################################
-
-Biplot.moved<-NULL
-Biplot.moving.status<-NULL
-Biplot.moving.which<-NULL
-
-Biplot.zoom.mode<-0
-Biplot.xlimtouse<-NULL
-Biplot.ylimtouse<-NULL
-
-Biplot.ZoomIn.cmd<-function()
-  {
-  Biplot.zoom.mode<<-1
-  propleft<-.5
-  propbottom<-.5
-  Biplot.xlimtouse<<-c(Biplot.XY.RightClick[1]-propleft*(Biplot.par$usr[2]-Biplot.par$usr[1])/sqrt(1.5),Biplot.XY.RightClick[1]+(1-propleft)*(Biplot.par$usr[2]-Biplot.par$usr[1])/sqrt(1.5))
-  Biplot.ylimtouse<<-c(Biplot.XY.RightClick[2]-propbottom*(Biplot.par$usr[4]-Biplot.par$usr[3])/sqrt(1.5),Biplot.XY.RightClick[2]+(1-propbottom)*(Biplot.par$usr[4]-Biplot.par$usr[3])/sqrt(1.5))
-  tkwm.title(GUI.TopLevel,paste("BiplotGUI -",Biplot.title.default,"(zoomed)"))
-  Biplot.replot()
-  }
-
-Biplot.ZoomOut.cmd<-function()
-  {
-  Biplot.zoom.mode<<-1
-  propleft<-.5
-  propbottom<-.5
-  Biplot.xlimtouse<<-c(Biplot.XY.RightClick[1]-propleft*(Biplot.par$usr[2]-Biplot.par$usr[1])*sqrt(1.5),Biplot.XY.RightClick[1]+(1-propleft)*(Biplot.par$usr[2]-Biplot.par$usr[1])*sqrt(1.5))
-  Biplot.ylimtouse<<-c(Biplot.XY.RightClick[2]-propbottom*(Biplot.par$usr[4]-Biplot.par$usr[3])*sqrt(1.5),Biplot.XY.RightClick[2]+(1-propbottom)*(Biplot.par$usr[4]-Biplot.par$usr[3])*sqrt(1.5))
-  tkwm.title(GUI.TopLevel,paste("BiplotGUI -",Biplot.title.default,"(zoomed)"))
-  Biplot.replot()
-  }
-
-Biplot.ResetZoom.cmd<-function()
-  {
-  Biplot.zoom.mode<<-0
-  Biplot.xlimtouse<<-NULL
-  Biplot.ylimtouse<<-NULL
-  tkwm.title(GUI.TopLevel,paste("BiplotGUI -",Biplot.title.default))
-  Biplot.replot()
-  }
-
-Biplot.DontPredict.cmd<-function()
-  {
-  tkconfigure(GUI.TopLevel,cursor="arrow")
-
-  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
-  dim(PredictionsTab.arrayR)<-c(p.in+1,4)
-  if (PredictionsTab.ColumnsUsed>=1)
-    {
-    ToClear<-paste(paste(PredictionsTab.arrayTcl,"(",c(outer(1:p.in,1:PredictionsTab.ColumnsUsed,function(x,y) paste(x,y,sep=","))),")",sep=""),collapse=" ")
-    .Tcl(paste("unset ",ToClear,sep=""))
-    }
-  PredictionsTab.ColumnsUsed<<-0
-  tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
-  .Tcl("update")
-  Biplot.replot()
-  }
-
-Biplot.PredictCursorPositions.cmd<-function()
-  {
-  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
-  dim(PredictionsTab.arrayR)<-c(p.in+1,4)
-  if (PredictionsTab.ColumnsUsed>=2)
-    {
-    ToClear<-paste(paste(PredictionsTab.arrayTcl,"(",c(outer(1:p.in,2:PredictionsTab.ColumnsUsed,function(x,y) paste(x,y,sep=","))),")",sep=""),collapse=" ")
-    .Tcl(paste("unset ",ToClear,sep=""))
-    }
-  PredictionsTab.ColumnsUsed<<-1
-  tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
-  .Tcl("update")
-  }
-
-Biplot.PredictPointsClosestToCursorPositions.cmd<-function()
-  {
-  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
-  dim(PredictionsTab.arrayR)<-c(p.in+1,4)
-  PredictionsTab.ColumnsUsed<<-3
-  tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
-  .Tcl("update")
-  }
-
-Biplot.Highlight.cmd<-function()
-  {
-  if (as.numeric(tclvalue(Biplot.Axes.var))<13)
-    {
-    if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
-      else B<-Biplot.B
-    Biplot.axes.WhichHighlight<<-variables.in[which.min(PythagorasDistance(matrix(Biplot.XY.RightClick,nrow=1),t(apply(B,1,function(x) x%*%t(x)%*%Biplot.XY.RightClick/sum(x^2)))))]
-    }
-    else
-      {
-      Biplot.axes.WhichHighlight<<-variables.in[which.min(unlist(lapply(Biplot.axis,function(mat)
-        {
-        temp1<-nrow(mat)
-        temp2<-sweep(-mat[-temp1,],2,Biplot.XY.RightClick,"+") # m-a
-        temp3<-diff(mat) #b-a
-        temp4<-rowSums(temp3*temp2)
-        temp5<-rowSums(temp3^2)
-        temp6<-ifelse(abs(temp5)<eps,0,temp4/temp5)
-        temp6<-sapply(temp6,function(x) min(max(0,x),1))
-        min(rowSums(temp2^2)-temp6^2*temp5)
-        })))]
-      }
-  Biplot.axes.mode<<-1
-  Biplot.replot()
-  if (tclvalue(Biplot.Axes.var)%in%c("0","2")) AxesTab.replot()
-  PredictionsTab.ArraySetup()
-  }
-
-Biplot.RemoveAxisHighlight.cmd<-function()
-  {
-  Biplot.axes.WhichHighlight<<-0
-  Biplot.axes.mode<<-0
-  tkentryconfigure(Biplot.RightClickInside.Menu,8,state="normal")
-  Biplot.replot()
-  if (tclvalue(Biplot.Axes.var)%in%c("0","2")) AxesTab.replot()
-  PredictionsTab.ArraySetup()
-  }
-
-##############################################################################
-### GUI ######################################################################
-##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.GUI.InnerPopUpMenu}{Biplot region (GUI): Inner pop-up menu}{Inner pop-up menu} BEGINLISTING")
 
 Biplot.RightClickInside.Menu<-tk2menu(BiplotRegion.image,tearoff=FALSE)
 tkadd(Biplot.RightClickInside.Menu,"command",label="Zoom in",command=function()
@@ -7462,15 +7972,9 @@ tkadd(Biplot.None.RightClickInside.Menu,"command",label="Print...",state=if (.Pl
   })
 
 ##############################################################################
-
-Biplot.SendPointToKraal.cmd<-function()
-  {
-  if (as.numeric(tclvalue(Biplot.Axes.var))<10) Y<-Biplot.Y_
-    else Y<-Biplot.Y
-  Kraal.moving.type<<-"point"
-  Kraal.moving.which<<-samples.in[which.min(PythagorasDistance(matrix(Biplot.XY.RightClick,nrow=1),Y))]
-  Kraal.in.func()
-  }
+### BIPLOT REGION : GUI : POINT POP-UP MENU ##################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.GUI.PointPopUpMenu}{Biplot region (GUI): Point pop-up menu}{Point pop-up menu} BEGINLISTING")
 
 Biplot.RightClickOnPoint.Menu<-tk2menu(BiplotRegion.image,tearoff=FALSE)
 tkadd(Biplot.RightClickOnPoint.Menu,"command",label="Send to kraal",command=function()
@@ -7496,40 +8000,9 @@ tkadd(Biplot.RightClickOnPoint.Menu,"command",label="Format...",command=function
   })
 
 ##############################################################################
-
-Biplot.SendAxisToKraal.cmd<-function()
-  {
-  if (p.in<=3)
-    {
-    tkmessageBox(title="Send to kraal",parent=GUI.TopLevel,message="At least three axes must be retained in the biplot.",icon="warning",type="ok")
-    tkfocus(GUI.TopLevel)
-    }
-    else
-      {
-      Kraal.moving.type<<-"axis"
-      if (as.numeric(tclvalue(Biplot.Axes.var))<13)
-        {
-        if (as.numeric(tclvalue(Biplot.Axes.var))<10) B<-Biplot.B_
-          else B<-Biplot.B
-        Kraal.moving.which<<-variables.in[which.min(PythagorasDistance(matrix(Biplot.XY.RightClick,nrow=1),t(apply(B,1,function(x) x%*%t(x)%*%Biplot.XY.RightClick/sum(x^2)))))]
-        }
-        else
-          {
-          Kraal.moving.which<<-variables.in[which.min(unlist(lapply(Biplot.axis,function(mat)
-            {
-            temp1<-nrow(mat)
-            temp2<-sweep(-mat[-temp1,],2,Biplot.XY.RightClick,"+") # m-a
-            temp3<-diff(mat) #b-a
-            temp4<-rowSums(temp3*temp2)
-            temp5<-rowSums(temp3^2)
-            temp6<-ifelse(abs(temp5)<eps,0,temp4/temp5)
-            temp6<-sapply(temp6,function(x) min(max(0,x),1))
-            min(rowSums(temp2^2)-temp6^2*temp5)
-            })))]
-          }
-      Kraal.in.func()
-      }
-  }
+### BIPLOT REGION : GUI : AXIS POP-UP MENU ###################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.GUI.AxisPopUpMenu}{Biplot region (GUI): Axis pop-up menu}{Axis pop-up menu} BEGINLISTING")
 
 Biplot.RightClickOnAxis.Menu<-tk2menu(BiplotRegion.image,tearoff=FALSE)
 tkadd(Biplot.RightClickOnAxis.Menu,"command",label="Highlight",command=function()
@@ -7575,6 +8048,9 @@ tkadd(Biplot.RightClickOnAxis.Menu,"command",label="Format...",command=function(
   })
 
 ##############################################################################
+### BIPLOT REGION : GUI : OUTER POP-UP MENU ##################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.BiplotRegion.GUI.OuterPopUpMenu}{Biplot region (GUI): Outer pop-up menu}{Outer pop-up menu} BEGINLISTING")
 
 Biplot.RightClickOutside.Menu<-tk2menu(BiplotRegion.image,tearoff=FALSE)
 tkadd(Biplot.RightClickOutside.Menu,"checkbutton",label="Show title",variable=View.ShowTitle.var,command=function()
@@ -7626,13 +8102,13 @@ tkadd(Biplot.RightClickOutside.Menu,"separator")
 tkadd(Biplot.RightClickOutside.Menu,"command",label="Show next legend entries",command=function()
   {
   GUI.BindingsOff()
-  Legend.NextPage.cmd()
+  View.ShowNextLegendEntries.cmd()
   GUI.BindingsOn()
   })
 tkadd(Biplot.RightClickOutside.Menu,"command",label="Show previous legend entries",command=function()
   {
   GUI.BindingsOff()
-  Legend.PrevPage.cmd()
+  View.ShowPreviousLegendEntries.cmd()
   GUI.BindingsOn()
   })
 tkadd(Biplot.RightClickOutside.Menu,"separator")
@@ -7683,13 +8159,13 @@ tkadd(Biplot.None.RightClickOutside.Menu,"separator")
 tkadd(Biplot.None.RightClickOutside.Menu,"command",label="Show next legend entries",command=function()
   {
   GUI.BindingsOff()
-  Legend.NextPage.cmd()
+  View.ShowNextLegendEntries.cmd()
   GUI.BindingsOn()
   })
 tkadd(Biplot.None.RightClickOutside.Menu,"command",label="Show previous legend entries",command=function()
   {
   GUI.BindingsOff()
-  Legend.PrevPage.cmd()
+  View.ShowPreviousLegendEntries.cmd()
   GUI.BindingsOn()
   })
 tkadd(Biplot.None.RightClickOutside.Menu,"separator")
@@ -7710,169 +8186,20 @@ tkadd(Biplot.None.RightClickOutside.Menu,"command",label="Print...",state=if (.P
 
 #####################################################################################################################
 #####################################################################################################################
-### CONTROL BUTTONS #################################################################################################
-#####################################################################################################################
-#####################################################################################################################
-
-ControlButtons.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
-
-ControlButtons.ProgressBar.pb<-ttkprogressbar(ControlButtons.frame,mode="determinate") #tk2progress(ControlButtons.frame,mode="determinate")
-
-ControlButtons.ProgressBar.create<-function() tkplace(ControlButtons.ProgressBar.pb,relx=.005,rely=.5,relwidth=.1,height=18,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.ProgressBar.create()
-
-ControlButtons.ProgressBar.destroy<-function() tkplace(ControlButtons.ProgressBar.pb,width=0,height=0)
-
-ControlButtons.DisplayInExternalWindow.AsIs.cmd<-function()
-  {
-  .Tcl("update")  # Don't know if this helps for anything.
-  if (boptions$ReuseExternalWindows && dev.cur()>1) graphics.off()
-  x11(width=7,height=7)
-  Biplot.plot()
-  .Tcl("update")  # Don't know if this helps for anything.
-  }
-
-ControlButtons.DisplayInExternalWindow.In3D.cmd<-function()
-  {
-  if (data.class(try(.find.package("rgl"),TRUE))=="try-error")
-    {
-    tkmessageBox(title="In 3D",parent=GUI.TopLevel,message="This option requires the `rgl' package. \nPlease download and install.",icon="info",type="ok")
-    tkfocus(GUI.TopLevel)
-    }
-    else
-      {
-      require("rgl",quietly=TRUE)
-      Biplot.plot3D()
-      }
-  }
-
-ControlButtons.External.but<-tk2menubutton(ControlButtons.frame,text="External",direction="above")
-ControlButtons.External.menu<-tk2menu(MenuBar.menu,tearoff=FALSE)
-tkadd(ControlButtons.External.menu,"command",label="As is",underline="3",accelerator="F11",command=function()
-  {
-  GUI.BindingsOff()
-  ControlButtons.DisplayInExternalWindow.AsIs.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ControlButtons.External.menu,"command",label="In 3D",underline="3",accelerator="F12",command=function()
-  {
-  GUI.BindingsOff()
-  ControlButtons.DisplayInExternalWindow.In3D.cmd()
-  GUI.BindingsOn()
-  })
-
-tkconfigure(ControlButtons.External.but,menu=ControlButtons.External.menu)
-tkplace(ControlButtons.External.but,relx=.12,rely=.5,relwidth=.075,height=22,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.HidePoints.var<-tclVar("0")
-ControlButtons.HidePoints.cmd<-function()
-  {
-  if (tclvalue(ControlButtons.HidePoints.var)=="1")
-    {
-    #View.ShowPointLabels.var<<-tclVar("0") An exception is made so that the picture doesn't move.
-    View.ShowPointValues.var<<-tclVar("0")
-    View.ShowGroupLabelsInLegend.var<<-tclVar("0")
-    if (tclvalue(Biplot.points.mode)=="2") Biplot.points.mode<<-tclVar("1")
-    }
-    else
-      {
-      #View.ShowPointLabels.var<<-tclVar("1") # An exception is made so that the picture doesn't move.
-      View.ShowPointValues.var<<-tclVar("1")
-      if (g>1) View.ShowGroupLabelsInLegend.var<<-tclVar("1")
-      }
-  Biplot.replot()
-  }
-
-ControlButtons.HideAxes.var<-tclVar("0")
-ControlButtons.HideAxes.cmd<-function()
-  {
-  if (tclvalue(ControlButtons.HideAxes.var)=="1")
-    {
-    View.AxisLabels.var<<-tclVar("-1")
-    Biplot.points.mode<<-tclVar("-1")
-    }
-    else
-      {
-      if (tclvalue(Biplot.Axes.var)%in%c("13","14")) View.AxisLabels.var<<-tclVar("2")
-        else View.AxisLabels.var<<-tclVar("1")
-      Biplot.points.mode<<-tclVar("0")
-      }
-  Biplot.replot()
-  }
-
-ControlButtons.Hide.but<-tk2menubutton(ControlButtons.frame,text="Hide",direction="above")
-ControlButtons.Hide.menu<-tk2menu(MenuBar.menu,tearoff=FALSE)
-tkadd(ControlButtons.Hide.menu,"checkbutton",label="Points",underline="0",variable=ControlButtons.HidePoints.var,command=function()
-  {
-  GUI.BindingsOff()
-  ControlButtons.HidePoints.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ControlButtons.Hide.menu,"checkbutton",label="Axes",underline="0",variable=ControlButtons.HideAxes.var,command=function()
-  {
-  GUI.BindingsOff()
-  ControlButtons.HideAxes.cmd()
-  GUI.BindingsOn()
-  })
-
-tkconfigure(ControlButtons.Hide.but,menu=ControlButtons.Hide.menu)
-tkplace(ControlButtons.Hide.but,relx=.2075,rely=.5,relwidth=.055,height=22,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.LiveUpdates.var<-tclVar("1")
-ControlButtons.LiveUpdates.chk<-tk2checkbutton(ControlButtons.frame,text="Live updates",variable=ControlButtons.LiveUpdates.var)
-tkplace(ControlButtons.LiveUpdates.chk,relx=.29,rely=.5,relwidth=.0745,relheight=.625,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.Stop.var<-FALSE
-ControlButtons.Stop.cmd<-function()
-  {
-  ControlButtons.Stop.var<<-TRUE
-  }
-
-ControlButtons.Stop.but<-tk2button(ControlButtons.frame,text="Stop",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  ControlButtons.Stop.cmd()
-  GUI.BindingsOn()
-  })
-tkplace(ControlButtons.Stop.but,relx=.405,rely=.5,relwidth=.07,height=22,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.ReturnPoints.but<-tk2button(ControlButtons.frame,text="Return points",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.ReturnPoints.cmd()
-  GUI.BindingsOn()
-  })
-tkplace(ControlButtons.ReturnPoints.but,relx=.6703+.005,rely=.5,relwidth=.075,height=22,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.ReturnAxes.but<-tk2button(ControlButtons.frame,text="Return axes",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.ReturnAxes.cmd()
-  GUI.BindingsOn()
-  })
-tkplace(ControlButtons.ReturnAxes.but,relx=.765+.005,rely=.5,relwidth=.075,height=22,"in"=ControlButtons.frame,anchor="w")
-
-ControlButtons.ReturnAll.but<-tk2button(ControlButtons.frame,text="Return all",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.ReturnAll.cmd()
-  GUI.BindingsOn()
-  })
-tkplace(ControlButtons.ReturnAll.but,relx=.8597+.005,rely=.5,relwidth=.075,height=22,"in"=ControlButtons.frame,anchor="w")
-
-tkplace(ControlButtons.frame,relx=.005,rely=.95,relwidth=.99,relheight=.045,"in"=GUI.TopLevel)
-
-#####################################################################################################################
-#####################################################################################################################
 ### SETTINGS BOX ####################################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.SettingsBox}{Settings box}{Settings box} BEGINLISTING")
 
-SettingsBox.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
-tkplace(SettingsBox.frame,relx=.61,rely=.6,relwidth=.385,relheight=.06,"in"=GUI.TopLevel)
+#####################################################################################################################
+### SETTINGS BOX : FUNCTIONS ########################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.SettingsBox.Functions}{Settings box (functions)}{Functions} BEGINLISTING")
 
-tkplace(tklabel(SettingsBox.frame,text="Action"),rely=.5,relwidth=.1,"in"=SettingsBox.frame,anchor="w")
+##############################################################################
+### SETTINGS BOX : FUNCTIONS : ACTION ########################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.SettingsBox.Functions.Action}{Settings box (functions): Action}{Action} BEGINLISTING")
 
 SettingsBox.action.cmd<-function(FollowThrough=TRUE)
   {
@@ -7885,18 +8212,16 @@ SettingsBox.action.cmd<-function(FollowThrough=TRUE)
     "13"=Axes.CircularNonLinear.determine())
   Biplot.replot()
   }
-SettingsBox.action.combo<-tkwidget(SettingsBox.frame,"ComboBox",editable=FALSE,values=c("Predict","Interpolate: centroid","Interpolate: vector sum"),text="Predict",height=3,modifycmd=function()
-  {
-  GUI.BindingsOff()
-  SettingsBox.action.cmd()
-  GUI.BindingsOn()
-  })
-tkplace(SettingsBox.action.combo,relx=.11,rely=.5,relwidth=.35,"in"=SettingsBox.frame,anchor="w")
 
-tkplace(tklabel(SettingsBox.frame,text="Transformation"),relx=.47,rely=.5,relwidth=.2,"in"=SettingsBox.frame,anchor="w")
+##############################################################################
+### SETTINGS BOX : FUNCTIONS : TRANSFORMATION ################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.SettingsBox.Functions.Transformation}{Settings box (functions): Transformation}{Transformation} BEGINLISTING")
 
 SettingsBox.transformation.func<-NULL # set in SettingsBox.transformation.cmd
+
 SettingsBox.BackTransformation.func<-NULL # set in SettingsBox.transformation.cmd
+
 SettingsBox.transformation.cmd<-function(FollowThrough=TRUE)
   {
   temp1<-tclvalue(tkget(SettingsBox.transformation.combo))
@@ -8016,17 +8341,11 @@ SettingsBox.transformation.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) SettingsBox.transformation.FollowThrough.cmd()
   }
 
-SettingsBox.transformation.combo<-tkwidget(SettingsBox.frame,"ComboBox",editable=FALSE,values=if (any(Data[samples.in,variables.in]<=0)) c("Centre","Centre, scale","Unitise, centre") else c("Centre","Centre, scale","Unitise, centre","Log, centre","Log, centre, scale", "Log, unitise, centre"),text="Centre",height=if (any(Data[samples.in,variables.in]<=0)) 3 else 6,modifycmd=function()
-  {
-  GUI.BindingsOff()
-  SettingsBox.transformation.cmd()
-  GUI.BindingsOn()
-  })
-tkplace(SettingsBox.transformation.combo,relx=.68,rely=.5,relwidth=.3,"in"=SettingsBox.frame,anchor="w")
+##############################################################################
 
 SettingsBox.transformation.FollowThrough.cmd<-function()
   {
-  tkconfigure(ControlButtons.ProgressBar.pb,value=1/6*100)
+  tkconfigure(Other.ProgressBar.pb,value=1/6*100)
   .Tcl("update")
   if (as.numeric(tclvalue(Biplot.Axes.var))<10)
     {
@@ -8044,19 +8363,59 @@ SettingsBox.transformation.FollowThrough.cmd<-function()
           "3"=Points.DistanceMetric.Mahalanobis.cmd())
   }
 
+#####################################################################################################################
+### SETTINGS BOX : GUI ##############################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.SettingsBox.GUI}{Settings box (GUI)}{GUI} BEGINLISTING")
 
-#####################################################################################################################
-#####################################################################################################################
-### Diagnostic TABS ################################################################################################
-#####################################################################################################################
-#####################################################################################################################
+SettingsBox.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
+tkplace(SettingsBox.frame,relx=.61,rely=.6,relwidth=.385,relheight=.06,"in"=GUI.TopLevel)
 
 ##############################################################################
-### TABS #####################################################################
+### SETTINGS BOX : GUI : ACTION ##############################################
 ##############################################################################
+#####cat("ENDLISTING \\0sourcethree{SC.SettingsBox.GUI.Action}{Settings box (GUI): Action}{Action} BEGINLISTING")
 
-DiagnosticTabs.nb<-tk2notebook(GUI.TopLevel,tabs=NULL) # Changed for R2.7
-tkplace(DiagnosticTabs.nb,relx=.61,rely=.04,relwidth=.385,relheight=.55,"in"=GUI.TopLevel)
+tkplace(tklabel(SettingsBox.frame,text="Action"),rely=.5,relwidth=.1,"in"=SettingsBox.frame,anchor="w")
+
+SettingsBox.action.combo<-tkwidget(SettingsBox.frame,"ComboBox",editable=FALSE,values=c("Predict","Interpolate: centroid","Interpolate: vector sum"),text="Predict",height=3,modifycmd=function()
+  {
+  GUI.BindingsOff()
+  SettingsBox.action.cmd()
+  GUI.BindingsOn()
+  })
+tkplace(SettingsBox.action.combo,relx=.11,rely=.5,relwidth=.35,"in"=SettingsBox.frame,anchor="w")
+
+##############################################################################
+### SETTINGS BOX : GUI : TRANSFORMATION ######################################
+##############################################################################
+#####cat("ENDLISTING \\0sourcethree{SC.SettingsBox.GUI.Transformation}{Settings box (GUI): Transformation}{Transformation} BEGINLISTING")
+
+tkplace(tklabel(SettingsBox.frame,text="Transformation"),relx=.47,rely=.5,relwidth=.2,"in"=SettingsBox.frame,anchor="w")
+
+SettingsBox.transformation.combo<-tkwidget(SettingsBox.frame,"ComboBox",editable=FALSE,values=if (any(Data[samples.in,variables.in]<=0)) c("Centre","Centre, scale","Unitise, centre") else c("Centre","Centre, scale","Unitise, centre","Log, centre","Log, centre, scale", "Log, unitise, centre"),text="Centre",height=if (any(Data[samples.in,variables.in]<=0)) 3 else 6,modifycmd=function()
+  {
+  GUI.BindingsOff()
+  SettingsBox.transformation.cmd()
+  GUI.BindingsOn()
+  })
+tkplace(SettingsBox.transformation.combo,relx=.68,rely=.5,relwidth=.3,"in"=SettingsBox.frame,anchor="w")
+
+#####################################################################################################################
+#####################################################################################################################
+### DIAGNOSTIC TABS #################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.DiagnosticTabs}{Diagnostic tabs}{Diagnostic tabs} BEGINLISTING")
+
+#####################################################################################################################
+### DIAGNOSTIC TABS : FUNCTIONS #####################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.DiagnosticTabs.Functions}{Diagnostic tabs (functions)}{Functions} BEGINLISTING")
+
+##############################################################################
+### DIAGNOSTIC TABS : FUNCTIONS : GENERAL ####################################
+##############################################################################
 
 DiagnosticTabs.xy<-NULL
 DiagnosticTabs.which<-NULL
@@ -8069,6 +8428,8 @@ DiagnosticTabs.switch<-function()
     "3"=GroupsTab.plot.predictivities(screen=FALSE),
     "4"=AxesTab.plot.predictivities(screen=FALSE))
   }
+
+##############################################################################
 
 DiagnosticTabs.SaveAs.PDF.cmd<-function()
   {
@@ -8168,6 +8529,8 @@ DiagnosticTabs.SaveAs.PicTeX.cmd<-function()
   tkfocus(GUI.TopLevel)
   }
 
+##############################################################################
+
 DiagnosticTabs.Copy.cmd<-function()
   {
   win.metafile(width=8,height=8,restoreConsole=FALSE)
@@ -8185,6 +8548,8 @@ DiagnosticTabs.Print.cmd<-function()
     }
   }
 
+##############################################################################
+
 DiagnosticTabs.ExternalWindow.cmd<-function()
   {
   if (boptions$ReuseExternalWindows && dev.cur()>1) graphics.off()
@@ -8193,26 +8558,22 @@ DiagnosticTabs.ExternalWindow.cmd<-function()
   }
 
 ##############################################################################
-### CONVERGENCE TAB ##########################################################
+### DIAGNOSTIC TABS : FUNCTIONS : CONVERGENCE ################################
 ##############################################################################
-
-DiagnosticTabs.Convergence<-tk2frame(DiagnosticTabs.nb)
-tkadd(DiagnosticTabs.nb,DiagnosticTabs.Convergence,text="Convergence")
-
-ConvergenceTab.HorizontalScale.func<-function() as.numeric(tkwinfo("width",DiagnosticTabs.Convergence))/as.numeric(tkwinfo("fpixels",DiagnosticTabs.Convergence,"1i"))/4*.99
-ConvergenceTab.VerticalScale.func<-function() as.numeric(tkwinfo("height",DiagnosticTabs.Convergence))/as.numeric(tkwinfo("fpixels",DiagnosticTabs.Convergence,"1i"))/4*.99
-ConvergenceTab.image<-mytkrplot(DiagnosticTabs.Convergence,fun=function()
-  {
-  par(mar=c(0,0,0,0),bg="white")
-  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
- },
- hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
-tkplace(ConvergenceTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Convergence)
-
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.Functions.Convergence}{Diagnostic tabs (functions): Convergence}{Convergence} BEGINLISTING")
 
 ConvergenceTab.update<-FALSE
 ConvergenceTab.points.StressVector<-NULL
 ConvergenceTab.axes.StressVector<-NULL
+
+ConvergenceTab.ShowTitle.var<-tclVar("1")
+
+ConvergenceTab.ShowTitle.cmd<-function()
+  {
+  ConvergenceTab.replot()
+  }
+
+##############################################################################
 
 ConvergenceTab.plot<-function(screen=TRUE)
   {
@@ -8248,138 +8609,32 @@ ConvergenceTab.RightClick<-function(x,y)
   tkpopup(ConvergenceTab.RightClick.Menu,tclvalue(tkwinfo("pointerx",ConvergenceTab.image)),tclvalue(tkwinfo("pointery",ConvergenceTab.image)))
   }
 
-ConvergenceTab.ShowTitle.var<-tclVar("1")
-ConvergenceTab.ShowTitle.cmd<-function()
-  {
-  ConvergenceTab.replot()
-  }
-
-ConvergenceTab.RightClick.Menu<-tk2menu(ConvergenceTab.image,tearoff=FALSE)
-tkadd(ConvergenceTab.RightClick.Menu,"checkbutton",label="Show title",variable=ConvergenceTab.ShowTitle.var,command=function()
-  {
-  GUI.BindingsOff()
-  ConvergenceTab.ShowTitle.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.RightClick.Menu,"separator")
-tkadd(ConvergenceTab.RightClick.Menu,"command",label="Format...",command=function()
-  {
-  GUI.BindingsOff()
-  Format.DiagnosticTabs.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.RightClick.Menu,"separator")
-ConvergenceTab.SaveAs.menu<-tk2menu(ConvergenceTab.image,tearoff=FALSE)
-tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.PDF.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Postscript.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Metafile.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Bmp.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Png.cmd()
-  GUI.BindingsOn()
-  })
-ConvergenceTab.SaveAs.Jpeg.menu<-tk2menu(ConvergenceTab.SaveAs.menu,tearoff=FALSE)
-tkadd(ConvergenceTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-50
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-75
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-100
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.SaveAs.menu,"cascade",label="Jpeg",menu=ConvergenceTab.SaveAs.Jpeg.menu)
-tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.SaveAs.PicTeX.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.RightClick.Menu,"cascade",label="Save as",menu=ConvergenceTab.SaveAs.menu)
-tkadd(ConvergenceTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.Copy.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.RightClick.Menu,"separator")
-tkadd(ConvergenceTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.Print.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(ConvergenceTab.RightClick.Menu,"separator")
-tkadd(ConvergenceTab.RightClick.Menu,"command",label="External",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"1"
-  DiagnosticTabs.ExternalWindow.cmd()
-  GUI.BindingsOn()
-  })
-
 ##############################################################################
-### POINTS TAB ###############################################################
+### DIAGNOSTIC TABS : FUNCTIONS : POINTS #####################################
 ##############################################################################
-
-DiagnosticTabs.Points<-tk2frame(DiagnosticTabs.nb)
-tkadd(DiagnosticTabs.nb,DiagnosticTabs.Points,text="Points")
-
-PointsTab.image<-mytkrplot(DiagnosticTabs.Points,fun=function()
-  {
-  par(mar=c(0,0,0,0),"bg"="white")
-  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
-  },hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
-tkplace(PointsTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Points)
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.Functions.Points}{Diagnostic tabs (functions): Points}{Points} BEGINLISTING")
 
 PointsTab.update<-TRUE
 PointsTab.predictivities1dim<-NULL
 PointsTab.predictivities<-NULL
+
+PointsTab.ShowTitle.var<-tclVar("1")
+
+PointsTab.ShowTitle.cmd<-function()
+  {
+  PointsTab.replot()
+  }
+
+PointsTab.ShowPointLabels.var<-tclVar("1")
+
+PointsTab.ShowPointLabels.cmd<-function()
+  {
+  PointsTab.replot()
+  }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.DiagnosticTabs.Functions.Points.Predictivities}{Diagnostic tabs (functions): Points: Predictivities}{Predictivities} BEGINLISTING")
 
 PointsTab.plot.predictivities<-function(screen=TRUE)
   {
@@ -8418,6 +8673,10 @@ PointsTab.predictivities.replot<-function()
   tkrreplot(PointsTab.image,PointsTab.plot.predictivities,hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
   if (tclvalue(Help.ShowPopUpHelp.var)=="1") mytktip(PointsTab.image,"The points tab: point predictivities. For options, right click. On the horizontal axis: the point predictivities in the first biplot dimension only. On the vertical axis: the point predictivities in the first two biplot dimensions jointly. The height above the diagonal line represents the point predictivities in the second biplot dimension only. The closer a point is to the top of the graph, the better represented the corresponding sample is in the biplot.")
   }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.DiagnosticTabs.Functions.Points.ShepardDiagram}{Diagnostic tabs (functions): Points: Shepard diagram}{Shepard diagram} BEGINLISTING")
 
 PointsTab.plot.ShepardDiagram<-function(screen=TRUE)
   {
@@ -8472,7 +8731,6 @@ PointsTab.plot.ShepardDiagram<-function(screen=TRUE)
       plot(0,0,main="",xlab="",ylab="",xaxt="n",yaxt="n",type="n",cex.lab=.85,cex.axis=.85)
       text(0,0,label="Too many points")
       }
-
   }
 
 PointsTab.ShepardDiagram.replot<-function()
@@ -8480,6 +8738,8 @@ PointsTab.ShepardDiagram.replot<-function()
   tkrreplot(PointsTab.image,PointsTab.plot.ShepardDiagram,hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
   if (tclvalue(Help.ShowPopUpHelp.var)=="1") mytktip(PointsTab.image,"The points tab: Shepard diagram. For options, right click. On the horizontal axis: the inter-sample dissimilarities. On the vertical axis: the inter-point distances. On the vertical axis superimposed onto the line (or step-function or curve): the inter-sample disparities. The closer the inter-point distances to the inter-sample disparities, the better the fit. A user-specified number of worst fitting point-pairs are identified in the top-left corner.")
   }
+
+##############################################################################
 
 PointsTab.replot<-function()
   {
@@ -8496,150 +8756,30 @@ PointsTab.RightClick<-function(x,y)
   tkpopup(PointsTab.RightClick.Menu,tclvalue(tkwinfo("pointerx",PointsTab.image)),tclvalue(tkwinfo("pointery",PointsTab.image)))
   }
 
-PointsTab.ShowTitle.var<-tclVar("1")
-PointsTab.ShowTitle.cmd<-function()
-  {
-  PointsTab.replot()
-  }
-
-PointsTab.ShowPointLabels.var<-tclVar("1")
-PointsTab.ShowPointLabels.cmd<-function()
-  {
-  PointsTab.replot()
-  }
-
-PointsTab.RightClick.Menu<-tk2menu(PointsTab.image,tearoff=FALSE)
-tkadd(PointsTab.RightClick.Menu,"checkbutton",label="Show title",variable=PointsTab.ShowTitle.var,command=function()
-  {
-  GUI.BindingsOff()
-  PointsTab.ShowTitle.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.RightClick.Menu,"checkbutton",label="Show point labels",variable=PointsTab.ShowPointLabels.var,command=function()
-  {
-  GUI.BindingsOff()
-  PointsTab.ShowPointLabels.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.RightClick.Menu,"separator")
-tkadd(PointsTab.RightClick.Menu,"command",label="Format...",command=function()
-  {
-  GUI.BindingsOff()
-  Format.DiagnosticTabs.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.RightClick.Menu,"separator")
-PointsTab.SaveAs.menu<-tk2menu(PointsTab.image,tearoff=FALSE)
-tkadd(PointsTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.PDF.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Postscript.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Metafile.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Bmp.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Png.cmd()
-  GUI.BindingsOn()
-  })
-PointsTab.SaveAs.Jpeg.menu<-tk2menu(PointsTab.SaveAs.menu,tearoff=FALSE)
-tkadd(PointsTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-50
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-75
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-100
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.SaveAs.menu,"cascade",label="Jpeg",menu=PointsTab.SaveAs.Jpeg.menu)
-tkadd(PointsTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.SaveAs.PicTeX.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.RightClick.Menu,"cascade",label="Save as",menu=PointsTab.SaveAs.menu)
-tkadd(PointsTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.Copy.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.RightClick.Menu,"separator")
-tkadd(PointsTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.Print.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(PointsTab.RightClick.Menu,"separator")
-tkadd(PointsTab.RightClick.Menu,"command",label="External",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"2"
-  DiagnosticTabs.ExternalWindow.cmd()
-  GUI.BindingsOn()
-  })
-
 ##############################################################################
-### GROUPS TAB ###############################################################
+### DIAGNOSTIC TABS : FUNCTIONS : GROUPS #####################################
 ##############################################################################
-
-DiagnosticTabs.Groups<-tk2frame(DiagnosticTabs.nb)
-tkadd(DiagnosticTabs.nb,DiagnosticTabs.Groups,text="Groups")
-
-GroupsTab.image<-mytkrplot(DiagnosticTabs.Groups,fun=function()
-  {
-  par(mar=c(0,0,0,0),"bg"="white")
-  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
-  },hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
-tkplace(GroupsTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Groups)
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.Functions.Groups}{Diagnostic tabs (functions): Groups}{Groups} BEGINLISTING")
 
 GroupsTab.update<-FALSE
 GroupsTab.predictivities1dim<-NULL
 GroupsTab.predictivities<-NULL
+
+GroupsTab.ShowTitle.var<-tclVar("1")
+
+GroupsTab.ShowTitle.cmd<-function()
+  {
+  GroupsTab.replot()
+  }
+
+GroupsTab.ShowGroupLabels.var<-tclVar("1")
+
+GroupsTab.ShowGroupLabels.cmd<-function()
+  {
+  GroupsTab.replot()
+  }
+
+##############################################################################
 
 GroupsTab.plot.predictivities<-function(screen=TRUE)
   {
@@ -8687,150 +8827,30 @@ GroupsTab.RightClick<-function(x,y)
   tkpopup(GroupsTab.RightClick.Menu,tclvalue(tkwinfo("pointerx",GroupsTab.image)),tclvalue(tkwinfo("pointery",GroupsTab.image)))
   }
 
-GroupsTab.ShowTitle.var<-tclVar("1")
-GroupsTab.ShowTitle.cmd<-function()
-  {
-  GroupsTab.replot()
-  }
-
-GroupsTab.ShowGroupLabels.var<-tclVar("1")
-GroupsTab.ShowGroupLabels.cmd<-function()
-  {
-  GroupsTab.replot()
-  }
-
-GroupsTab.RightClick.Menu<-tk2menu(GroupsTab.image,tearoff=FALSE)
-tkadd(GroupsTab.RightClick.Menu,"checkbutton",label="Show title",variable=GroupsTab.ShowTitle.var,command=function()
-  {
-  GUI.BindingsOff()
-  GroupsTab.ShowTitle.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.RightClick.Menu,"checkbutton",label="Show group labels",variable=GroupsTab.ShowGroupLabels.var,command=function()
-  {
-  GUI.BindingsOff()
-  GroupsTab.ShowGroupLabels.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.RightClick.Menu,"separator")
-tkadd(GroupsTab.RightClick.Menu,"command",label="Format...",command=function()
-  {
-  GUI.BindingsOff()
-  Format.DiagnosticTabs.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.RightClick.Menu,"separator")
-GroupsTab.SaveAs.menu<-tk2menu(GroupsTab.image,tearoff=FALSE)
-tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.PDF.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Postscript.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Metafile.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Bmp.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Png.cmd()
-  GUI.BindingsOn()
-  })
-GroupsTab.SaveAs.Jpeg.menu<-tk2menu(GroupsTab.SaveAs.menu,tearoff=FALSE)
-tkadd(GroupsTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-50
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-75
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-100
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.SaveAs.menu,"cascade",label="Jpeg",menu=GroupsTab.SaveAs.Jpeg.menu)
-tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.SaveAs.PicTeX.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.RightClick.Menu,"cascade",label="Save as",menu=GroupsTab.SaveAs.menu)
-tkadd(GroupsTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.Copy.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.RightClick.Menu,"separator")
-tkadd(GroupsTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.Print.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(GroupsTab.RightClick.Menu,"separator")
-tkadd(GroupsTab.RightClick.Menu,"command",label="External",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"3"
-  DiagnosticTabs.ExternalWindow.cmd()
-  GUI.BindingsOn()
-  })
-
 ##############################################################################
-### AXES TAB #################################################################
+### DIAGNOSTIC TABS : FUNCTIONS : AXES #######################################
 ##############################################################################
-
-DiagnosticTabs.Axes<-tk2frame(DiagnosticTabs.nb)
-tkadd(DiagnosticTabs.nb,DiagnosticTabs.Axes,text="Axes")
-
-AxesTab.image<-mytkrplot(DiagnosticTabs.Axes,fun=function()
-  {
-  par(mar=c(0,0,0,0),"bg"="white")
-  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
-  },hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
-tkplace(AxesTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Axes)
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.Functions.Axes}{Diagnostic tabs (functions): Axes}{Axes} BEGINLISTING")
 
 AxesTab.update<-TRUE
 AxesTab.predictivities1dim<-NULL
 AxesTab.predictivities<-NULL
+
+AxesTab.ShowTitle.var<-tclVar("1")
+
+AxesTab.ShowTitle.cmd<-function()
+  {
+  AxesTab.replot()
+  }
+
+AxesTab.ShowAxisLabels.var<-tclVar("1")
+
+AxesTab.ShowAxisLabels.cmd<-function()
+  {
+  AxesTab.replot()
+  }
+
+##############################################################################
 
 AxesTab.plot.predictivities<-function(screen=TRUE)
   {
@@ -8845,8 +8865,8 @@ AxesTab.plot.predictivities<-function(screen=TRUE)
       else par(mar=c(2.5,3,2.5,2))
 
   par("bg"="white",pty="s")
-  leaveout<-sort(unique(c(which(is.na(AxesTab.predictivities1dim)),which(is.na(AxesTab.predictivities))))) # TO TAKE CARE OF CASE WHEN GROUP HAS ONLY 1 SAMPLE.
-  if (length(leaveout)>0) leavein<-(1:length(AxesTab.predictivities))[-leaveout] else leavein<-1:length(AxesTab.predictivities) # TO TAKE CARE OF CASE WHEN GROUP HAS ONLY 1 SAMPLE.
+  leaveout<-sort(unique(c(which(is.na(AxesTab.predictivities1dim)),which(is.na(AxesTab.predictivities))))) # To take care of the case when a group has only 1 sample.
+  if (length(leaveout)>0) leavein<-(1:length(AxesTab.predictivities))[-leaveout] else leavein<-1:length(AxesTab.predictivities) # # To care of the case when a group has only 1 sample.
   plot(AxesTab.predictivities1dim[leavein],AxesTab.predictivities[leavein],xaxt="n",yaxt="n",type="n",xlab="",ylab="",cex.lab=.85,cex.axis=.85,xlim=c(0,1),ylim=c(0,1) )
   if (tclvalue(AxesTab.ShowAxisLabels.var)=="1") xylim<-getLabelUsr(c(AxesTab.predictivities1dim[leavein],0,1),c(AxesTab.predictivities[leavein],0,1),par(),c(bpar$axes.label.text[variables.in][leavein],NA,NA),bpar$DiagnosticTabs.predictivities.label.cex,c(rep(bpar$DiagnosticTabs.predictivities.label.HorizOffset,length(leavein)),0),c(rep(bpar$DiagnosticTabs.predictivities.label.VertOffset,length(leavein)),0))
     else xylim<-list(c(0,1),c(0,1))
@@ -8890,217 +8910,10 @@ AxesTab.RightClick<-function(x,y)
   tkpopup(AxesTab.RightClick.Menu,tclvalue(tkwinfo("pointerx",AxesTab.image)),tclvalue(tkwinfo("pointery",AxesTab.image)))
   }
 
-AxesTab.ShowTitle.var<-tclVar("1")
-AxesTab.ShowTitle.cmd<-function()
-  {
-  AxesTab.replot()
-  }
-
-AxesTab.ShowAxisLabels.var<-tclVar("1")
-AxesTab.ShowAxisLabels.cmd<-function()
-  {
-  AxesTab.replot()
-  }
-
-AxesTab.RightClick.Menu<-tk2menu(AxesTab.image,tearoff=FALSE)
-tkadd(AxesTab.RightClick.Menu,"checkbutton",label="Show title",variable=AxesTab.ShowTitle.var,command=function()
-  {
-  GUI.BindingsOff()
-  AxesTab.ShowTitle.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.RightClick.Menu,"checkbutton",label="Show axis labels",variable=AxesTab.ShowAxisLabels.var,command=function()
-  {
-  GUI.BindingsOff()
-  AxesTab.ShowAxisLabels.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.RightClick.Menu,"separator")
-tkadd(AxesTab.RightClick.Menu,"command",label="Format...",command=function()
-  {
-  GUI.BindingsOff()
-  Format.DiagnosticTabs.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.RightClick.Menu,"separator")
-AxesTab.SaveAs.menu<-tk2menu(AxesTab.image,tearoff=FALSE)
-tkadd(AxesTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.PDF.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Postscript.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Metafile.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Bmp.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Png.cmd()
-  GUI.BindingsOn()
-  })
-AxesTab.SaveAs.Jpeg.menu<-tk2menu(AxesTab.SaveAs.menu,tearoff=FALSE)
-tkadd(AxesTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-50
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-75
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
-  {
-  GUI.BindingsOff()
-  File.Jpeg.quality<<-100
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.Jpeg.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.SaveAs.menu,"cascade",label="Jpeg",menu=AxesTab.SaveAs.Jpeg.menu)
-tkadd(AxesTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.SaveAs.PicTeX.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.RightClick.Menu,"cascade",label="Save as",menu=AxesTab.SaveAs.menu)
-tkadd(AxesTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.Copy.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.RightClick.Menu,"separator")
-tkadd(AxesTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.Print.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(AxesTab.RightClick.Menu,"separator")
-tkadd(AxesTab.RightClick.Menu,"command",label="External",command=function()
-  {
-  GUI.BindingsOff()
-  DiagnosticTabs.which<<-"4"
-  DiagnosticTabs.ExternalWindow.cmd()
-  GUI.BindingsOn()
-  })
-
 ##############################################################################
-### PREDICTIONS TAB ##########################################################
+### DIAGNOSTIC TABS : FUNCTIONS : PREDICTION #################################
 ##############################################################################
-
-DiagnosticTabs.Predictions<-tk2frame(DiagnosticTabs.nb)
-tkadd(DiagnosticTabs.nb,DiagnosticTabs.Predictions,text="Predictions")
-
-PredictionsTab.arrayR<-NULL
-PredictionsTab.arrayTcl<-NULL
-PredictionsTab.ColumnsUsed<-NULL
-PredictionsTab.table<-NULL
-PredictionsTab.yscr<-NULL
-PredictionsTab.InitialSetup<-TRUE
-
-PredictionsTab.place<-function()
-  {
-  tkplace(PredictionsTab.table,relx=.5,rely=.1,height=290,"in"=DiagnosticTabs.Predictions,anchor="n")
-  b<-as.numeric(tclvalue(tkwinfo("width",PredictionsTab.table)))
-  a<-as.numeric(tclvalue(tkwinfo("width",DiagnosticTabs.Convergence)))
-  c<-a/2+b/2
-  tkplace(PredictionsTab.yscr,x=c-1,rely=.1,height=290,"in"=DiagnosticTabs.Predictions,anchor="nw")
-  }
-
-PredictionsTab.ArraySetup<-function()
-  {
-  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
-  dim(PredictionsTab.arrayR)<<-c(p.in+1,4)
-  if (PredictionsTab.InitialSetup) PredictionsTab.arrayTcl<<-tclArray()
-    else
-      {
-      .Tcl(paste("unset ",PredictionsTab.arrayTcl,sep=""))
-      PredictionsTab.arrayTcl<<-tclArray()
-      }
-  for (j in 0:3) PredictionsTab.arrayTcl[[0,j]]<<-PredictionsTab.arrayR[1,j+1]
-  for (i in (1:p.in)) PredictionsTab.arrayTcl[[i,0]]<<-PredictionsTab.arrayR[i+1,1]
-  PredictionsTab.ColumnsUsed<<-0
-  if (PredictionsTab.InitialSetup)
-    {
-    PredictionsTab.table<<-tk2table(DiagnosticTabs.Predictions,variable=PredictionsTab.arrayTcl,rows=max(17,p+1),cols=4,titlerows=1,resizeborders="none",selectmode="browse",rowseparator="\"\n\"",colseparator="\"\t\"",padx=5,background="white",state="disabled",yscrollcommand=function(...) tkset(PredictionsTab.yscr,...))
-    PredictionsTab.yscr<<-tkscrollbar(DiagnosticTabs.Predictions,command=function(...) tkyview(PredictionsTab.table,...))
-    PredictionsTab.InitialSetup<<-FALSE
-    }
-    else tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
-
-  if (Biplot.axes.mode==0)
-    {
-    for (temp1 in 1:p.in) .Tcl(paste(PredictionsTab.table," tag cell Cell",temp1,".0 ",temp1,",0",sep=""))
-    for (temp1 in 1:p.in) .Tcl(paste(PredictionsTab.table," tag configure Cell",temp1,".0"," -fg ",bpar$axes.label.col[variables.in[temp1]],sep=""))
-
-    .Tcl(paste(PredictionsTab.table," tag col VariableNames 0",sep=""))
-    .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 1",sep=""))
-    .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 2",sep=""))
-    .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 3",sep=""))
-
-    .Tcl(paste(PredictionsTab.table," tag configure title -anchor c",sep=""))
-    .Tcl(paste(PredictionsTab.table," tag configure VariableNames -anchor w",sep=""))
-    .Tcl(paste(PredictionsTab.table," tag configure NumericalOutput -anchor e",sep=""))
-    }
-    else
-      {
-      for (temp1 in 1:p.in) .Tcl(paste(PredictionsTab.table," tag cell Cell",temp1,".0 ",temp1,",0",sep=""))
-      for (temp1 in which(variables.in!=Biplot.axes.WhichHighlight)) .Tcl(paste(PredictionsTab.table," tag configure Cell",temp1,".0"," -fg ",bpar$interaction.highlight.axes.col.bg,sep=""))
-      temp1<-which(variables.in==Biplot.axes.WhichHighlight)
-      .Tcl(paste(PredictionsTab.table," tag configure Cell",temp1,".0"," -fg ",bpar$interaction.highlight.axes.col.fg,sep=""))
-
-      for (temp1 in 1:3) .Tcl(paste(PredictionsTab.table," tag cell Cell",which(variables.in==Biplot.axes.WhichHighlight),".",temp1," ",which(variables.in==Biplot.axes.WhichHighlight),",",temp1,sep=""))
-      for (temp1 in 1:3) .Tcl(paste(PredictionsTab.table," tag configure Cell",which(variables.in==Biplot.axes.WhichHighlight),".",temp1," -fg black",sep=""))
-      for (temp1 in 1:3) for (temp2 in which(variables.in!=Biplot.axes.WhichHighlight)) .Tcl(paste(PredictionsTab.table," tag cell Cell",temp2,".",temp1," ",temp2,",",temp1,sep=""))
-      for (temp1 in 1:3) for (temp2 in which(variables.in!=Biplot.axes.WhichHighlight)) .Tcl(paste(PredictionsTab.table," tag configure Cell",temp2,".",temp1," -fg ",bpar$interaction.highlight.axes.col.bg,sep=""))
-
-      .Tcl(paste(PredictionsTab.table," tag col VariableNames 0",sep=""))
-      .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 1",sep=""))
-      .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 2",sep=""))
-      .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 3",sep=""))
-
-      .Tcl(paste(PredictionsTab.table," tag configure title -anchor c",sep=""))
-      .Tcl(paste(PredictionsTab.table," tag configure VariableNames -anchor w",sep=""))
-      .Tcl(paste(PredictionsTab.table," tag configure NumericalOutput -anchor e",sep=""))
-      }
-
-  PredictionsTab.place()
-  }
-
-PredictionsTab.ArraySetup()
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.Functions.Prediction}{Diagnostic tabs (functions): Prediction}{Prediction} BEGINLISTING")
 
 PredictionsTab.update<-function()
   {
@@ -9120,26 +8933,9 @@ PredictionsTab.update<-function()
   }
 
 ##############################################################################
-### EXPORT TAB ###############################################################
+### DIAGNOSTIC TABS : FUNCTIONS : EXPORT #####################################
 ##############################################################################
-
-DiagnosticTabs.Export<-tk2frame(DiagnosticTabs.nb)
-ExportTab.frame<-tk2frame(DiagnosticTabs.Export,relief="groove",borderwidth="1.5p")
-tkplace(ExportTab.frame,"in"=DiagnosticTabs.Export,relx=.525,rely=.475,relwidth=.755,relheight=.75,anchor="center")
-tkadd(DiagnosticTabs.nb,DiagnosticTabs.Export,text="Export")
-
-ExportTab.scrx<-tkscrollbar(ExportTab.frame,repeatinterval=5,command=function(...)tkxview(ExportTab.tree,...),orient="horizontal")
-ExportTab.scry<-tkscrollbar(ExportTab.frame,repeatinterval=5,command=function(...)tkyview(ExportTab.tree,...))
-ExportTab.tree<-tkwidget(ExportTab.frame,"Tree",relief="flat",dropenabled="0",dragenabled="0",bg="white",padx=4,xscrollcommand=function(...) tkset(ExportTab.scrx,...),yscrollcommand=function(...) tkset(ExportTab.scry,...))
-tkplace(ExportTab.tree,relx=0,rely=0,relwidth=.945,relheight=.945,"in"=ExportTab.frame,anchor="nw")
-tkplace(ExportTab.scrx,relx=0,rely=1,relwidth=.95,"in"=ExportTab.frame,anchor="sw")
-tkplace(ExportTab.scry,relx=1,rely=0,relheight=.95,"in"=ExportTab.frame,anchor="ne")
-
-ExportTab.data<-NULL
-ExportTab.data.name<-NULL
-ExportTab.data.func<-NULL
-ExportTab.Rvalue<-NULL
-ExportTab.Nvalue<-NULL
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.Functions.Export}{Diagnostic tabs (functions): Export}{Export} BEGINLISTING")
 
 ExportTab.update<-function()
   {
@@ -9980,6 +9776,8 @@ ExportTab.update<-function()
     })
   }
 
+##############################################################################
+
 ExportTab.DisplayInConsole.cmd<-function()
   {
   cat("\n")
@@ -9989,6 +9787,660 @@ ExportTab.DisplayInConsole.cmd<-function()
   cat("\n")
   }
 
+ExportTab.ExportToWorkspace.cmd<-function()
+  {
+  assign(ExportTab.data.name[[ExportTab.Rvalue]][ExportTab.Nvalue],ExportTab.data.func[[ExportTab.Rvalue]][[ExportTab.Nvalue]](),envir=.GlobalEnv)
+  cat("\n","Saved '",ExportTab.data[[ExportTab.Rvalue]][ExportTab.Nvalue],"' in the Workspace as `",ExportTab.data.name[[ExportTab.Rvalue]][ExportTab.Nvalue],"'.\n\n",sep="")
+  }
+
+#####################################################################################################################
+### DIAGNOSTIC TABS : GUI ###########################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.DiagnosticTabs.GUI}{Diagnostic tabs (GUI)}{GUI} BEGINLISTING")
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : GENERAL ##########################################
+##############################################################################
+
+DiagnosticTabs.nb<-tk2notebook(GUI.TopLevel,tabs=NULL) # Changed from R 2.7
+tkplace(DiagnosticTabs.nb,relx=.61,rely=.04,relwidth=.385,relheight=.55,"in"=GUI.TopLevel)
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : CONVERGENCE ######################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.GUI.Convergence}{Diagnostic tabs (GUI): Convergence}{Convergence} BEGINLISTING")
+
+DiagnosticTabs.Convergence<-tk2frame(DiagnosticTabs.nb)
+tkadd(DiagnosticTabs.nb,DiagnosticTabs.Convergence,text="Convergence")
+
+ConvergenceTab.HorizontalScale.func<-function() as.numeric(tkwinfo("width",DiagnosticTabs.Convergence))/as.numeric(tkwinfo("fpixels",DiagnosticTabs.Convergence,"1i"))/4*.99
+ConvergenceTab.VerticalScale.func<-function() as.numeric(tkwinfo("height",DiagnosticTabs.Convergence))/as.numeric(tkwinfo("fpixels",DiagnosticTabs.Convergence,"1i"))/4*.99
+ConvergenceTab.image<-mytkrplot(DiagnosticTabs.Convergence,fun=function()
+  {
+  par(mar=c(0,0,0,0),bg="white")
+  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
+ },
+ hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
+tkplace(ConvergenceTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Convergence)
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcefour{SC.DiagnosticTabs.GUI.Convergence.PopUpMenu}{Diagnostic tabs (GUI): Convergence: Pop-up menu}{Pop-up menu} BEGINLISTING")
+
+ConvergenceTab.RightClick.Menu<-tk2menu(ConvergenceTab.image,tearoff=FALSE)
+tkadd(ConvergenceTab.RightClick.Menu,"checkbutton",label="Show title",variable=ConvergenceTab.ShowTitle.var,command=function()
+  {
+  GUI.BindingsOff()
+  ConvergenceTab.ShowTitle.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.RightClick.Menu,"separator")
+tkadd(ConvergenceTab.RightClick.Menu,"command",label="Format...",command=function()
+  {
+  GUI.BindingsOff()
+  Format.DiagnosticTabs.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.RightClick.Menu,"separator")
+ConvergenceTab.SaveAs.menu<-tk2menu(ConvergenceTab.image,tearoff=FALSE)
+tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.PDF.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Postscript.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Metafile.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Bmp.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Png.cmd()
+  GUI.BindingsOn()
+  })
+ConvergenceTab.SaveAs.Jpeg.menu<-tk2menu(ConvergenceTab.SaveAs.menu,tearoff=FALSE)
+tkadd(ConvergenceTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-50
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-75
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-100
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.SaveAs.menu,"cascade",label="Jpeg",menu=ConvergenceTab.SaveAs.Jpeg.menu)
+tkadd(ConvergenceTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.SaveAs.PicTeX.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.RightClick.Menu,"cascade",label="Save as",menu=ConvergenceTab.SaveAs.menu)
+tkadd(ConvergenceTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.Copy.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.RightClick.Menu,"separator")
+tkadd(ConvergenceTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.Print.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(ConvergenceTab.RightClick.Menu,"separator")
+tkadd(ConvergenceTab.RightClick.Menu,"command",label="External",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"1"
+  DiagnosticTabs.ExternalWindow.cmd()
+  GUI.BindingsOn()
+  })
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : POINTS ###########################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.GUI.Points}{Diagnostic tabs (GUI): Points}{Points} BEGINLISTING")
+
+DiagnosticTabs.Points<-tk2frame(DiagnosticTabs.nb)
+tkadd(DiagnosticTabs.nb,DiagnosticTabs.Points,text="Points")
+
+PointsTab.image<-mytkrplot(DiagnosticTabs.Points,fun=function()
+  {
+  par(mar=c(0,0,0,0),"bg"="white")
+  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
+  },hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
+tkplace(PointsTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Points)
+
+##############################################################################
+
+PointsTab.RightClick.Menu<-tk2menu(PointsTab.image,tearoff=FALSE)
+tkadd(PointsTab.RightClick.Menu,"checkbutton",label="Show title",variable=PointsTab.ShowTitle.var,command=function()
+  {
+  GUI.BindingsOff()
+  PointsTab.ShowTitle.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.RightClick.Menu,"checkbutton",label="Show point labels",variable=PointsTab.ShowPointLabels.var,command=function()
+  {
+  GUI.BindingsOff()
+  PointsTab.ShowPointLabels.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.RightClick.Menu,"separator")
+tkadd(PointsTab.RightClick.Menu,"command",label="Format...",command=function()
+  {
+  GUI.BindingsOff()
+  Format.DiagnosticTabs.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.RightClick.Menu,"separator")
+PointsTab.SaveAs.menu<-tk2menu(PointsTab.image,tearoff=FALSE)
+tkadd(PointsTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.PDF.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Postscript.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Metafile.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Bmp.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Png.cmd()
+  GUI.BindingsOn()
+  })
+PointsTab.SaveAs.Jpeg.menu<-tk2menu(PointsTab.SaveAs.menu,tearoff=FALSE)
+tkadd(PointsTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-50
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-75
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-100
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.SaveAs.menu,"cascade",label="Jpeg",menu=PointsTab.SaveAs.Jpeg.menu)
+tkadd(PointsTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.SaveAs.PicTeX.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.RightClick.Menu,"cascade",label="Save as",menu=PointsTab.SaveAs.menu)
+tkadd(PointsTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.Copy.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.RightClick.Menu,"separator")
+tkadd(PointsTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.Print.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(PointsTab.RightClick.Menu,"separator")
+tkadd(PointsTab.RightClick.Menu,"command",label="External",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"2"
+  DiagnosticTabs.ExternalWindow.cmd()
+  GUI.BindingsOn()
+  })
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : GROUPS ###########################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.GUI.Groups}{Diagnostic tabs (GUI): Groups}{Groups} BEGINLISTING")
+
+DiagnosticTabs.Groups<-tk2frame(DiagnosticTabs.nb)
+tkadd(DiagnosticTabs.nb,DiagnosticTabs.Groups,text="Groups")
+
+GroupsTab.image<-mytkrplot(DiagnosticTabs.Groups,fun=function()
+  {
+  par(mar=c(0,0,0,0),"bg"="white")
+  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
+  },hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
+tkplace(GroupsTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Groups)
+
+##############################################################################
+
+GroupsTab.RightClick.Menu<-tk2menu(GroupsTab.image,tearoff=FALSE)
+tkadd(GroupsTab.RightClick.Menu,"checkbutton",label="Show title",variable=GroupsTab.ShowTitle.var,command=function()
+  {
+  GUI.BindingsOff()
+  GroupsTab.ShowTitle.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.RightClick.Menu,"checkbutton",label="Show group labels",variable=GroupsTab.ShowGroupLabels.var,command=function()
+  {
+  GUI.BindingsOff()
+  GroupsTab.ShowGroupLabels.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.RightClick.Menu,"separator")
+tkadd(GroupsTab.RightClick.Menu,"command",label="Format...",command=function()
+  {
+  GUI.BindingsOff()
+  Format.DiagnosticTabs.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.RightClick.Menu,"separator")
+GroupsTab.SaveAs.menu<-tk2menu(GroupsTab.image,tearoff=FALSE)
+tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.PDF.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Postscript.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Metafile.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Bmp.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Png.cmd()
+  GUI.BindingsOn()
+  })
+GroupsTab.SaveAs.Jpeg.menu<-tk2menu(GroupsTab.SaveAs.menu,tearoff=FALSE)
+tkadd(GroupsTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-50
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-75
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-100
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.SaveAs.menu,"cascade",label="Jpeg",menu=GroupsTab.SaveAs.Jpeg.menu)
+tkadd(GroupsTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.SaveAs.PicTeX.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.RightClick.Menu,"cascade",label="Save as",menu=GroupsTab.SaveAs.menu)
+tkadd(GroupsTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.Copy.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.RightClick.Menu,"separator")
+tkadd(GroupsTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.Print.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(GroupsTab.RightClick.Menu,"separator")
+tkadd(GroupsTab.RightClick.Menu,"command",label="External",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"3"
+  DiagnosticTabs.ExternalWindow.cmd()
+  GUI.BindingsOn()
+  })
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : AXES #############################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.GUI.Axes}{Diagnostic tabs (GUI): Axes}{Axes} BEGINLISTING")
+
+DiagnosticTabs.Axes<-tk2frame(DiagnosticTabs.nb)
+tkadd(DiagnosticTabs.nb,DiagnosticTabs.Axes,text="Axes")
+
+AxesTab.image<-mytkrplot(DiagnosticTabs.Axes,fun=function()
+  {
+  par(mar=c(0,0,0,0),"bg"="white")
+  plot(0,0,type="n",xaxt="n",yaxt="n",main="",xlab="",ylab="",bty="n")
+  },hscale=ConvergenceTab.HorizontalScale.func(),vscale=ConvergenceTab.VerticalScale.func())
+tkplace(AxesTab.image,relwidth=1,relheight=1,"in"=DiagnosticTabs.Axes)
+
+##############################################################################
+
+AxesTab.RightClick.Menu<-tk2menu(AxesTab.image,tearoff=FALSE)
+tkadd(AxesTab.RightClick.Menu,"checkbutton",label="Show title",variable=AxesTab.ShowTitle.var,command=function()
+  {
+  GUI.BindingsOff()
+  AxesTab.ShowTitle.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.RightClick.Menu,"checkbutton",label="Show axis labels",variable=AxesTab.ShowAxisLabels.var,command=function()
+  {
+  GUI.BindingsOff()
+  AxesTab.ShowAxisLabels.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.RightClick.Menu,"separator")
+tkadd(AxesTab.RightClick.Menu,"command",label="Format...",command=function()
+  {
+  GUI.BindingsOff()
+  Format.DiagnosticTabs.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.RightClick.Menu,"separator")
+AxesTab.SaveAs.menu<-tk2menu(AxesTab.image,tearoff=FALSE)
+tkadd(AxesTab.SaveAs.menu,"radiobutton",label="PDF...",variable=File.SaveAs.var,value="0",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.PDF.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Postscript...",variable=File.SaveAs.var,value="1",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Postscript.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Metafile...",variable=File.SaveAs.var,value="2",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Metafile.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Bmp...",variable=File.SaveAs.var,value="3",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Bmp.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.menu,"radiobutton",label="Png...",variable=File.SaveAs.var,value="4",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Png.cmd()
+  GUI.BindingsOn()
+  })
+AxesTab.SaveAs.Jpeg.menu<-tk2menu(AxesTab.SaveAs.menu,tearoff=FALSE)
+tkadd(AxesTab.SaveAs.Jpeg.menu,"radiobutton",label="50% quality...",variable=File.SaveAs.var,value="5",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-50
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.Jpeg.menu,"radiobutton",label="75% quality...",variable=File.SaveAs.var,value="6",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-75
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.Jpeg.menu,"radiobutton",label="100% quality...",variable=File.SaveAs.var,value="7",command=function()
+  {
+  GUI.BindingsOff()
+  File.Jpeg.quality<<-100
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.Jpeg.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.SaveAs.menu,"cascade",label="Jpeg",menu=AxesTab.SaveAs.Jpeg.menu)
+tkadd(AxesTab.SaveAs.menu,"radiobutton",label="PicTeX",variable=File.SaveAs.var,value="8",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.SaveAs.PicTeX.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.RightClick.Menu,"cascade",label="Save as",menu=AxesTab.SaveAs.menu)
+tkadd(AxesTab.RightClick.Menu,"command",label="Copy",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.Copy.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.RightClick.Menu,"separator")
+tkadd(AxesTab.RightClick.Menu,"command",label="Print...",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.Print.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(AxesTab.RightClick.Menu,"separator")
+tkadd(AxesTab.RightClick.Menu,"command",label="External",command=function()
+  {
+  GUI.BindingsOff()
+  DiagnosticTabs.which<<-"4"
+  DiagnosticTabs.ExternalWindow.cmd()
+  GUI.BindingsOn()
+  })
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : PREDICTIONS ######################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.GUI.Predictions}{Diagnostic tabs (GUI): Predictions}{Predictions} BEGINLISTING")
+
+DiagnosticTabs.Predictions<-tk2frame(DiagnosticTabs.nb)
+tkadd(DiagnosticTabs.nb,DiagnosticTabs.Predictions,text="Predictions")
+
+PredictionsTab.arrayR<-NULL
+PredictionsTab.arrayTcl<-NULL
+PredictionsTab.ColumnsUsed<-NULL
+PredictionsTab.table<-NULL
+PredictionsTab.yscr<-NULL
+PredictionsTab.InitialSetup<-TRUE
+
+PredictionsTab.place<-function()
+  {
+  tkplace(PredictionsTab.table,relx=.5,rely=.1,height=290,"in"=DiagnosticTabs.Predictions,anchor="n")
+  b<-as.numeric(tclvalue(tkwinfo("width",PredictionsTab.table)))
+  a<-as.numeric(tclvalue(tkwinfo("width",DiagnosticTabs.Convergence)))
+  c<-a/2+b/2
+  tkplace(PredictionsTab.yscr,x=c-1,rely=.1,height=290,"in"=DiagnosticTabs.Predictions,anchor="nw")
+  }
+
+PredictionsTab.ArraySetup<-function()
+  {
+  PredictionsTab.arrayR<<-c("Variable",bpar$axes.label.text[variables.in],"Predicted",rep(" ",p.in),"Actual",rep(" ",p.in),"RelAbsErr%",rep(" ",p.in))
+  dim(PredictionsTab.arrayR)<<-c(p.in+1,4)
+  if (PredictionsTab.InitialSetup) PredictionsTab.arrayTcl<<-tclArray()
+    else
+      {
+      .Tcl(paste("unset ",PredictionsTab.arrayTcl,sep=""))
+      PredictionsTab.arrayTcl<<-tclArray()
+      }
+  for (j in 0:3) PredictionsTab.arrayTcl[[0,j]]<<-PredictionsTab.arrayR[1,j+1]
+  for (i in (1:p.in)) PredictionsTab.arrayTcl[[i,0]]<<-PredictionsTab.arrayR[i+1,1]
+  PredictionsTab.ColumnsUsed<<-0
+  if (PredictionsTab.InitialSetup)
+    {
+    PredictionsTab.table<<-tk2table(DiagnosticTabs.Predictions,variable=PredictionsTab.arrayTcl,rows=max(17,p+1),cols=4,titlerows=1,resizeborders="none",selectmode="browse",rowseparator="\"\n\"",colseparator="\"\t\"",padx=5,background="white",state="disabled",yscrollcommand=function(...) tkset(PredictionsTab.yscr,...))
+    PredictionsTab.yscr<<-tkscrollbar(DiagnosticTabs.Predictions,command=function(...) tkyview(PredictionsTab.table,...))
+    PredictionsTab.InitialSetup<<-FALSE
+    }
+    else tkconfigure(PredictionsTab.table,variable=PredictionsTab.arrayTcl)
+
+  if (Biplot.axes.mode==0)
+    {
+    for (temp1 in 1:p.in) .Tcl(paste(PredictionsTab.table," tag cell Cell",temp1,".0 ",temp1,",0",sep=""))
+    for (temp1 in 1:p.in) .Tcl(paste(PredictionsTab.table," tag configure Cell",temp1,".0"," -fg ",bpar$axes.label.col[variables.in[temp1]],sep=""))
+
+    .Tcl(paste(PredictionsTab.table," tag col VariableNames 0",sep=""))
+    .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 1",sep=""))
+    .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 2",sep=""))
+    .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 3",sep=""))
+
+    .Tcl(paste(PredictionsTab.table," tag configure title -anchor c",sep=""))
+    .Tcl(paste(PredictionsTab.table," tag configure VariableNames -anchor w",sep=""))
+    .Tcl(paste(PredictionsTab.table," tag configure NumericalOutput -anchor e",sep=""))
+    }
+    else
+      {
+      for (temp1 in 1:p.in) .Tcl(paste(PredictionsTab.table," tag cell Cell",temp1,".0 ",temp1,",0",sep=""))
+      for (temp1 in which(variables.in!=Biplot.axes.WhichHighlight)) .Tcl(paste(PredictionsTab.table," tag configure Cell",temp1,".0"," -fg ",bpar$interaction.highlight.axes.col.bg,sep=""))
+      temp1<-which(variables.in==Biplot.axes.WhichHighlight)
+      .Tcl(paste(PredictionsTab.table," tag configure Cell",temp1,".0"," -fg ",bpar$interaction.highlight.axes.col.fg,sep=""))
+
+      for (temp1 in 1:3) .Tcl(paste(PredictionsTab.table," tag cell Cell",which(variables.in==Biplot.axes.WhichHighlight),".",temp1," ",which(variables.in==Biplot.axes.WhichHighlight),",",temp1,sep=""))
+      for (temp1 in 1:3) .Tcl(paste(PredictionsTab.table," tag configure Cell",which(variables.in==Biplot.axes.WhichHighlight),".",temp1," -fg black",sep=""))
+      for (temp1 in 1:3) for (temp2 in which(variables.in!=Biplot.axes.WhichHighlight)) .Tcl(paste(PredictionsTab.table," tag cell Cell",temp2,".",temp1," ",temp2,",",temp1,sep=""))
+      for (temp1 in 1:3) for (temp2 in which(variables.in!=Biplot.axes.WhichHighlight)) .Tcl(paste(PredictionsTab.table," tag configure Cell",temp2,".",temp1," -fg ",bpar$interaction.highlight.axes.col.bg,sep=""))
+
+      .Tcl(paste(PredictionsTab.table," tag col VariableNames 0",sep=""))
+      .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 1",sep=""))
+      .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 2",sep=""))
+      .Tcl(paste(PredictionsTab.table," tag col NumericalOutput 3",sep=""))
+
+      .Tcl(paste(PredictionsTab.table," tag configure title -anchor c",sep=""))
+      .Tcl(paste(PredictionsTab.table," tag configure VariableNames -anchor w",sep=""))
+      .Tcl(paste(PredictionsTab.table," tag configure NumericalOutput -anchor e",sep=""))
+      }
+
+  PredictionsTab.place()
+  }
+
+PredictionsTab.ArraySetup()
+
+##############################################################################
+### DIAGNOSTIC TABS : GUI : EXPORT ###########################################
+##############################################################################
+# cat("ENDLISTING \\0sourcethree{SC.DiagnosticTabs.GUI.Export}{Diagnostic tabs (GUI): Export}{Export} BEGINLISTING")
+
+DiagnosticTabs.Export<-tk2frame(DiagnosticTabs.nb)
+ExportTab.frame<-tk2frame(DiagnosticTabs.Export,relief="groove",borderwidth="1.5p")
+tkplace(ExportTab.frame,"in"=DiagnosticTabs.Export,relx=.525,rely=.475,relwidth=.755,relheight=.75,anchor="center")
+tkadd(DiagnosticTabs.nb,DiagnosticTabs.Export,text="Export")
+
+ExportTab.scrx<-tkscrollbar(ExportTab.frame,repeatinterval=5,command=function(...)tkxview(ExportTab.tree,...),orient="horizontal")
+ExportTab.scry<-tkscrollbar(ExportTab.frame,repeatinterval=5,command=function(...)tkyview(ExportTab.tree,...))
+ExportTab.tree<-tkwidget(ExportTab.frame,"Tree",relief="flat",dropenabled="0",dragenabled="0",bg="white",padx=4,xscrollcommand=function(...) tkset(ExportTab.scrx,...),yscrollcommand=function(...) tkset(ExportTab.scry,...))
+tkplace(ExportTab.tree,relx=0,rely=0,relwidth=.945,relheight=.945,"in"=ExportTab.frame,anchor="nw")
+tkplace(ExportTab.scrx,relx=0,rely=1,relwidth=.95,"in"=ExportTab.frame,anchor="sw")
+tkplace(ExportTab.scry,relx=1,rely=0,relheight=.95,"in"=ExportTab.frame,anchor="ne")
+
+ExportTab.data<-NULL
+ExportTab.data.name<-NULL
+ExportTab.data.func<-NULL
+ExportTab.Rvalue<-NULL
+ExportTab.Nvalue<-NULL
+
 ExportTab.DisplayInConsole.but<-tk2button(DiagnosticTabs.Export,text="Display in console",command=function()
   {
   GUI.BindingsOff()
@@ -9996,12 +10448,6 @@ ExportTab.DisplayInConsole.but<-tk2button(DiagnosticTabs.Export,text="Display in
   GUI.BindingsOn()
   })
 tkplace(ExportTab.DisplayInConsole.but,relx=.24,rely=.92,relwidth=.28,height=22,"in"=DiagnosticTabs.Export,anchor="w")
-
-ExportTab.ExportToWorkspace.cmd<-function()
-  {
-  assign(ExportTab.data.name[[ExportTab.Rvalue]][ExportTab.Nvalue],ExportTab.data.func[[ExportTab.Rvalue]][[ExportTab.Nvalue]](),envir=.GlobalEnv)
-  cat("\n","Saved '",ExportTab.data[[ExportTab.Rvalue]][ExportTab.Nvalue],"' in the Workspace as `",ExportTab.data.name[[ExportTab.Rvalue]][ExportTab.Nvalue],"'.\n\n",sep="")
-  }
 
 ExportTab.ExportToWorkspace.but<-tk2button(DiagnosticTabs.Export,text="Save to Workspace",command=function()
   {
@@ -10016,15 +10462,35 @@ tkplace(ExportTab.ExportToWorkspace.but,relx=.520,rely=.92,relwidth=.28,height=2
 ### KRAAL ###########################################################################################################
 #####################################################################################################################
 #####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.Kraal}{Kraal}{Kraal} BEGINLISTING")
 
-Kraal.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
-tkplace(Kraal.frame,relx=.61,rely=.6725,relwidth=.385,relheight=.2671+.005,"in"=GUI.TopLevel)
+#####################################################################################################################
+### KRAAL : FUNCTIONS ###############################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.Kraal.Functions}{Kraal (functions)}{Functions} BEGINLISTING")
+
+Kraal.par<-NULL
+Kraal.xy<-NULL
+Kraal.XY.move<-NULL
+Kraal.XY.RightClick<-NULL
 
 Kraal.grid<-as.matrix(expand.grid(seq(from=0,to=1,length.out=ceiling(sqrt(n+p))+3)[-c(1,ceiling(sqrt(n+p))+3)],rev(seq(from=.05,to=1,length.out=ceiling(sqrt(n+p))+3)[-c(1,ceiling(sqrt(n+p))+3)])))
 Kraal.grid.open<-1:nrow(Kraal.grid)
 
-Kraal.HorizontalScale.func<-function() as.numeric(tkwinfo("width",Kraal.frame))/as.numeric(tkwinfo("fpixels",Kraal.frame,"1i"))/4
-Kraal.VerticalScale.func<-function() as.numeric(tkwinfo("height",Kraal.frame))/as.numeric(tkwinfo("fpixels",Kraal.frame,"1i"))/4
+Kraal.ConvertCoordinates<-function(xin,yin)
+  {
+  width<-as.numeric(tclvalue(tkwinfo("width",Kraal.image)))
+  height<-as.numeric(tclvalue(tkwinfo("height",Kraal.image)))
+  x<-as.numeric(xin)/width
+  y<-1-as.numeric(yin)/height
+  figwidthprop<-Kraal.par$fig[2]-Kraal.par$fig[1]
+  figheightprop<-Kraal.par$fig[4]-Kraal.par$fig[3]
+  plotregionstartxprop<-figwidthprop*Kraal.par$plt[1]+Kraal.par$fig[1]
+  plotregionendxprop<-figwidthprop*Kraal.par$plt[2]+Kraal.par$fig[1]
+  plotregionstartyprop<-figheightprop*Kraal.par$plt[3]+Kraal.par$fig[3]
+  plotregionendyprop<-figheightprop*Kraal.par$plt[4]+Kraal.par$fig[3]
+  c((x-plotregionstartxprop)/(plotregionendxprop-plotregionstartxprop)*(Kraal.par$usr[2]-Kraal.par$usr[1])+Kraal.par$usr[1],(y-plotregionstartyprop)/(plotregionendyprop-plotregionstartyprop)*(Kraal.par$usr[4]-Kraal.par$usr[3])+Kraal.par$usr[3])
+  }
 
 Kraal.plot<-function()
   {
@@ -10047,41 +10513,23 @@ Kraal.plot<-function()
   Kraal.par$strheightx<<-strheight("x")
   }
 
-Kraal.image<-tkrplot(GUI.TopLevel,fun=function()
-  {
-   par(mar=c(0,0,0,0),"bg"="white")
-  plot(.5,.5,type="n",xaxt="n",yaxt="n",xaxs="i",yaxs="i",xlim=c(0,1),ylim=c(0,1),main="",xlab="",ylab="",bty="n")
-  points(Kraal.grid,pch="-",cex=.5,col="gray95")
-  },hscale=Kraal.HorizontalScale.func(),vscale=Kraal.VerticalScale.func())
-tkplace(Kraal.image,"in"=Kraal.frame,relwidth=1,relheight=1)
-
 Kraal.replot<-function() tkrreplot(Kraal.image,fun=Kraal.plot,hscale=Kraal.HorizontalScale.func(),vscale=Kraal.VerticalScale.func())
-
-Kraal.par<-NULL
-Kraal.ConvertCoordinates<-function(xin,yin)
-  {
-  width<-as.numeric(tclvalue(tkwinfo("width",Kraal.image)))
-  height<-as.numeric(tclvalue(tkwinfo("height",Kraal.image)))
-  x<-as.numeric(xin)/width
-  y<-1-as.numeric(yin)/height
-  figwidthprop<-Kraal.par$fig[2]-Kraal.par$fig[1]
-  figheightprop<-Kraal.par$fig[4]-Kraal.par$fig[3]
-  plotregionstartxprop<-figwidthprop*Kraal.par$plt[1]+Kraal.par$fig[1]
-  plotregionendxprop<-figwidthprop*Kraal.par$plt[2]+Kraal.par$fig[1]
-  plotregionstartyprop<-figheightprop*Kraal.par$plt[3]+Kraal.par$fig[3]
-  plotregionendyprop<-figheightprop*Kraal.par$plt[4]+Kraal.par$fig[3]
-  c((x-plotregionstartxprop)/(plotregionendxprop-plotregionstartxprop)*(Kraal.par$usr[2]-Kraal.par$usr[1])+Kraal.par$usr[1],(y-plotregionstartyprop)/(plotregionendyprop-plotregionstartyprop)*(Kraal.par$usr[4]-Kraal.par$usr[3])+Kraal.par$usr[3])
-  }
-
-Kraal.xy<-NULL
-Kraal.XY.move<-NULL
-Kraal.XY.RightClick<-NULL
 
 Kraal.motion<-function(x,y)
   {
   Kraal.XY.move<<-Kraal.ConvertCoordinates(x,y)
   if (Kraal.OverPoint() || Kraal.OverAxis() || Kraal.moving.status) tkconfigure(GUI.TopLevel,cursor="hand2")
     else tkconfigure(GUI.TopLevel,cursor="arrow")
+  }
+
+Kraal.OverPoint<-function()
+  {
+  n.in<n && min(PythagorasDistance(matrix(Kraal.XY.move,nrow=1),Kraal.points.Y))<min(Kraal.par$strwidthx,Kraal.par$strheightx)/1
+  }
+
+Kraal.OverAxis<-function()
+  {
+  p.in<p && min(PythagorasDistance(matrix(Kraal.XY.move,nrow=1),Kraal.axes.Y))<min(Kraal.par$strwidthx,Kraal.par$strheightx)/.5
   }
 
 Kraal.LeftClick<-function(x,y)
@@ -10100,6 +10548,7 @@ Kraal.LeftClick<-function(x,y)
       Kraal.moving.status<<-TRUE
       }
   }
+
 Kraal.LeftRelease<-function(x,y)
   {
   if (Kraal.moving.status)
@@ -10137,19 +10586,10 @@ Kraal.LeftRelease<-function(x,y)
     }
     Kraal.moving.status<<-FALSE
   }
+
 Kraal.LeftReleaseFromBiplot<-NULL
 
 Kraal.DoubleLeftClick<-NULL
-
-Kraal.OverPoint<-function()
-  {
-  n.in<n && min(PythagorasDistance(matrix(Kraal.XY.move,nrow=1),Kraal.points.Y))<min(Kraal.par$strwidthx,Kraal.par$strheightx)/1
-  }
-
-Kraal.OverAxis<-function()
-  {
-  p.in<p && min(PythagorasDistance(matrix(Kraal.XY.move,nrow=1),Kraal.axes.Y))<min(Kraal.par$strwidthx,Kraal.par$strheightx)/.5
-  }
 
 Kraal.RightClick<-function(x,y)
   {
@@ -10161,87 +10601,7 @@ Kraal.RightClick<-function(x,y)
       else tkpopup(Kraal.RightClick.Menu,tclvalue(tkwinfo("pointerx",Kraal.image)),tclvalue(tkwinfo("pointery",Kraal.image)))
   }
 
-###########################################################
-
-Kraal.RightClickOnPoint.Menu<-tk2menu(Kraal.image,tearoff=FALSE)
-tkadd(Kraal.RightClickOnPoint.Menu,"command",label="Return to biplot",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.moving.type<<-"point"
-  Kraal.moving.which<<-Kraal.samples.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.points.Y))]
-  Kraal.out.func()
-  GUI.BindingsOn()
-  })
-tkadd(Kraal.RightClickOnPoint.Menu,"separator")
-tkadd(Kraal.RightClickOnPoint.Menu,"command",label="Format...",command=function()
-  {
-  GUI.BindingsOff()
-  if (g>1)
-    {
-    temp1<-Kraal.samples.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.points.Y))]
-    temp2<-as.numeric(group[temp1])+1
-    }
-    else temp2<-1
-  Format.ByGroup.cmd(temp2)
-  GUI.BindingsOn()
-  })
-
-###########################################################
-
-Kraal.RightClickOnAxis.Menu<-tk2menu(Kraal.image,tearoff=FALSE)
-tkadd(Kraal.RightClickOnAxis.Menu,"command",label="Return to biplot",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.moving.type<<-"axis"
-  Kraal.moving.which<<-Kraal.variables.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.axes.Y))]
-  Kraal.out.func()
-  GUI.BindingsOn()
-  })
-tkadd(Kraal.RightClickOnAxis.Menu,"separator")
-tkadd(Kraal.RightClickOnAxis.Menu,"command",label="Format...",command=function()
-  {
-  GUI.BindingsOff()
-  temp1<-Kraal.variables.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.axes.Y))]
-  Format.Axes.cmd(WhichAxisInitially=temp1+1)
-  GUI.BindingsOn()
-  })
-
-###########################################################
-
-Kraal.RightClick.Menu<-tk2menu(Kraal.image,tearoff=FALSE)
-tkadd(Kraal.RightClick.Menu,"command",label="Return points",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.ReturnPoints.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(Kraal.RightClick.Menu,"command",label="Return axes",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.ReturnAxes.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(Kraal.RightClick.Menu,"command",label="Return all",state="disabled",command=function()
-  {
-  GUI.BindingsOff()
-  Kraal.ReturnAll.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(Kraal.RightClick.Menu,"separator")
-tkadd(Kraal.RightClick.Menu,"command",label="Format by group...",command=function()
-  {
-  GUI.BindingsOff()
-  Format.ByGroup.cmd()
-  GUI.BindingsOn()
-  })
-tkadd(Kraal.RightClick.Menu,"command",label="Format axes...",command=function()
-  {
-  GUI.BindingsOff()
-  Format.Axes.cmd()
-  GUI.BindingsOn()
-  })
-
-###########################################################
+##############################################################################
 
 Kraal.points.Y<-NULL
 Kraal.samples.in<-NULL
@@ -10292,8 +10652,8 @@ Kraal.in.func<-function(FollowThrough=TRUE)
       Kraal.points.Y<<-matrix(Kraal.points.Y,ncol=2)
       Kraal.samples.WhereInGrid<<-Kraal.samples.WhereInGrid[temp6]
       Kraal.grid.open<<-Kraal.grid.open[-temp5]
-      tkconfigure(ControlButtons.ReturnPoints.but,state="normal")
-      tkconfigure(ControlButtons.ReturnAll.but,state="normal")
+      tkconfigure(Other.ReturnPoints.but,state="normal")
+      tkconfigure(Other.ReturnAll.but,state="normal")
       for (temp7 in c(0,2)) tkentryconfigure(Kraal.RightClick.Menu,temp7,state="normal")
       }
     else if (Kraal.moving.type=="axis")
@@ -10311,8 +10671,8 @@ Kraal.in.func<-function(FollowThrough=TRUE)
       Kraal.grid.open<<-Kraal.grid.open[-temp5]
       Additional.Interpolate.ANewSample.var<<-tclVar("0")
       Additional.Interpolate.ANewSample.values<<-matrix(colMeans(Data[samples.in,variables.in]),ncol=1)
-      tkconfigure(ControlButtons.ReturnAxes.but,state="normal")
-      tkconfigure(ControlButtons.ReturnAll.but,state="normal")
+      tkconfigure(Other.ReturnAxes.but,state="normal")
+      tkconfigure(Other.ReturnAll.but,state="normal")
       if (Biplot.axes.mode==1 && Biplot.axes.WhichHighlight==Kraal.moving.which)
         {
         Biplot.axes.WhichHighlight<<-0
@@ -10342,7 +10702,7 @@ Kraal.out.func<-function(FollowThrough=TRUE)
     Kraal.samples.in<<-Kraal.samples.in[Kraal.samples.in!=Kraal.moving.which]
     if (n.in==n)
       {
-      tkconfigure(ControlButtons.ReturnPoints.but,state="disabled")
+      tkconfigure(Other.ReturnPoints.but,state="disabled")
       tkentryconfigure(Kraal.RightClick.Menu,0,state="disabled")
       }
     }
@@ -10358,14 +10718,14 @@ Kraal.out.func<-function(FollowThrough=TRUE)
       Additional.Interpolate.ANewSample.values<<-matrix(colMeans(Data[samples.in,variables.in]),ncol=1)
       if (p.in==p)
         {
-        tkconfigure(ControlButtons.ReturnAxes.but,state="disabled")
+        tkconfigure(Other.ReturnAxes.but,state="disabled")
         tkentryconfigure(Kraal.RightClick.Menu,1,state="disabled")
         }
       PredictionsTab.ArraySetup()
       }
   if (n.in==n && p.in==p)
     {
-    tkconfigure(ControlButtons.ReturnAll.but,state="disabled")
+    tkconfigure(Other.ReturnAll.but,state="disabled")
     tkentryconfigure(Kraal.RightClick.Menu,2,state="disabled")
     }
   Kraal.replot()
@@ -10384,11 +10744,11 @@ Kraal.ReturnPoints.cmd<-function(FollowThrough=TRUE)
   g.in<<-g
   g.n.in<<-g.n
 
-  tkconfigure(ControlButtons.ReturnPoints.but,state="disabled")
+  tkconfigure(Other.ReturnPoints.but,state="disabled")
   tkentryconfigure(Kraal.RightClick.Menu,0,state="disabled")
   if (p==p.in)
     {
-    tkconfigure(ControlButtons.ReturnAll.but,state="disabled")
+    tkconfigure(Other.ReturnAll.but,state="disabled")
     tkentryconfigure(Kraal.RightClick.Menu,2,state="disabled")
     }
   Kraal.replot()
@@ -10406,11 +10766,11 @@ Kraal.ReturnAxes.cmd<-function(FollowThrough=TRUE)
   Additional.Interpolate.ANewSample.var<<-tclVar("0")
   Additional.Interpolate.ANewSample.values<<-matrix(colMeans(Data[samples.in,variables.in]),ncol=1)
 
-  tkconfigure(ControlButtons.ReturnAxes.but,state="disabled")
+  tkconfigure(Other.ReturnAxes.but,state="disabled")
   tkentryconfigure(Kraal.RightClick.Menu,1,state="disabled")
   if (n==n.in)
     {
-    tkconfigure(ControlButtons.ReturnAll.but,state="disabled")
+    tkconfigure(Other.ReturnAll.but,state="disabled")
     tkentryconfigure(Kraal.RightClick.Menu,2,state="disabled")
     }
   PredictionsTab.ArraySetup()
@@ -10439,11 +10799,11 @@ Kraal.ReturnAll.cmd<-function(FollowThrough=TRUE)
   variables.in<<-1:p
   p.in<<-p
 
-  tkconfigure(ControlButtons.ReturnPoints.but,state="disabled")
+  tkconfigure(Other.ReturnPoints.but,state="disabled")
   tkentryconfigure(Kraal.RightClick.Menu,0,state="disabled")
-  tkconfigure(ControlButtons.ReturnAxes.but,state="disabled")
+  tkconfigure(Other.ReturnAxes.but,state="disabled")
   tkentryconfigure(Kraal.RightClick.Menu,1,state="disabled")
-  tkconfigure(ControlButtons.ReturnAll.but,state="disabled")
+  tkconfigure(Other.ReturnAll.but,state="disabled")
   tkentryconfigure(Kraal.RightClick.Menu,2,state="disabled")
   PredictionsTab.ArraySetup()
   Kraal.replot()
@@ -10468,10 +10828,314 @@ Kraal.FollowThrough.cmd<-function()
   }
 
 #####################################################################################################################
+### KRAAL : GUI #####################################################################################################
 #####################################################################################################################
-### INITIALISE ######################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.Kraal.GUI}{Kraal (GUI)}{GUI} BEGINLISTING")
+
+Kraal.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
+tkplace(Kraal.frame,relx=.61,rely=.6725,relwidth=.385,relheight=.2671+.005,"in"=GUI.TopLevel)
+
+Kraal.HorizontalScale.func<-function() as.numeric(tkwinfo("width",Kraal.frame))/as.numeric(tkwinfo("fpixels",Kraal.frame,"1i"))/4
+Kraal.VerticalScale.func<-function() as.numeric(tkwinfo("height",Kraal.frame))/as.numeric(tkwinfo("fpixels",Kraal.frame,"1i"))/4
+
+Kraal.image<-tkrplot(GUI.TopLevel,fun=function()
+  {
+   par(mar=c(0,0,0,0),"bg"="white")
+  plot(.5,.5,type="n",xaxt="n",yaxt="n",xaxs="i",yaxs="i",xlim=c(0,1),ylim=c(0,1),main="",xlab="",ylab="",bty="n")
+  points(Kraal.grid,pch="-",cex=.5,col="gray95")
+  },hscale=Kraal.HorizontalScale.func(),vscale=Kraal.VerticalScale.func())
+tkplace(Kraal.image,"in"=Kraal.frame,relwidth=1,relheight=1)
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcethree{SC.Kraal.GUI.KraalPopUpMenu}{Kraal (GUI): Kraal pop-up menu}{Kraal pop-up menu} BEGINLISTING")
+
+Kraal.RightClick.Menu<-tk2menu(Kraal.image,tearoff=FALSE)
+tkadd(Kraal.RightClick.Menu,"command",label="Return points",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.ReturnPoints.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(Kraal.RightClick.Menu,"command",label="Return axes",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.ReturnAxes.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(Kraal.RightClick.Menu,"command",label="Return all",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.ReturnAll.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(Kraal.RightClick.Menu,"separator")
+tkadd(Kraal.RightClick.Menu,"command",label="Format by group...",command=function()
+  {
+  GUI.BindingsOff()
+  Format.ByGroup.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(Kraal.RightClick.Menu,"command",label="Format axes...",command=function()
+  {
+  GUI.BindingsOff()
+  Format.Axes.cmd()
+  GUI.BindingsOn()
+  })
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcethree{SC.Kraal.GUI.KraalPointPopUpMenu}{Kraal (GUI): Kraal point pop-up menu}{Kraal point pop-up menu} BEGINLISTING")
+
+Kraal.RightClickOnPoint.Menu<-tk2menu(Kraal.image,tearoff=FALSE)
+tkadd(Kraal.RightClickOnPoint.Menu,"command",label="Return to biplot",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.moving.type<<-"point"
+  Kraal.moving.which<<-Kraal.samples.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.points.Y))]
+  Kraal.out.func()
+  GUI.BindingsOn()
+  })
+tkadd(Kraal.RightClickOnPoint.Menu,"separator")
+tkadd(Kraal.RightClickOnPoint.Menu,"command",label="Format...",command=function()
+  {
+  GUI.BindingsOff()
+  if (g>1)
+    {
+    temp1<-Kraal.samples.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.points.Y))]
+    temp2<-as.numeric(group[temp1])+1
+    }
+    else temp2<-1
+  Format.ByGroup.cmd(temp2)
+  GUI.BindingsOn()
+  })
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcethree{SC.Kraal.GUI.KraalAxisPopUpMenu}{Kraal (GUI): Kraal axis pop-up menu}{Kraal axis pop-up menu} BEGINLISTING")
+
+Kraal.RightClickOnAxis.Menu<-tk2menu(Kraal.image,tearoff=FALSE)
+tkadd(Kraal.RightClickOnAxis.Menu,"command",label="Return to biplot",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.moving.type<<-"axis"
+  Kraal.moving.which<<-Kraal.variables.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.axes.Y))]
+  Kraal.out.func()
+  GUI.BindingsOn()
+  })
+tkadd(Kraal.RightClickOnAxis.Menu,"separator")
+tkadd(Kraal.RightClickOnAxis.Menu,"command",label="Format...",command=function()
+  {
+  GUI.BindingsOff()
+  temp1<-Kraal.variables.in[which.min(PythagorasDistance(matrix(Kraal.XY.RightClick,nrow=1),Kraal.axes.Y))]
+  Format.Axes.cmd(WhichAxisInitially=temp1+1)
+  GUI.BindingsOn()
+  })
+
 #####################################################################################################################
 #####################################################################################################################
+### OTHER ###########################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.Other}{Other}{Other} BEGINLISTING")
+
+#####################################################################################################################
+### OTHER : FUNCTIONS ###############################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.Other.Functions}{Other (functions)}{Functions} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcethree{SC.Other.Functions.External}{Other (functions): External}{External} BEGINLISTING")
+
+# cat("ENDLISTING \\0sourcefour{SC.Other.Functions.External.AsIs}{Other (functions): External: As is}{As is} BEGINLISTING")
+
+Other.DisplayInExternalWindow.AsIs.cmd<-function()
+  {
+  .Tcl("update") # Don't know whether this has any use.
+  if (boptions$ReuseExternalWindows && dev.cur()>1) graphics.off()
+  x11(width=7,height=7)
+  Biplot.plot()
+  .Tcl("update") # Don't know whether this has any use.
+  }
+
+# cat("ENDLISTING \\0sourcefour{SC.Other.Functions.External.In3D}{Other (functions): External: In 3D}{In 3D} BEGINLISTING")
+
+Other.DisplayInExternalWindow.In3D.cmd<-function()
+  {
+  if (data.class(try(.find.package("rgl"),TRUE))=="try-error")
+    {
+    tkmessageBox(title="In 3D",parent=GUI.TopLevel,message="This option requires the `rgl' package. \nPlease download and install.",icon="info",type="ok")
+    tkfocus(GUI.TopLevel)
+    }
+    else
+      {
+      require("rgl",quietly=TRUE)
+      Biplot.plot3D()
+      }
+  }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcethree{SC.Other.Functions.Hide}{Other (functions): Hide}{Hide} BEGINLISTING")
+# cat("ENDLISTING \\0sourcefour{SC.Other.Functions.Hide.Points}{Other (functions): Hide: Points}{Points} BEGINLISTING")
+
+Other.HidePoints.var<-tclVar("0")
+Other.HidePoints.cmd<-function()
+  {
+  if (tclvalue(Other.HidePoints.var)=="1")
+    {
+    #View.ShowPointLabels.var<<-tclVar("0") An exception is made so that the picture doesn't move.
+    View.ShowPointValues.var<<-tclVar("0")
+    View.ShowGroupLabelsInLegend.var<<-tclVar("0")
+    if (tclvalue(Biplot.points.mode)=="2") Biplot.points.mode<<-tclVar("1")
+    }
+    else
+      {
+      #View.ShowPointLabels.var<<-tclVar("1") # An exception is made so that the picture doesn't move.
+      View.ShowPointValues.var<<-tclVar("1")
+      if (g>1) View.ShowGroupLabelsInLegend.var<<-tclVar("1")
+      }
+  Biplot.replot()
+  }
+
+# cat("ENDLISTING \\0sourcefour{SC.Other.Functions.Hide.Axes}{Other (functions): Hide: Axes}{Axes} BEGINLISTING")
+
+Other.HideAxes.var<-tclVar("0")
+Other.HideAxes.cmd<-function()
+  {
+  if (tclvalue(Other.HideAxes.var)=="1")
+    {
+    View.AxisLabels.var<<-tclVar("-1")
+    Biplot.points.mode<<-tclVar("-1")
+    }
+    else
+      {
+      if (tclvalue(Biplot.Axes.var)%in%c("13","14")) View.AxisLabels.var<<-tclVar("2")
+        else View.AxisLabels.var<<-tclVar("1")
+      Biplot.points.mode<<-tclVar("0")
+      }
+  Biplot.replot()
+  }
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcethree{SC.Other.Functions.LiveUpdates}{Other (functions): Live updates}{Live updates} BEGINLISTING")
+Other.LiveUpdates.var<-tclVar("1")
+
+##############################################################################
+
+# cat("ENDLISTING \\0sourcethree{SC.Other.Functions.Stop}{Other (functions): Stop}{Stop} BEGINLISTING")
+
+Other.Stop.var<-FALSE
+Other.Stop.cmd<-function()
+  {
+  Other.Stop.var<<-TRUE
+  }
+
+#####################################################################################################################
+### OTHER : GUI #####################################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourcetwo{SC.Other.GUI}{Other (GUI)}{GUI} BEGINLISTING")
+
+Other.frame<-tkframe(GUI.TopLevel,relief="groove",borderwidth="1.5p")
+
+##############################################################################
+
+Other.ProgressBar.pb<-ttkprogressbar(Other.frame,mode="determinate") #tk2progress(Other.frame,mode="determinate")
+Other.ProgressBar.create<-function() tkplace(Other.ProgressBar.pb,relx=.005,rely=.5,relwidth=.1,height=18,"in"=Other.frame,anchor="w")
+Other.ProgressBar.create()
+Other.ProgressBar.destroy<-function() tkplace(Other.ProgressBar.pb,width=0,height=0)
+
+##############################################################################
+
+Other.External.but<-tk2menubutton(Other.frame,text="External",direction="above")
+Other.External.menu<-tk2menu(MenuBar.menu,tearoff=FALSE)
+tkadd(Other.External.menu,"command",label="As is",underline="3",accelerator="F11",command=function()
+  {
+  GUI.BindingsOff()
+  Other.DisplayInExternalWindow.AsIs.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(Other.External.menu,"command",label="In 3D",underline="3",accelerator="F12",command=function()
+  {
+  GUI.BindingsOff()
+  Other.DisplayInExternalWindow.In3D.cmd()
+  GUI.BindingsOn()
+  })
+
+tkconfigure(Other.External.but,menu=Other.External.menu)
+tkplace(Other.External.but,relx=.12,rely=.5,relwidth=.075,height=22,"in"=Other.frame,anchor="w")
+
+##############################################################################
+
+Other.Hide.but<-tk2menubutton(Other.frame,text="Hide",direction="above")
+Other.Hide.menu<-tk2menu(MenuBar.menu,tearoff=FALSE)
+tkadd(Other.Hide.menu,"checkbutton",label="Points",underline="0",variable=Other.HidePoints.var,command=function()
+  {
+  GUI.BindingsOff()
+  Other.HidePoints.cmd()
+  GUI.BindingsOn()
+  })
+tkadd(Other.Hide.menu,"checkbutton",label="Axes",underline="0",variable=Other.HideAxes.var,command=function()
+  {
+  GUI.BindingsOff()
+  Other.HideAxes.cmd()
+  GUI.BindingsOn()
+  })
+
+tkconfigure(Other.Hide.but,menu=Other.Hide.menu)
+tkplace(Other.Hide.but,relx=.2075,rely=.5,relwidth=.055,height=22,"in"=Other.frame,anchor="w")
+
+##############################################################################
+
+Other.LiveUpdates.chk<-tk2checkbutton(Other.frame,text="Live updates",variable=Other.LiveUpdates.var)
+tkplace(Other.LiveUpdates.chk,relx=.29,rely=.5,relwidth=.0745,relheight=.625,"in"=Other.frame,anchor="w")
+
+##############################################################################
+
+Other.Stop.but<-tk2button(Other.frame,text="Stop",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Other.Stop.cmd()
+  GUI.BindingsOn()
+  })
+tkplace(Other.Stop.but,relx=.405,rely=.5,relwidth=.07,height=22,"in"=Other.frame,anchor="w")
+
+##############################################################################
+
+Other.ReturnPoints.but<-tk2button(Other.frame,text="Return points",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.ReturnPoints.cmd()
+  GUI.BindingsOn()
+  })
+tkplace(Other.ReturnPoints.but,relx=.6703+.005,rely=.5,relwidth=.075,height=22,"in"=Other.frame,anchor="w")
+
+Other.ReturnAxes.but<-tk2button(Other.frame,text="Return axes",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.ReturnAxes.cmd()
+  GUI.BindingsOn()
+  })
+tkplace(Other.ReturnAxes.but,relx=.765+.005,rely=.5,relwidth=.075,height=22,"in"=Other.frame,anchor="w")
+
+Other.ReturnAll.but<-tk2button(Other.frame,text="Return all",state="disabled",command=function()
+  {
+  GUI.BindingsOff()
+  Kraal.ReturnAll.cmd()
+  GUI.BindingsOn()
+  })
+tkplace(Other.ReturnAll.but,relx=.8597+.005,rely=.5,relwidth=.075,height=22,"in"=Other.frame,anchor="w")
+
+##############################################################################
+
+tkplace(Other.frame,relx=.005,rely=.95,relwidth=.99,relheight=.045,"in"=GUI.TopLevel)
+
+#####################################################################################################################
+#####################################################################################################################
+### FINAL INITIALISATION ############################################################################################
+#####################################################################################################################
+#####################################################################################################################
+# cat("ENDLISTING \\0sourceone{SC.FinalInitialisation}{Final initialisation}{Final initialisation} BEGINLISTING")
 
 bparp.func()
 tkselect(DiagnosticTabs.nb,3)
@@ -10480,3 +11144,4 @@ Help.ShowPopUpHelp.cmd()
 GUI.BindingsOn()
 invisible()
 }
+
