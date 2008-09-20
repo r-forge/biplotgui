@@ -1,3 +1,6 @@
+# To fix: The circular non-linear export isn't complete - no marker labels
+# To change: Make the default biplot when Mahalanobis PCO is chosen, the CVA biplot (from Sugnet).
+
 ################################################################################
 ################################################################################
 ### LOADING ####################################################################
@@ -34,7 +37,7 @@
 #####################################################################################################################
 # cat("ENDLISTING \\0sourceone{SC.Call}{Call}{Call} BEGINLISTING")
 
-# cat("ENDLISTING See the \\0proglang{R} help file for this function for details on how its arguments are to be used. BEGINLISTING")
+# cat("ENDLISTING See the \\0proglang{R} help file for the \\0code{Biplots} function for details on how its arguments are to be used. BEGINLISTING")
 Biplots<-function(Data,groups=rep(1,nrow(Data)),PointLabels=rownames(Data),AxisLabels=colnames(Data),excel=NULL,ExcelGroupsCol=0)
 {
 
@@ -121,7 +124,7 @@ p.in<-p
 variables.in<-1:p 
 # cat("ENDLISTING If the argument \\0code{AxisLabels} of the \\0code{Biplots} function isn't provided and the argument \\0code{Data} has no column names, the axis labels are taken to be `V1', ..., `Vp'. BEGINLISTING")
 if (missing(AxisLabels) && is.null(AxisLabels)) AxisLabels<-paste("V",1:p,sep="") 
-# cat("ENDLISTING A small positive number used when such a number is necessary. BEGINLISTING")
+# cat("ENDLISTING A small positive number used when such a number is needed. BEGINLISTING")
 eps<-1e-8 
 
 #####################################################################################################################
@@ -342,7 +345,7 @@ graphics.off()
 #####################################################################################################################
 # cat("ENDLISTING \\0sourceone{SC.GeneralFunctions}{General functions}{General functions} BEGINLISTING")
 
-# cat("ENDLISTING A modification of the \\0code{tkrplot} function of the \\0pkg{tkrplot} package by Luke Tierney. BEGINLISTING")
+# cat("ENDLISTING A modification of the \\0code{tkrplot} function of the \\0pkg{tkrplot} package \\0citep{tkrplot}. BEGINLISTING")
 mytkrplot<-function(fun,hscale=1,vscale=1,...) 
   {
   image<-paste("Rplot",.make.tkindex(),sep="")
@@ -404,7 +407,7 @@ getLabelUsr<-function(xi,yi,parin,.labels,.cex,horiz,vert,showconv=FALSE)
 
 ##############################################################################
 
-# cat("ENDLISTING Prepares a new plotting device. However, no plotting is actually performed. Specific values of \\0code{xlimtouse} and \\0code{ylimtouse} may be specified, however by default the plot is made large enough so that all the points (\\0code{x},\\0code{y}) fit. In addition, if \\0code{fitaroundlabels} is \\0code{TRUE}, \\0code{getLabelUsr} is called so that all the labels will be fully visibile on the new plot as well. The font size of the labels is set through \\0code{labels.cex}; their horizontal and vertical offset from (\\0code{x},\\0code{y}) can also be set via \\0code{HorizOffset} and \\0code{VertOffset}. `\\0code{\\0ldots}' is for further graphical parameters. However, for all plots \\0code{type = \"n\"}, \\0code{xlab = \"\"} and \\0code{ylab = \"\"} so that these parameters should not be included in `\\0code{\\0ldots}'. Plots have a unit aspect ratio so that the distances within them can be properly assessed. BEGINLISTING")
+# cat("ENDLISTING Prepares a new plotting device. However, no plotting is actually performed. Specific values of \\0code{xlimtouse} and \\0code{ylimtouse} may be specified, however by default the plot is made large enough so that all the points (\\0code{x},\\0code{y}) fit. In addition, if \\0code{fitaroundlabels} is \\0code{TRUE}, \\0code{getLabelUsr} is called so that all the labels will be fully visibile on the new plot as well. The font size of the labels is set through \\0code{labels.cex}; their horizontal and vertical offset from (\\0code{x},\\0code{y}) can also be set via \\0code{HorizOffset} and \\0code{VertOffset}. `\\0code{\\0ldots}' is for further graphical parameters. However, for all plots \\0code{type = \"n\"}, \\0code{xlab = \"\"} and \\0code{ylab = \"\"} so that these parameters should not be included in `\\0code{\\0ldots}'. Plots are drawn at a unit aspect ratio so that the distances within them can be properly assessed. BEGINLISTING")
 mynewplot<-function(x,y,xlimtouse=NA,ylimtouse=NA,fitaroundlabels=FALSE,.labels=NA,labels.cex,HorizOffset,VertOffset,...)
   { 
   b<-list(...)
@@ -841,7 +844,7 @@ GUI.resize.replot<-function()
   GUI.resize.counter<<-0
   }
 
-# cat("ENDLISTING Calls the \\0code{GUI.resize.replot} function only a short period of time after the user dynamically resizes the GUI window in order to avoid the function repeatedly being called as a result of a single resize by the user. BEGINLISTING")
+# cat("ENDLISTING Calls the \\0code{GUI.resize.replot} function a short period of time after the user dynamically resizes the GUI window in order to avoid the function repeatedly being called as a result of a single resize by the user. BEGINLISTING")
 GUI.resize<-function()
   {
   if (GUI.resize.allowed)
@@ -1137,7 +1140,7 @@ GUI.update<-function()
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.File.SaveAs}{Menu bar (functions): File: Save as}{Save as} BEGINLISTING")
 
-# cat("ENDLISTING Activated only through the keyboard shortcut `Ctrl+S'. BEGINLISTING")
+# cat("ENDLISTING Activated through the keyboard shortcut `Ctrl+S' only. BEGINLISTING")
 
 File.Save.as.cmd<-function() # Called only by the keyboard shortcut `Ctrl+S'.
   {
@@ -1308,11 +1311,14 @@ File.Print.cmd<-function() # Requires work for Unix-alike.
 
 File.Options.cmd<-function()
   {
+# cat("ENDLISTING Controls the dialogue box. BEGINLISTING")
   local.GUI.func<-function()
     {
+    # cat("ENDLISTING Creates the dialogue box. BEGINLISTING")
     top<-tktoplevel()
     tkwm.withdraw(top)
 
+    # cat("ENDLISTING Sets the local variables to their default values when the Default button is clicked. BEGINLISTING")
     onDefaults<-function()
       {
       local.MDSConvergence.var<<-tclVar(1e-6)
@@ -1337,6 +1343,7 @@ File.Options.cmd<-function()
       tkconfigure(combo3,text="fov")
       }
 
+    # cat("ENDLISTING Sets the variables to the current values of the local variables when the OK button is clicked; destroys the dialogue box. BEGINLISTING")
     onOK<-function()
       {
       boptions$MDS.convergence<<-as.numeric(tclvalue(local.MDSConvergence.var))
@@ -1350,11 +1357,10 @@ File.Options.cmd<-function()
       tkdestroy(top) # This comes below tkget so that the combo's still exist for their values to be taken.
       }
 
-    onCancel<-function()
-      {
-      tkdestroy(top)
-      }
+    # cat("ENDLISTING Destroys the dialogue box without changing the variable values when the Cancel button is clicked. BEGINLISTING")
+    onCancel<-function() tkdestroy(top)
 
+    # cat("ENDLISTING Initialises the local variables. BEGINLISTING")
     local.MDSConvergence.var<-tclVar(boptions$MDS.convergence)
     local.MDSMaximumIterations.var<-tclVar(boptions$MDS.MaximumIterations)
     local.ProcrustesConvergence.var<-tclVar(boptions$Procrustes.convergence)
@@ -1367,6 +1373,7 @@ File.Options.cmd<-function()
     local.ThreeDMouseButtonActionRight.var<-tclVar(boptions$ThreeD.MouseButtonAction[3])
 
     ###
+    # cat("ENDLISTING Creates and positions the widgets of the dialogue box. BEGINLISTING")
     frame1<-tkwidget(top,"TitleFrame",text="Convergence")
     tkplace(frame1,relx=.05,relwidth=.90,y=10,height=105,"in"=top)
 
@@ -1413,6 +1420,7 @@ File.Options.cmd<-function()
     tkplace(button2,relx=.775,rely=.99,anchor="se")
     tkplace(button3,relx=.96,rely=.99,anchor="se")
 
+    # cat("ENDLISTING Sets the dialogue box bindings. BEGINLISTING")
     tkbind(top,"<Return>",onOK)
     tkbind(top,"<Escape>",onCancel)
     tkbind(top,"<Destroy>",function()
@@ -1420,7 +1428,7 @@ File.Options.cmd<-function()
       tkgrab.release(top)
       tkfocus(GUI.TopLevel)
       })
-
+    # cat("ENDLISTING Sizes, centres and iconifies the dialogue box. BEGINLISTING")
     tkwm.geometry(top,paste("390x292","+",round(GUI.AvailableScreenWidth/2-390/2,0),"+",round(GUI.AvailableScreenHeight/2-292/2,0),sep=""))
     tkwm.focusmodel(top,"active")
     tkwm.resizable(top,"0","0")
@@ -1435,7 +1443,7 @@ File.Options.cmd<-function()
 
     tkwait.window(top)
     }
-
+  # cat("ENDLISTING Initialises the dialogue box. BEGINLISTING")
   local.GUI.func()
   }
 
@@ -1603,11 +1611,20 @@ View.CalibrateDisplaySpaceAxes.var<-tclVar("0")
 
 Format.Title.cmd<-function()
   {
+  # cat("ENDLISTING Controls the dialogue box. BEGINLISTING")
   local.GUI.func<-function()
     {
+    # cat("ENDLISTING Creates the dialogue box. BEGINLISTING")
     top<-tktoplevel()
     tkwm.withdraw(top)
 
+ # cat("ENDLISTING Sets the local variable to its default value when the Default button is clicked. BEGINLISTING")
+    onDefault<-function()
+      {
+      NewTitle<<-tclVar(Biplot.title.default)
+      tkconfigure(entry1,textvariable=NewTitle)
+      }
+    # cat("ENDLISTING Sets the variable to the current values of the local variable when the OK button is clicked; destroys the dialogue box; redraws the biplot if necessary. BEGINLISTING")
     onOK<-function()
       {
       tkdestroy(top)
@@ -1617,17 +1634,16 @@ Format.Title.cmd<-function()
         Biplot.replot()
         }
       }
+    # cat("ENDLISTING Destroys the dialogue box without changing the variable value when the Cancel button is clicked. BEGINLISTING")
     onCancel<-function() tkdestroy(top)
 
-    onDefault<-function()
-      {
-      NewTitle<<-tclVar(Biplot.title.default)
-      tkconfigure(entry1,textvariable=NewTitle)
-      }
+    # cat("ENDLISTING Initialises the local variable. BEGINLISTING")
+    NewTitle<-tclVar(Biplot.title)
 
+    # cat("ENDLISTING Creates and positions the widgets of the dialogue box. BEGINLISTING")
     frame1<-tk2frame(top,relief="groove",borderwidth="1.5p")
     label1<-tk2label(frame1,text="New title")
-    NewTitle<-tclVar(Biplot.title)
+
     entry1<-tk2entry(frame1,textvariable=NewTitle)
     button1<-tk2button(top,text="OK",width=10,command=onOK)
     button2<-tk2button(top,text="Cancel",width=10,command=onCancel)
@@ -1640,6 +1656,7 @@ Format.Title.cmd<-function()
     tkplace(button2,relx=.95,rely=.85,anchor="e")
     tkplace(button3,relx=0.05,rely=.85,anchor="w")
 
+    # cat("ENDLISTING Sets the dialogue box bindings. BEGINLISTING")
     tkbind(entry1,"<Return>",onOK)
     tkbind(top,"<Escape>",onCancel)
     tkbind(top,"<Destroy>",function()
@@ -1647,7 +1664,7 @@ Format.Title.cmd<-function()
       tkgrab.release(top)
       tkfocus(GUI.TopLevel)}
       )
-
+    # cat("ENDLISTING Sizes, centres and iconifies the dialogue box. BEGINLISTING")
     tkwm.geometry(top,paste("300x120","+",round(GUI.AvailableScreenWidth/2-300/2,0),"+",round(GUI.AvailableScreenHeight/2-120/2,0),sep=""))
     tkwm.focusmodel(top,"active")
     tkwm.resizable(top,"0","0")
@@ -1662,7 +1679,7 @@ Format.Title.cmd<-function()
 
     tkwait.window(top)
   }
-
+  # cat("ENDLISTING Initialises the dialogue box. BEGINLISTING")
   local.GUI.func()
   }
 
@@ -1672,26 +1689,30 @@ Format.Title.cmd<-function()
 
 Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
   {
+# cat("ENDLISTING Controls the dialogue box. BEGINLISTING")
   local.GUI.func<-function()
     {
+    # cat("ENDLISTING The window to return to after the dialogue box is closed. BEGINLISTING")
     ReturnToWindow<-tkfocus()
+    # cat("ENDLISTING Creates the dialogue box. BEGINLISTING")
     top<-tktoplevel()
     tkwm.withdraw(top)
-
+    # cat("ENDLISTING The group to be selected initially. BEGINLISTING")
     WhichGroup<-WhichGroupInitially
-
+    # cat("ENDLISTING Updates the group entry boxes of those entries that were changed for all groups simultaneously. BEGINLISTING")
     UpdateEntryBoxes<-function()
       {
+      # cat("ENDLISTING The Points tab. BEGINLISTING")
       if (WhichGroup==1 && tclvalue(local.points.cex.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.points.cex.var[[temp1]]<<-tclVar(tclvalue(local.points.cex.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.points.label.cex.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.points.label.cex.var[[temp1]]<<-tclVar(tclvalue(local.points.label.cex.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.points.label.HorizOffset.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.points.label.HorizOffset.var[[temp1]]<<-tclVar(tclvalue(local.points.label.HorizOffset.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.points.label.VertOffset.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.points.label.VertOffset.var[[temp1]]<<-tclVar(tclvalue(local.points.label.VertOffset.var[[1]]))
-
+      # cat("ENDLISTING The Sample group means tab. BEGINLISTING")
       if (WhichGroup==1 && tclvalue(local.SampleGroupMeans.cex.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.SampleGroupMeans.cex.var[[temp1]]<<-tclVar(tclvalue(local.SampleGroupMeans.cex.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.SampleGroupMeans.label.cex.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.SampleGroupMeans.label.cex.var[[temp1]]<<-tclVar(tclvalue(local.SampleGroupMeans.label.cex.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.SampleGroupMeans.label.HorizOffset.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.SampleGroupMeans.label.HorizOffset.var[[temp1]]<<-tclVar(tclvalue(local.SampleGroupMeans.label.HorizOffset.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.SampleGroupMeans.label.VertOffset.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.SampleGroupMeans.label.VertOffset.var[[temp1]]<<-tclVar(tclvalue(local.SampleGroupMeans.label.VertOffset.var[[1]]))
-
+      # cat("ENDLISTING The Convex hulls / Alpha-bags tab. BEGINLISTING")
       if (WhichGroup==1 && tclvalue(local.ConvexHullAlphaBag.lwd.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.lwd.var[[temp1]]<<-tclVar(tclvalue(local.ConvexHullAlphaBag.lwd.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.ConvexHullAlphaBag.TukeyMedian.cex.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.TukeyMedian.cex.var[[temp1]]<<-tclVar(tclvalue(local.ConvexHullAlphaBag.TukeyMedian.cex.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.ConvexHullAlphaBag.TukeyMedian.cex.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.TukeyMedian.cex.var[[temp1]]<<-tclVar(tclvalue(local.ConvexHullAlphaBag.TukeyMedian.cex.var[[1]]))
@@ -1699,13 +1720,14 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       if (WhichGroup==1 && tclvalue(local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var[[temp1]]<<-tclVar(tclvalue(local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var[[1]]))
       if (WhichGroup==1 && tclvalue(local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[1]])!=" ") for (temp1 in 2:(g+1)) local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[temp1]]<<-tclVar(tclvalue(local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[1]]))
       }
-
+    # cat("ENDLISTING Updates the local variables and widgets when a different group is selected. BEGINLISTING")
     ChangeGroup<-function()
       {
       UpdateEntryBoxes()
       temp<-as.numeric(tclvalue(tkcurselection(listbox1)))+1
       if (!is.na(temp)) WhichGroup<<-temp
 
+      # cat("ENDLISTING The Points tab. BEGINLISTING")
       local.points.pch.var[[1]]<<-if (all(unlist(lapply(local.points.pch.var[-1],tclvalue))==tclvalue(local.points.pch.var[[2]]))) local.points.pch.var[[2]] else tclVar(" ")
       tkconfigure(spinboxA1,textvariable=local.points.pch.var[[WhichGroup]])
 
@@ -1734,7 +1756,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       tkconfigure(entryA4,textvariable=local.points.label.VertOffset.var[[WhichGroup]])
 
       ###
-
+      # cat("ENDLISTING The Sample group means tab. BEGINLISTING")
       local.SampleGroupMeans.pch.var[[1]]<<-if (all(unlist(lapply(local.SampleGroupMeans.pch.var[-1],tclvalue))==tclvalue(local.SampleGroupMeans.pch.var[[2]]))) local.SampleGroupMeans.pch.var[[2]] else tclVar(" ")
       tkconfigure(spinboxB1,textvariable=local.SampleGroupMeans.pch.var[[WhichGroup]])
 
@@ -1763,7 +1785,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       tkconfigure(entryB4,textvariable=local.SampleGroupMeans.label.VertOffset.var[[WhichGroup]])
 
       ###
-
+      # cat("ENDLISTING The Convex hulls / Alpha-bags tab. BEGINLISTING")
       local.ConvexHullAlphaBag.lty.var[[1]]<<-if (all(unlist(lapply(local.ConvexHullAlphaBag.lty.var[-1],tclvalue))==tclvalue(local.ConvexHullAlphaBag.lty.var[[2]]))) local.ConvexHullAlphaBag.lty.var[[2]] else tclVar(" ")
       tkconfigure(spinboxC1,textvariable=local.ConvexHullAlphaBag.lty.var[[WhichGroup]])
 
@@ -1804,91 +1826,24 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       tkconfigure(entryC5,textvariable=local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[[WhichGroup]])
 
       ###
-
+      # cat("ENDLISTING The Classification regions tab. BEGINLISTING")
       local.ClassificationRegion.col.bg.var[[1]]<<-if (all(unlist(local.ClassificationRegion.col.bg.var[-1])==local.ClassificationRegion.col.bg.var[[2]])) local.ClassificationRegion.col.bg.var[[2]] else text2hex("SystemButtonFace")
       tkconfigure(labelD1,background=local.ClassificationRegion.col.bg.var[[WhichGroup]])
       }
 
-    local.points.pch.var<-NULL
-    local.points.cex.var<-NULL
-    local.points.col.fg.var<-NULL
-    local.points.col.bg.var<-NULL
-    local.points.label.font.var<-NULL
-    local.points.label.cex.var<-NULL
-    local.points.label.col.var<-NULL
-    local.points.label.HorizOffset.var<-NULL
-    local.points.label.VertOffset.var<-NULL
-
-    local.SampleGroupMeans.pch.var<-NULL
-    local.SampleGroupMeans.cex.var<-NULL
-    local.SampleGroupMeans.col.fg.var<-NULL
-    local.SampleGroupMeans.col.bg.var<-NULL
-    local.SampleGroupMeans.label.font.var<-NULL
-    local.SampleGroupMeans.label.cex.var<-NULL
-    local.SampleGroupMeans.label.col.var<-NULL
-    local.SampleGroupMeans.label.HorizOffset.var<-NULL
-    local.SampleGroupMeans.label.VertOffset.var<-NULL
-
-    local.ConvexHullAlphaBag.lty.var<-NULL
-    local.ConvexHullAlphaBag.lwd.var<-NULL
-    local.ConvexHullAlphaBag.col.fg.var<-NULL
-    local.ConvexHullAlphaBag.col.bg.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.pch.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.cex.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.col.fg.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.col.bg.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.label.font.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.label.cex.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.label.col.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var<-NULL
-    local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var<-NULL
-
-    local.ClassificationRegion.col.bg.var<-NULL
-
-    initialise<-function()
+   # cat("ENDLISTING Sets the local variables to their default values when the Default button is clicked. BEGINLISTING")
+  onDefaults<-function()
       {
-      local.points.pch.var<<-lapply(c(if (identical(bpar$gpoints.pch,rep(bpar$gpoints.pch[1],g))) bpar$gpoints.pch[1] else " ",as.character(bpar$gpoints.pch)),tclVar)
-      local.points.cex.var<<-lapply(c(if (identical(bpar$gpoints.cex,rep(bpar$gpoints.cex[1],g))) bpar$gpoints.cex[1] else " ",as.character(bpar$gpoints.cex)),tclVar)
-      local.points.col.fg.var<<-lapply(c(if (identical(bpar$gpoints.col.fg,rep(bpar$gpoints.col.fg[1],g))) bpar$gpoints.col.fg[1] else "SystemButtonFace",as.character(bpar$gpoints.col.fg)),text2hex)
-      local.points.col.bg.var<<-lapply(c(if (identical(bpar$gpoints.col.bg,rep(bpar$gpoints.col.bg[1],g))) bpar$gpoints.col.bg[1] else "SystemButtonFace",as.character(bpar$gpoints.col.bg)),text2hex)
-      local.points.label.font.var<<-lapply(c(if (identical(bpar$gpoints.label.font,rep(bpar$gpoints.label.font[1],g))) bpar$gpoints.label.font[1] else " ",as.character(bpar$gpoints.label.font)),tclVar)
-      local.points.label.cex.var<<-lapply(c(if (identical(bpar$gpoints.label.cex,rep(bpar$gpoints.label.cex[1],g))) bpar$gpoints.label.cex[1] else " ",as.character(bpar$gpoints.label.cex)),tclVar)
-      local.points.label.col.var<<-lapply(c(if (identical(bpar$gpoints.label.col,rep(bpar$gpoints.label.col[1],g))) bpar$gpoints.label.col[1] else "SystemButtonFace",as.character(bpar$gpoints.label.col)),text2hex)
-      local.points.label.HorizOffset.var<<-lapply(c(if (identical(bpar$gpoints.label.HorizOffset,rep(bpar$gpoints.label.HorizOffset[1],g))) bpar$gpoints.label.HorizOffset[1] else " ",as.character(bpar$gpoints.label.HorizOffset)),tclVar)
-      local.points.label.VertOffset.var<<-lapply(c(if (identical(bpar$gpoints.label.VertOffset,rep(bpar$gpoints.label.VertOffset[1],g))) bpar$gpoints.label.VertOffset[1] else " ",as.character(bpar$gpoints.label.VertOffset)),tclVar)
-
-      local.SampleGroupMeans.pch.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.pch,rep(bpar$gSampleGroupMeans.pch[1],g))) bpar$gSampleGroupMeans.pch[1] else " ",as.character(bpar$gSampleGroupMeans.pch)),tclVar)
-      local.SampleGroupMeans.cex.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.cex,rep(bpar$gSampleGroupMeans.cex[1],g))) bpar$gSampleGroupMeans.cex[1] else " ",as.character(bpar$gSampleGroupMeans.cex)),tclVar)
-      local.SampleGroupMeans.col.fg.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.col.fg,rep(bpar$gSampleGroupMeans.col.fg[1],g))) bpar$gSampleGroupMeans.col.fg[1] else "SystemButtonFace",as.character(bpar$gSampleGroupMeans.col.fg)),text2hex)
-      local.SampleGroupMeans.col.bg.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.col.bg,rep(bpar$gSampleGroupMeans.col.bg[1],g))) bpar$gSampleGroupMeans.col.bg[1] else "SystemButtonFace",as.character(bpar$gSampleGroupMeans.col.bg)),text2hex)
-      local.SampleGroupMeans.label.font.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.font,rep(bpar$gSampleGroupMeans.label.font[1],g))) bpar$gSampleGroupMeans.label.font[1] else " ",as.character(bpar$gSampleGroupMeans.label.font)),tclVar)
-      local.SampleGroupMeans.label.cex.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.cex,rep(bpar$gSampleGroupMeans.label.cex[1],g))) bpar$gSampleGroupMeans.label.cex[1] else " ",as.character(bpar$gSampleGroupMeans.label.cex)),tclVar)
-      local.SampleGroupMeans.label.col.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.col,rep(bpar$gSampleGroupMeans.label.col[1],g))) bpar$gSampleGroupMeans.label.col[1] else "SystemButtonFace",as.character(bpar$gSampleGroupMeans.label.col)),text2hex)
-      local.SampleGroupMeans.label.HorizOffset.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.HorizOffset,rep(bpar$gSampleGroupMeans.label.HorizOffset[1],g))) bpar$gSampleGroupMeans.label.HorizOffset[1] else " ",as.character(bpar$gSampleGroupMeans.label.HorizOffset)),tclVar)
-      local.SampleGroupMeans.label.VertOffset.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.VertOffset,rep(bpar$gSampleGroupMeans.label.VertOffset[1],g))) bpar$gSampleGroupMeans.label.VertOffset[1] else " ",as.character(bpar$gSampleGroupMeans.label.VertOffset)),tclVar)
-
-      local.ConvexHullAlphaBag.lty.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.lty,rep(bpar$gConvexHullAlphaBag.lty[1],g))) bpar$gConvexHullAlphaBag.lty[1] else " ",as.character(bpar$gConvexHullAlphaBag.lty)),tclVar)
-      local.ConvexHullAlphaBag.lwd.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.lwd,rep(bpar$gConvexHullAlphaBag.lwd[1],g))) bpar$gConvexHullAlphaBag.lwd[1] else " ",as.character(bpar$gConvexHullAlphaBag.lwd)),tclVar)
-      local.ConvexHullAlphaBag.col.fg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.col.fg,rep(bpar$gConvexHullAlphaBag.col.fg[1],g))) bpar$gConvexHullAlphaBag.col.fg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.col.fg)),text2hex)
-      local.ConvexHullAlphaBag.col.bg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.col.bg,rep(bpar$gConvexHullAlphaBag.col.bg[1],g))) bpar$gConvexHullAlphaBag.col.bg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.col.bg)),text2hex)
-      local.ConvexHullAlphaBag.TukeyMedian.pch.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.pch,rep(bpar$gConvexHullAlphaBag.TukeyMedian.pch[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.pch[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.pch)),tclVar)
-      local.ConvexHullAlphaBag.TukeyMedian.cex.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.cex,rep(bpar$gConvexHullAlphaBag.TukeyMedian.cex[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.cex[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.cex)),tclVar)
-      local.ConvexHullAlphaBag.TukeyMedian.col.fg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.col.fg,rep(bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.col.fg)),text2hex)
-      local.ConvexHullAlphaBag.TukeyMedian.col.bg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.col.bg,rep(bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.col.bg)),text2hex)
-      local.ConvexHullAlphaBag.TukeyMedian.label.font.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.font,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.font[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.font[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.font)),tclVar)
-      local.ConvexHullAlphaBag.TukeyMedian.label.cex.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.cex,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.cex)),tclVar)
-      local.ConvexHullAlphaBag.TukeyMedian.label.col.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.col,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.col[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.col[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.col)),text2hex)
-      local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset)),tclVar)
-      local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset)),tclVar)
-
-      local.ClassificationRegion.col.bg.var<<-lapply(c(if (identical(bpar$gClassificationRegion.col.bg,rep(bpar$gClassificationRegion.col.bg[1],g))) bpar$gClassificationRegion.col.bg[1] else "SystemButtonFace",as.character(bpar$gClassificationRegion.col.bg)),text2hex)
+      bpar.initialise1.func()
+      initialise()
+      ChangeGroup()
       }
 
-    initialise()
+    # cat("ENDLISTING Sets the variables to the current values of the local variables when the OK button is clicked. BEGINLISTING")
     onOK<-function()
       {
       UpdateEntryBoxes()
-
+      # cat("ENDLISTING The Points tab. BEGINLISTING")
       bpar$gpoints.pch<<-as.numeric(lapply(local.points.pch.var[-1],tclvalue))
       bpar$gpoints.cex<<-as.numeric(lapply(local.points.cex.var[-1],tclvalue))
       bpar$gpoints.col.fg<<-unlist(local.points.col.fg.var[-1])
@@ -1898,7 +1853,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       bpar$gpoints.label.col<<-unlist(local.points.label.col.var[-1])
       bpar$gpoints.label.HorizOffset<<-as.numeric(lapply(local.points.label.HorizOffset.var[-1],tclvalue))
       bpar$gpoints.label.VertOffset<<-as.numeric(lapply(local.points.label.VertOffset.var[-1],tclvalue))
-
+      # cat("ENDLISTING The Sample group means tab. BEGINLISTING")
       bpar$gSampleGroupMeans.pch<<-as.numeric(lapply(local.SampleGroupMeans.pch.var[-1],tclvalue))
       bpar$gSampleGroupMeans.cex<<-as.numeric(lapply(local.SampleGroupMeans.cex.var[-1],tclvalue))
       bpar$gSampleGroupMeans.col.fg<<-unlist(local.SampleGroupMeans.col.fg.var[-1])
@@ -1908,7 +1863,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       bpar$gSampleGroupMeans.label.col<<-unlist(local.SampleGroupMeans.label.col.var[-1])
       bpar$gSampleGroupMeans.label.HorizOffset<<-as.numeric(lapply(local.SampleGroupMeans.label.HorizOffset.var[-1],tclvalue))
       bpar$gSampleGroupMeans.label.VertOffset<<-as.numeric(lapply(local.SampleGroupMeans.label.VertOffset.var[-1],tclvalue))
-
+      # cat("ENDLISTING The Convex hulls / Alpha-bags tab. BEGINLISTING")
       bpar$gConvexHullAlphaBag.lty<<-as.numeric(lapply(local.ConvexHullAlphaBag.lty.var[-1],tclvalue))
       bpar$gConvexHullAlphaBag.lwd<<-as.numeric(lapply(local.ConvexHullAlphaBag.lwd.var[-1],tclvalue))
       bpar$gConvexHullAlphaBag.col.fg<<-unlist(local.ConvexHullAlphaBag.col.fg.var[-1])
@@ -1922,36 +1877,119 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       bpar$gConvexHullAlphaBag.TukeyMedian.label.col<<-unlist(local.ConvexHullAlphaBag.TukeyMedian.label.col.var[-1])
       bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset<<-as.numeric(lapply(local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var[-1],tclvalue))
       bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset<<-as.numeric(lapply(local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var[-1],tclvalue))
-
+      # cat("ENDLISTING The Classification regions tab. BEGINLISTING")
       bpar$gClassificationRegion.col.bg<<-unlist(local.ClassificationRegion.col.bg.var[-1])
 
       bparp.func()
+      # cat("ENDLISTING Redraws the biplot. BEGINLISTING")
       Biplot.replot()
+      # cat("ENDLISTING If necessary, redraws the point predictivities. BEGINLISTING")
       if (tclvalue(Biplot.Axes.var)%in%c("0","2")) PointsTab.predictivities.replot()
+      # cat("ENDLISTING If necessary, redraws the group predictivities. BEGINLISTING")
       if (tclvalue(Biplot.Axes.var)=="2") GroupsTab.replot()
+      # cat("ENDLISTING If necessary, redraws the kraal. BEGINLISTING")
       if (n.in<n) Kraal.replot()
-
+      # cat("ENDLISTING Destroys the dialogue box. BEGINLISTING")
       tkdestroy(top)
       }
+    # cat("ENDLISTING Destroys the dialogue box without changing the variable values when the Cancel button is clicked. BEGINLISTING")
     onCancel<-function() tkdestroy(top)
-    onDefaults<-function()
+
+ # cat("ENDLISTING Defines the local variables. BEGINLISTING")
+ # cat("ENDLISTING The Points tab. BEGINLISTING")
+    local.points.pch.var<-NULL
+    local.points.cex.var<-NULL
+    local.points.col.fg.var<-NULL
+    local.points.col.bg.var<-NULL
+    local.points.label.font.var<-NULL
+    local.points.label.cex.var<-NULL
+    local.points.label.col.var<-NULL
+    local.points.label.HorizOffset.var<-NULL
+    local.points.label.VertOffset.var<-NULL
+      # cat("ENDLISTING The Sample group means tab. BEGINLISTING")
+    local.SampleGroupMeans.pch.var<-NULL
+    local.SampleGroupMeans.cex.var<-NULL
+    local.SampleGroupMeans.col.fg.var<-NULL
+    local.SampleGroupMeans.col.bg.var<-NULL
+    local.SampleGroupMeans.label.font.var<-NULL
+    local.SampleGroupMeans.label.cex.var<-NULL
+    local.SampleGroupMeans.label.col.var<-NULL
+    local.SampleGroupMeans.label.HorizOffset.var<-NULL
+    local.SampleGroupMeans.label.VertOffset.var<-NULL
+      # cat("ENDLISTING The Convex hulls / Alpha-bags tab. BEGINLISTING")
+    local.ConvexHullAlphaBag.lty.var<-NULL
+    local.ConvexHullAlphaBag.lwd.var<-NULL
+    local.ConvexHullAlphaBag.col.fg.var<-NULL
+    local.ConvexHullAlphaBag.col.bg.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.pch.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.cex.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.col.fg.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.col.bg.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.font.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.cex.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.col.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var<-NULL
+    local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var<-NULL
+      # cat("ENDLISTING The Classification regions tab. BEGINLISTING")
+    local.ClassificationRegion.col.bg.var<-NULL
+
+   # cat("ENDLISTING Initialises the local variables. BEGINLISTING")
+    initialise<-function()
       {
-      bpar.initialise1.func()
-      initialise()
-      ChangeGroup()
+      # cat("ENDLISTING The Points tab. BEGINLISTING")
+      local.points.pch.var<<-lapply(c(if (identical(bpar$gpoints.pch,rep(bpar$gpoints.pch[1],g))) bpar$gpoints.pch[1] else " ",as.character(bpar$gpoints.pch)),tclVar)
+      local.points.cex.var<<-lapply(c(if (identical(bpar$gpoints.cex,rep(bpar$gpoints.cex[1],g))) bpar$gpoints.cex[1] else " ",as.character(bpar$gpoints.cex)),tclVar)
+      local.points.col.fg.var<<-lapply(c(if (identical(bpar$gpoints.col.fg,rep(bpar$gpoints.col.fg[1],g))) bpar$gpoints.col.fg[1] else "SystemButtonFace",as.character(bpar$gpoints.col.fg)),text2hex)
+      local.points.col.bg.var<<-lapply(c(if (identical(bpar$gpoints.col.bg,rep(bpar$gpoints.col.bg[1],g))) bpar$gpoints.col.bg[1] else "SystemButtonFace",as.character(bpar$gpoints.col.bg)),text2hex)
+      local.points.label.font.var<<-lapply(c(if (identical(bpar$gpoints.label.font,rep(bpar$gpoints.label.font[1],g))) bpar$gpoints.label.font[1] else " ",as.character(bpar$gpoints.label.font)),tclVar)
+      local.points.label.cex.var<<-lapply(c(if (identical(bpar$gpoints.label.cex,rep(bpar$gpoints.label.cex[1],g))) bpar$gpoints.label.cex[1] else " ",as.character(bpar$gpoints.label.cex)),tclVar)
+      local.points.label.col.var<<-lapply(c(if (identical(bpar$gpoints.label.col,rep(bpar$gpoints.label.col[1],g))) bpar$gpoints.label.col[1] else "SystemButtonFace",as.character(bpar$gpoints.label.col)),text2hex)
+      local.points.label.HorizOffset.var<<-lapply(c(if (identical(bpar$gpoints.label.HorizOffset,rep(bpar$gpoints.label.HorizOffset[1],g))) bpar$gpoints.label.HorizOffset[1] else " ",as.character(bpar$gpoints.label.HorizOffset)),tclVar)
+      local.points.label.VertOffset.var<<-lapply(c(if (identical(bpar$gpoints.label.VertOffset,rep(bpar$gpoints.label.VertOffset[1],g))) bpar$gpoints.label.VertOffset[1] else " ",as.character(bpar$gpoints.label.VertOffset)),tclVar)
+      # cat("ENDLISTING The Sample group means tab. BEGINLISTING")
+      local.SampleGroupMeans.pch.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.pch,rep(bpar$gSampleGroupMeans.pch[1],g))) bpar$gSampleGroupMeans.pch[1] else " ",as.character(bpar$gSampleGroupMeans.pch)),tclVar)
+      local.SampleGroupMeans.cex.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.cex,rep(bpar$gSampleGroupMeans.cex[1],g))) bpar$gSampleGroupMeans.cex[1] else " ",as.character(bpar$gSampleGroupMeans.cex)),tclVar)
+      local.SampleGroupMeans.col.fg.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.col.fg,rep(bpar$gSampleGroupMeans.col.fg[1],g))) bpar$gSampleGroupMeans.col.fg[1] else "SystemButtonFace",as.character(bpar$gSampleGroupMeans.col.fg)),text2hex)
+      local.SampleGroupMeans.col.bg.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.col.bg,rep(bpar$gSampleGroupMeans.col.bg[1],g))) bpar$gSampleGroupMeans.col.bg[1] else "SystemButtonFace",as.character(bpar$gSampleGroupMeans.col.bg)),text2hex)
+      local.SampleGroupMeans.label.font.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.font,rep(bpar$gSampleGroupMeans.label.font[1],g))) bpar$gSampleGroupMeans.label.font[1] else " ",as.character(bpar$gSampleGroupMeans.label.font)),tclVar)
+      local.SampleGroupMeans.label.cex.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.cex,rep(bpar$gSampleGroupMeans.label.cex[1],g))) bpar$gSampleGroupMeans.label.cex[1] else " ",as.character(bpar$gSampleGroupMeans.label.cex)),tclVar)
+      local.SampleGroupMeans.label.col.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.col,rep(bpar$gSampleGroupMeans.label.col[1],g))) bpar$gSampleGroupMeans.label.col[1] else "SystemButtonFace",as.character(bpar$gSampleGroupMeans.label.col)),text2hex)
+      local.SampleGroupMeans.label.HorizOffset.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.HorizOffset,rep(bpar$gSampleGroupMeans.label.HorizOffset[1],g))) bpar$gSampleGroupMeans.label.HorizOffset[1] else " ",as.character(bpar$gSampleGroupMeans.label.HorizOffset)),tclVar)
+      local.SampleGroupMeans.label.VertOffset.var<<-lapply(c(if (identical(bpar$gSampleGroupMeans.label.VertOffset,rep(bpar$gSampleGroupMeans.label.VertOffset[1],g))) bpar$gSampleGroupMeans.label.VertOffset[1] else " ",as.character(bpar$gSampleGroupMeans.label.VertOffset)),tclVar)
+      # cat("ENDLISTING The Convex hulls / Alpha-bags tab. BEGINLISTING")
+      local.ConvexHullAlphaBag.lty.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.lty,rep(bpar$gConvexHullAlphaBag.lty[1],g))) bpar$gConvexHullAlphaBag.lty[1] else " ",as.character(bpar$gConvexHullAlphaBag.lty)),tclVar)
+      local.ConvexHullAlphaBag.lwd.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.lwd,rep(bpar$gConvexHullAlphaBag.lwd[1],g))) bpar$gConvexHullAlphaBag.lwd[1] else " ",as.character(bpar$gConvexHullAlphaBag.lwd)),tclVar)
+      local.ConvexHullAlphaBag.col.fg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.col.fg,rep(bpar$gConvexHullAlphaBag.col.fg[1],g))) bpar$gConvexHullAlphaBag.col.fg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.col.fg)),text2hex)
+      local.ConvexHullAlphaBag.col.bg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.col.bg,rep(bpar$gConvexHullAlphaBag.col.bg[1],g))) bpar$gConvexHullAlphaBag.col.bg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.col.bg)),text2hex)
+      local.ConvexHullAlphaBag.TukeyMedian.pch.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.pch,rep(bpar$gConvexHullAlphaBag.TukeyMedian.pch[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.pch[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.pch)),tclVar)
+      local.ConvexHullAlphaBag.TukeyMedian.cex.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.cex,rep(bpar$gConvexHullAlphaBag.TukeyMedian.cex[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.cex[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.cex)),tclVar)
+      local.ConvexHullAlphaBag.TukeyMedian.col.fg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.col.fg,rep(bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.col.fg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.col.fg)),text2hex)
+      local.ConvexHullAlphaBag.TukeyMedian.col.bg.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.col.bg,rep(bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.col.bg[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.col.bg)),text2hex)
+      local.ConvexHullAlphaBag.TukeyMedian.label.font.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.font,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.font[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.font[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.font)),tclVar)
+      local.ConvexHullAlphaBag.TukeyMedian.label.cex.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.cex,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.cex[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.cex)),tclVar)
+      local.ConvexHullAlphaBag.TukeyMedian.label.col.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.col,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.col[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.col[1] else "SystemButtonFace",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.col)),text2hex)
+      local.ConvexHullAlphaBag.TukeyMedian.label.HorizOffset.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.HorizOffset)),tclVar)
+      local.ConvexHullAlphaBag.TukeyMedian.label.VertOffset.var<<-lapply(c(if (identical(bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset,rep(bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[1],g))) bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset[1] else " ",as.character(bpar$gConvexHullAlphaBag.TukeyMedian.label.VertOffset)),tclVar)
+      # cat("ENDLISTING The Classification regions tab. BEGINLISTING")
+      local.ClassificationRegion.col.bg.var<<-lapply(c(if (identical(bpar$gClassificationRegion.col.bg,rep(bpar$gClassificationRegion.col.bg[1],g))) bpar$gClassificationRegion.col.bg[1] else "SystemButtonFace",as.character(bpar$gClassificationRegion.col.bg)),text2hex)
       }
 
+    initialise()
+  
+    # cat("ENDLISTING Creates and positions the widgets of the dialogue box. BEGINLISTING")
+    # cat("ENDLISTING The list of groups. BEGINLISTING")
     listbox1<-tkwidget(top,"listbox",bg="white",relief="groove",borderwidth="1.5p",yscrollcommand=function(...) tkset(listbox1.scry,...))
     listbox1.scry<-tkscrollbar(top,repeatinterval=5,command=function(...) tkyview(listbox1,...))
     tkinsert(listbox1,"end","All groups")
     if (g>1) for (i in bpar$groups.label.text) tkinsert(listbox1,"end",i)
     tkselect(listbox1,"set",WhichGroupInitially-1)
-
+    # cat(ENDLISTING The tabs. BEGINLISTING")
     notebook<-tk2notebook(top,tabs=NULL) # Changed for R 2.7.0
 
     ###
 
     notebook.A<-tk2frame(notebook)
+    # cat("ENDLISTING The Points tab. BEGINLISTING")
     tkadd(notebook,notebook.A,text="Points")
 
     ###
@@ -2042,6 +2080,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     ###
 
     notebook.B<-tk2frame(notebook)
+    # cat("ENDLISTING The Sample group means tab. BEGINLISTING")
     tkadd(notebook,notebook.B,text="Sample group means")
     
     ###
@@ -2132,6 +2171,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     ###
 
     notebook.C<-tk2frame(notebook)
+    # cat("ENDLISTING The Convex hulls / Alpha-bags tab. BEGINLISTING")
     tkadd(notebook,notebook.C,text="Convex hulls / Alpha-bags")
 
     ###
@@ -2268,6 +2308,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
     ###
 
     notebook.D<-tk2frame(notebook)
+    # cat("ENDLISTING The Classification regions tab. BEGINLISTING")
     tkadd(notebook,notebook.D,text="Classification regions")
 
     ###
@@ -2289,23 +2330,24 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
         if (WhichGroup==1) for (temp1 in 2:(g+1)) local.ClassificationRegion.col.bg.var[[temp1]]<<-local.ClassificationRegion.col.bg.var[[1]]
         }
       })
-
-    ###
-
-    button1<-tk2button(top,text="OK",width=10,command=onOK)
-    button2<-tk2button(top,text="Cancel",width=10,command=onCancel)
-    button3<-tk2button(top,text="Defaults",width=10,command=onDefaults)
+###
 
     tkplace(listbox1,relx=.05,rely=.49,relwidth=.23,relheight=.88,"in"=top,anchor="w")
     tkplace(listbox1.scry,relx=1,relheight=1,"in"=listbox1,anchor="ne")
     tkplace(notebook,relx=.3,rely=.05,relwidth=.67,relheight=.88,"in"=top)
+    tkselect(notebook,WhichTabInitially-1)
+ 
+   ###
+    # cat("ENDLISTING The buttons. BEGINLISTING")
+    button1<-tk2button(top,text="OK",width=10,command=onOK)
+    button2<-tk2button(top,text="Cancel",width=10,command=onCancel)
+    button3<-tk2button(top,text="Defaults",width=10,command=onDefaults)
 
     tkplace(button1,relx=.84,rely=.99,anchor="se")
     tkplace(button2,relx=.965,rely=.99,anchor="se")
     tkplace(button3,relx=.05,rely=.99,anchor="sw")
-
-    tkselect(notebook,WhichTabInitially-1)
-
+ 
+    # cat("ENDLISTING Sets the dialogue box bindings. BEGINLISTING")
     tkbind(listbox1,"<<ListboxSelect>>",ChangeGroup)
     tkbind(top,"<Escape>",onCancel)
     tkbind(top,"<Destroy>",function()
@@ -2313,6 +2355,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
       tkgrab.release(top)
       tkfocus(ReturnToWindow)}
       )
+    # cat("ENDLISTING Sizes, centres and iconifies the dialogue box. BEGINLISTING")
     tkwm.focusmodel(top,"active")
     tkwm.geometry(top,paste("640x475","+",round(GUI.AvailableScreenWidth/2-640/2,0),"+",round(GUI.AvailableScreenHeight/2-475/2,0),sep=""))
 
@@ -2329,7 +2372,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
     tkwait.window(top)
     }
-
+  # cat("ENDLISTING Initialises the dialogue box. BEGINLISTING")
   local.GUI.func()
   }
 
@@ -2339,14 +2382,17 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
 Format.Axes.cmd<-function(WhichAxisInitially=1)
   {
+# cat("ENDLISTING Controls the dialogue box. BEGINLISTING")
   local.GUI.func<-function()
     {
+    # cat("ENDLISTING The window to return to after the dialogue box is closed. BEGINLISTING")
     ReturnToWindow<-tkfocus()
+    # cat("ENDLISTING Creates the dialogue box. BEGINLISTING")
     top<-tktoplevel()
     tkwm.withdraw(top)
-
+    # cat("ENDLISTING The axis to be selected initially. BEGINLISTING")
     WhichAxis<-WhichAxisInitially
-
+    # cat("ENDLISTING Updates the axis entry boxes of those entries that were changed for all axes simultaneously. BEGINLISTING")
     UpdateEntryBoxes<-function()
       {
       if (WhichAxis==1 && tclvalue(local.axes.lwd.var[[1]])!=" ") for (temp1 in 2:(p+1)) local.axes.lwd.var[[temp1]]<<-tclVar(tclvalue(local.axes.lwd.var[[1]]))
@@ -2357,7 +2403,7 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
       if (WhichAxis==1 && tclvalue(local.axes.marker.RelOffset.var[[1]])!=" ") for (temp1 in 2:(p+1)) local.axes.marker.RelOffset.var[[temp1]]<<-tclVar(tclvalue(local.axes.marker.RelOffset.var[[1]]))
       if (WhichAxis==1 && tclvalue(local.axes.label.cex.var[[1]])!=" ") for (temp1 in 2:(p+1)) local.axes.label.cex.var[[temp1]]<<-tclVar(tclvalue(local.axes.label.cex.var[[1]]))
       }
-
+    # cat("ENDLISTING Updates the local variables and widgets when a different axis is selected. BEGINLISTING")
     ChangeGroup<-function()
       {
       UpdateEntryBoxes()
@@ -2412,45 +2458,15 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
       local.axes.label.col.var[[1]]<<-if (all(unlist(local.axes.label.col.var[-1])==local.axes.label.col.var[[2]])) local.axes.label.col.var[[2]] else text2hex("SystemButtonFace")
       tkconfigure(labelA4,background=local.axes.label.col.var[[WhichAxis]])
       }
-
-    local.axes.lty.var<-NULL
-    local.axes.lwd.var<-NULL
-    local.axes.col.var<-NULL
-    local.axes.tick.n.var<-NULL
-    local.axes.tick.lty.var<-NULL
-    local.axes.tick.lwd.var<-NULL
-    local.axes.tick.col.var<-NULL
-    local.axes.tick.RelLength.var<-NULL
-    local.axes.marker.font.var<-NULL
-    local.axes.marker.cex.var<-NULL
-    local.axes.marker.col.var<-NULL
-    local.axes.marker.RelOffset.var<-NULL
-    local.axes.label.font.var<-NULL
-    local.axes.label.cex.var<-NULL
-    local.axes.label.las.var<-NULL
-    local.axes.label.col.var<-NULL
-
-    initialise<-function()
+   # cat("ENDLISTING Sets the local variables to their default values when the Default button is clicked. BEGINLISTING")
+   onDefaults<-function()
       {
-      local.axes.lty.var<<-lapply(c(if (identical(bpar$axes.lty,rep(bpar$axes.lty[1],p))) bpar$axes.lty[1] else " ",as.character(bpar$axes.lty)),tclVar)
-      local.axes.lwd.var<<-lapply(c(if (identical(bpar$axes.lwd,rep(bpar$axes.lwd[1],p))) bpar$axes.lwd[1] else " ",as.character(bpar$axes.lwd)),tclVar)
-      local.axes.col.var<<-lapply(c(if (identical(bpar$axes.col,rep(bpar$axes.col[1],p))) bpar$axes.col[1] else "SystemButtonFace",as.character(bpar$axes.col)),text2hex)
-      local.axes.tick.n.var<<-lapply(c(if (identical(bpar$axes.tick.n,rep(bpar$axes.tick.n[1],p))) bpar$axes.tick.n[1] else " ",as.character(bpar$axes.tick.n)),tclVar)
-      local.axes.tick.lty.var<<-lapply(c(if (identical(bpar$axes.tick.lty,rep(bpar$axes.tick.lty[1],p))) bpar$axes.tick.lty[1] else " ",as.character(bpar$axes.tick.lty)),tclVar)
-      local.axes.tick.lwd.var<<-lapply(c(if (identical(bpar$axes.tick.lwd,rep(bpar$axes.tick.lwd[1],p))) bpar$axes.tick.lwd[1] else " ",as.character(bpar$axes.tick.lwd)),tclVar)
-      local.axes.tick.col.var<<-lapply(c(if (identical(bpar$axes.tick.col,rep(bpar$axes.tick.col[1],p))) bpar$axes.tick.col[1] else "SystemButtonFace",as.character(bpar$axes.tick.col)),text2hex)
-      local.axes.tick.RelLength.var<<-lapply(c(if (identical(bpar$axes.tick.RelLength,rep(bpar$axes.tick.RelLength[1],p))) bpar$axes.tick.RelLength[1] else " ",as.character(bpar$axes.tick.RelLength)),tclVar)
-      local.axes.marker.font.var<<-lapply(c(if (identical(bpar$axes.marker.font,rep(bpar$axes.marker.font[1],p))) bpar$axes.marker.font[1] else " ",as.character(bpar$axes.marker.font)),tclVar)
-      local.axes.marker.cex.var<<-lapply(c(if (identical(bpar$axes.marker.cex,rep(bpar$axes.marker.cex[1],p))) bpar$axes.marker.cex[1] else " ",as.character(bpar$axes.marker.cex)),tclVar)
-      local.axes.marker.col.var<<-lapply(c(if (identical(bpar$axes.marker.col,rep(bpar$axes.marker.col[1],p))) bpar$axes.marker.col[1] else "SystemButtonFace",as.character(bpar$axes.marker.col)),text2hex)
-      local.axes.marker.RelOffset.var<<-lapply(c(if (identical(bpar$axes.marker.RelOffset,rep(bpar$axes.marker.RelOffset[1],p))) bpar$axes.marker.RelOffset[1] else " ",as.character(bpar$axes.marker.RelOffset)),tclVar)
-      local.axes.label.font.var<<-lapply(c(if (identical(bpar$axes.label.font,rep(bpar$axes.label.font[1],p))) bpar$axes.label.font[1] else " ",as.character(bpar$axes.label.font)),tclVar)
-      local.axes.label.cex.var<<-lapply(c(if (identical(bpar$axes.label.cex,rep(bpar$axes.label.cex[1],p))) bpar$axes.label.cex[1] else " ",as.character(bpar$axes.label.cex)),tclVar)
-      local.axes.label.las.var<<-lapply(c(if (identical(bpar$axes.label.las,rep(bpar$axes.label.las[1],p))) bpar$axes.label.las[1] else " ",as.character(bpar$axes.label.las)),tclVar)
-      local.axes.label.col.var<<-lapply(c(if (identical(bpar$axes.label.col,rep(bpar$axes.label.col[1],p))) bpar$axes.label.col[1] else "SystemButtonFace",as.character(bpar$axes.label.col)),text2hex)
+      bpar.initialise2.func()
+      initialise()
+      ChangeGroup()
       }
 
-    initialise()
+    # cat("ENDLISTING Sets the variables to the current values of the local variables when the OK button is clicked; redraws the biplot and if necessary the axis predictivities and kraal; destroys the dialogue box. BEGINLISTING")
     onOK<-function()
       {
       UpdateEntryBoxes()
@@ -2477,14 +2493,52 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
       if (p.in<p) Kraal.replot()
       tkdestroy(top)
       }
+
+    # cat("ENDLISTING Destroys the dialogue box without changing the variable values when the Cancel button is clicked. BEGINLISTING")
     onCancel<-function() tkdestroy(top)
-    onDefaults<-function()
+
+ # cat("ENDLISTING Defines the local variables. BEGINLISTING")
+    local.axes.lty.var<-NULL
+    local.axes.lwd.var<-NULL
+    local.axes.col.var<-NULL
+    local.axes.tick.n.var<-NULL
+    local.axes.tick.lty.var<-NULL
+    local.axes.tick.lwd.var<-NULL
+    local.axes.tick.col.var<-NULL
+    local.axes.tick.RelLength.var<-NULL
+    local.axes.marker.font.var<-NULL
+    local.axes.marker.cex.var<-NULL
+    local.axes.marker.col.var<-NULL
+    local.axes.marker.RelOffset.var<-NULL
+    local.axes.label.font.var<-NULL
+    local.axes.label.cex.var<-NULL
+    local.axes.label.las.var<-NULL
+    local.axes.label.col.var<-NULL
+
+   # cat("ENDLISTING Initialises the local variables. BEGINLISTING")
+    initialise<-function()
       {
-      bpar.initialise2.func()
-      initialise()
-      ChangeGroup()
+      local.axes.lty.var<<-lapply(c(if (identical(bpar$axes.lty,rep(bpar$axes.lty[1],p))) bpar$axes.lty[1] else " ",as.character(bpar$axes.lty)),tclVar)
+      local.axes.lwd.var<<-lapply(c(if (identical(bpar$axes.lwd,rep(bpar$axes.lwd[1],p))) bpar$axes.lwd[1] else " ",as.character(bpar$axes.lwd)),tclVar)
+      local.axes.col.var<<-lapply(c(if (identical(bpar$axes.col,rep(bpar$axes.col[1],p))) bpar$axes.col[1] else "SystemButtonFace",as.character(bpar$axes.col)),text2hex)
+      local.axes.tick.n.var<<-lapply(c(if (identical(bpar$axes.tick.n,rep(bpar$axes.tick.n[1],p))) bpar$axes.tick.n[1] else " ",as.character(bpar$axes.tick.n)),tclVar)
+      local.axes.tick.lty.var<<-lapply(c(if (identical(bpar$axes.tick.lty,rep(bpar$axes.tick.lty[1],p))) bpar$axes.tick.lty[1] else " ",as.character(bpar$axes.tick.lty)),tclVar)
+      local.axes.tick.lwd.var<<-lapply(c(if (identical(bpar$axes.tick.lwd,rep(bpar$axes.tick.lwd[1],p))) bpar$axes.tick.lwd[1] else " ",as.character(bpar$axes.tick.lwd)),tclVar)
+      local.axes.tick.col.var<<-lapply(c(if (identical(bpar$axes.tick.col,rep(bpar$axes.tick.col[1],p))) bpar$axes.tick.col[1] else "SystemButtonFace",as.character(bpar$axes.tick.col)),text2hex)
+      local.axes.tick.RelLength.var<<-lapply(c(if (identical(bpar$axes.tick.RelLength,rep(bpar$axes.tick.RelLength[1],p))) bpar$axes.tick.RelLength[1] else " ",as.character(bpar$axes.tick.RelLength)),tclVar)
+      local.axes.marker.font.var<<-lapply(c(if (identical(bpar$axes.marker.font,rep(bpar$axes.marker.font[1],p))) bpar$axes.marker.font[1] else " ",as.character(bpar$axes.marker.font)),tclVar)
+      local.axes.marker.cex.var<<-lapply(c(if (identical(bpar$axes.marker.cex,rep(bpar$axes.marker.cex[1],p))) bpar$axes.marker.cex[1] else " ",as.character(bpar$axes.marker.cex)),tclVar)
+      local.axes.marker.col.var<<-lapply(c(if (identical(bpar$axes.marker.col,rep(bpar$axes.marker.col[1],p))) bpar$axes.marker.col[1] else "SystemButtonFace",as.character(bpar$axes.marker.col)),text2hex)
+      local.axes.marker.RelOffset.var<<-lapply(c(if (identical(bpar$axes.marker.RelOffset,rep(bpar$axes.marker.RelOffset[1],p))) bpar$axes.marker.RelOffset[1] else " ",as.character(bpar$axes.marker.RelOffset)),tclVar)
+      local.axes.label.font.var<<-lapply(c(if (identical(bpar$axes.label.font,rep(bpar$axes.label.font[1],p))) bpar$axes.label.font[1] else " ",as.character(bpar$axes.label.font)),tclVar)
+      local.axes.label.cex.var<<-lapply(c(if (identical(bpar$axes.label.cex,rep(bpar$axes.label.cex[1],p))) bpar$axes.label.cex[1] else " ",as.character(bpar$axes.label.cex)),tclVar)
+      local.axes.label.las.var<<-lapply(c(if (identical(bpar$axes.label.las,rep(bpar$axes.label.las[1],p))) bpar$axes.label.las[1] else " ",as.character(bpar$axes.label.las)),tclVar)
+      local.axes.label.col.var<<-lapply(c(if (identical(bpar$axes.label.col,rep(bpar$axes.label.col[1],p))) bpar$axes.label.col[1] else "SystemButtonFace",as.character(bpar$axes.label.col)),text2hex)
       }
 
+    initialise()
+
+    # cat("ENDLISTING Creates and positions the widgets of the dialogue box. BEGINLISTING")
     listbox1<-tkwidget(top,"listbox",bg="white",relief="groove",borderwidth="1.5p",yscrollcommand=function(...) tkset(listbox1.scry,...))
     listbox1.scry<-tkscrollbar(top,repeatinterval=5,command=function(...) tkyview(listbox1,...))
     tkinsert(listbox1,"end","All axes")
@@ -2638,21 +2692,20 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
         }
       })
 
+    tkplace(listbox1,relx=.05,rely=.49,relwidth=.23,relheight=.88,"in"=top,anchor="w")
+    tkplace(listbox1.scry,relx=1,relheight=1,"in"=listbox1,anchor="ne")
     ###
 
     button1<-tk2button(top,text="OK",width=10,command=onOK)
     button2<-tk2button(top,text="Cancel",width=10,command=onCancel)
     button3<-tk2button(top,text="Defaults",width=10,command=onDefaults)
 
-    tkplace(listbox1,relx=.05,rely=.49,relwidth=.23,relheight=.88,"in"=top,anchor="w")
-    tkplace(listbox1.scry,relx=1,relheight=1,"in"=listbox1,anchor="ne")
-
     tkplace(button1,relx=.84,rely=.99,anchor="se")
     tkplace(button2,relx=.965,rely=.99,anchor="se")
     tkplace(button3,relx=.05,rely=.99,anchor="sw")
 
     tkplace(frameA,relx=.3,rely=.05,relwidth=.67,relheight=.88,"in"=top)
-
+    # cat("ENDLISTING Sets the dialogue box bindings. BEGINLISTING")
     tkbind(listbox1,"<<ListboxSelect>>",ChangeGroup)
     tkbind(top,"<Escape>",onCancel)
     tkbind(top,"<Destroy>",function()
@@ -2660,6 +2713,8 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
       tkgrab.release(top)
       tkfocus(ReturnToWindow)}
       )
+
+    # cat("ENDLISTING Sizes, centres and iconifies the dialogue box. BEGINLISTING")
     tkwm.focusmodel(top,"active")
     tkwm.geometry(top,paste("600x545","+",round(GUI.AvailableScreenWidth/2-600/2,0),"+",round(GUI.AvailableScreenHeight/2-545/2,0),sep=""))
 
@@ -2676,7 +2731,7 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
 
     tkwait.window(top)
     }
-
+  # cat("ENDLISTING Initialises the dialogue box. BEGINLISTING")
   local.GUI.func()
   }
 
@@ -2686,9 +2741,10 @@ Format.Axes.cmd<-function(WhichAxisInitially=1)
 
 Format.Interaction.cmd<-function()
   {
+# cat("ENDLISTING Creates the dialogue box. BEGINLISTING")
   top<-tktoplevel()
   tkwm.withdraw(top)
-
+   # cat("ENDLISTING Sets the local variables to their default values when the Default button is clicked. BEGINLISTING")
   onDefaults<-function()
     {
     local.interaction.prediction.lty.var<<-tclVar(3)
@@ -2723,7 +2779,7 @@ Format.Interaction.cmd<-function()
     local.interaction.highlight.ShowValues.digits.var<<-tclVar(3)
     tkconfigure(spinbox4,textvariable=local.interaction.highlight.ShowValues.digits.var)
     }
-
+    # cat("ENDLISTING Sets the variables to the current values of the local variables when the OK button is clicked; redraws the biplot. BEGINLISTING")
   onOK<-function()
     {
     tkdestroy(top)
@@ -2745,12 +2801,9 @@ Format.Interaction.cmd<-function()
     bpar$interaction.highlight.ShowValues.digits<<-as.numeric(tclvalue(local.interaction.highlight.ShowValues.digits.var))
     Biplot.replot()
     }
-
-  onCancel<-function()
-    {
-    tkdestroy(top)
-    }
-
+    # cat("ENDLISTING Destroys the dialogue box without changing the variable values when the Cancel button is clicked. BEGINLISTING")
+  onCancel<-function() tkdestroy(top)
+ # cat("ENDLISTING Defines the local variables. BEGINLISTING")
     local.interaction.prediction.lty.var<-tclVar(bpar$interaction.prediction.lty)
     local.interaction.prediction.lwd.var<-tclVar(bpar$interaction.prediction.lwd)
     local.interaction.prediction.col.var<-text2hex(bpar$interaction.prediction.col)
@@ -2769,7 +2822,7 @@ Format.Interaction.cmd<-function()
     local.interaction.highlight.ShowValues.digits.var<-tclVar(bpar$interaction.highlight.ShowValues.digits)
 
   ###
-
+    # cat("ENDLISTING Creates and positions the widgets of the dialogue box. BEGINLISTING")
   frame1<-tkwidget(top,"TitleFrame",text="Prediction")
   tkplace(frame1,relx=.05,relwidth=.90,y=10,height=165,"in"=top)
 
@@ -2897,7 +2950,7 @@ Format.Interaction.cmd<-function()
   tkplace(button1,relx=.05,rely=.99,anchor="sw")
   tkplace(button2,relx=.775,rely=.99,anchor="se")
   tkplace(button3,relx=.96,rely=.99,anchor="se")
-
+    # cat("ENDLISTING Sets the dialogue box bindings. BEGINLISTING")
   tkbind(top,"<Return>",onOK)
   tkbind(top,"<Escape>",onCancel)
   tkbind(top,"<Destroy>",function()
@@ -2905,7 +2958,7 @@ Format.Interaction.cmd<-function()
     tkgrab.release(top)
     tkfocus(top)
     })
-
+    # cat("ENDLISTING Sizes, centres and iconifies the dialogue box. BEGINLISTING")
   tkwm.geometry(top,paste("390x412","+",round(GUI.AvailableScreenWidth/2-390/2,0),"+",round(GUI.AvailableScreenHeight/2-412/2,0),sep=""))
   tkwm.focusmodel(top,"active")
   tkwm.resizable(top,"0","0")
@@ -2927,9 +2980,10 @@ Format.Interaction.cmd<-function()
 
 Format.DiagnosticTabs.cmd<-function()
   {
+    # cat("ENDLISTING Creates the dialogue box. BEGINLISTING")
   top<-tktoplevel()
   tkwm.withdraw(top)
-
+   # cat("ENDLISTING Sets the local variables to their default values when the Default button is clicked. BEGINLISTING")
   onDefaults<-function()
     {
     local.DiagnosticTabs.convergence.lty.var<<-tclVar(1)
@@ -2980,7 +3034,7 @@ Format.DiagnosticTabs.cmd<-function()
     local.DiagnosticTabs.predictions.digits.var<<-tclVar(3)
     tkconfigure(spinbox8,textvariable=local.DiagnosticTabs.predictions.digits.var)
     }
-
+    # cat("ENDLISTING Sets the variables to the current values of the local variables when the OK button is clicked; redraws the graphs of the diagnostic tabs. BEGINLISTING")
   onOK<-function()
     {
     tkdestroy(top)
@@ -3017,11 +3071,10 @@ Format.DiagnosticTabs.cmd<-function()
     AxesTab.replot()
     }
 
-  onCancel<-function()
-    {
-    tkdestroy(top)
-    }
+    # cat("ENDLISTING Destroys the dialogue box without changing the variable values when the Cancel button is clicked. BEGINLISTING")
+  onCancel<-function() tkdestroy(top)
 
+   # cat("ENDLISTING Initialises the local variables. BEGINLISTING")
   local.DiagnosticTabs.convergence.lty.var<-tclVar(bpar$DiagnosticTabs.convergence.lty)
   local.DiagnosticTabs.convergence.lwd.var<-tclVar(bpar$DiagnosticTabs.convergence.lwd)
   local.DiagnosticTabs.convergence.col.var<-text2hex(bpar$DiagnosticTabs.convergence.col)
@@ -3049,7 +3102,7 @@ Format.DiagnosticTabs.cmd<-function()
   local.DiagnosticTabs.predictions.digits.var<-tclVar(bpar$DiagnosticTabs.predictions.digits)
 
   ###
-
+    # cat("ENDLISTING Creates and positions the widgets of the dialogue box. BEGINLISTING")
   frame1<-tkwidget(top,"TitleFrame",text="Convergence")
   tkplace(frame1,relx=.05,relwidth=.90,y=10,height=85,"in"=top)
 
@@ -3225,7 +3278,7 @@ Format.DiagnosticTabs.cmd<-function()
   tkplace(button1,relx=.05,rely=.99,anchor="sw")
   tkplace(button2,relx=.775,rely=.99,anchor="se")
   tkplace(button3,relx=.96,rely=.99,anchor="se")
-
+    # cat("ENDLISTING Sets the dialogue box bindings. BEGINLISTING")
   tkbind(top,"<Return>",onOK)
   tkbind(top,"<Escape>",onCancel)
   tkbind(top,"<Destroy>",function()
@@ -3233,7 +3286,7 @@ Format.DiagnosticTabs.cmd<-function()
     tkgrab.release(top)
     tkfocus(top)
     })
-
+    # cat("ENDLISTING Sizes, centres and iconifies the dialogue box. BEGINLISTING")
   tkwm.geometry(top,paste("390x632","+",round(GUI.AvailableScreenWidth/2-390/2,0),"+",round(GUI.AvailableScreenHeight/2-632/2,0),sep=""))
   tkwm.focusmodel(top,"active")
   tkwm.resizable(top,"0","0")
@@ -3255,7 +3308,9 @@ Format.DiagnosticTabs.cmd<-function()
 
 Format.ResetAll.cmd<-function()
   {
+  # cat("ENDLISTING A standard dialogue box asking whether all the graphical parameters of the \\0hyperlink{MenuBar.Format}{Format} menu should be reset. BEGINLISTING")
   temp1<-tkmessageBox(icon="question",message="Are you sure? Clicking yes will reset all the graphical parameters\nof the Format menu to their original values.",parent=GUI.TopLevel,title="Reset all",type="yesno")
+  # cat("ENDLISTING If answered in the affirmative, all the graphical parameters of the \\0hyperlink{MenuBar.Format}{Format} menu are reset to their default values, and all the graphs of the \\0ac{GUI} are redrawn. BEGINLISTING")
   if (tclvalue(temp1)=="yes")
     {
     Biplot.title<<-Biplot.title.default
@@ -3281,6 +3336,7 @@ Format.ResetAll.cmd<-function()
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Joint.PCA}{Menu bar (functions): Joint: PCA}{PCA} BEGINLISTING")
 
+# cat("ENDLISTING Setup for \\0ac{PCA} biplots. BEGINLISTING")
 Joint.PCA.cmd<-function(FollowThrough=TRUE)
   {
   View.ClipAround.var<<-tclVar("0")
@@ -3309,10 +3365,10 @@ Joint.PCA.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Biplot.Axes.FollowThrough.cmd()
   }
 
-# cat("ENDLISTING The default PCA biplot title. BEGINLISTING")
+# cat("ENDLISTING The default \\0ac{PCA} biplot title. BEGINLISTING")
 Joint.PCA.title<-"PCA biplot"
 
-# cat("ENDLISTING Calculation of the basic PCA biplot quantities. BEGINLISTING")
+# cat("ENDLISTING Calculation of the basic statistical quantities for \\0ac{PCA} biplots. BEGINLISTING")
 Joint.PCA.determine<-function()
   {
   temp1<-eigen(t(Biplot.Xtransformed)%*%Biplot.Xtransformed,symmetric=TRUE)
@@ -3334,7 +3390,7 @@ Joint.PCA.determine<-function()
   AxesTab.predictivities1dim<<-colSums(Xhat1^2)/colSums(Biplot.Xtransformed^2)
   }
 
-# cat("ENDLISTING Setting of the plug-in mechanisms for PCA biplots. BEGINLISTING")
+# cat("ENDLISTING The plug-in mechanisms for \\0ac{PCA} biplots. BEGINLISTING")
 Joint.PCA.layout<-NULL # included in plot
 Joint.PCA.plot<-function(screen=TRUE) Biplot.linear.plot(screen)
 Joint.PCA.predictions<-function() Biplot.linear.predictions()
@@ -3350,6 +3406,8 @@ Joint.PCA.plot3D<-function() Biplot.linear.plot3D()
 ##############################################################################
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Joint.CovarianceCorrelation}{Menu bar (functions): Joint: Covariance/Correlation}{Covariance/Correlation} BEGINLISTING")
+
+# cat("ENDLISTING Setup for Covariance/Correlation biplots. BEGINLISTING")
 
 Joint.CovarianceCorrelation.cmd<-function(FollowThrough=TRUE)
   {
@@ -3377,7 +3435,9 @@ Joint.CovarianceCorrelation.cmd<-function(FollowThrough=TRUE)
   if (FollowThrough) Biplot.Axes.FollowThrough.cmd()
   }
 
+# cat("ENDLISTING The default Covariance/Correlation biplot title. BEGINLISTING")
 Joint.CovarianceCorrelation.title<-"Covariance/Correlation biplot"
+# cat("ENDLISTING Calculation of the basic statistical quantities for Covariance/Correlation biplots. BEGINLISTING")
 Joint.CovarianceCorrelation.determine<-function()
   {
   temp1<-eigen(t(Biplot.Xtransformed)%*%Biplot.Xtransformed,symmetric=TRUE)
@@ -3391,7 +3451,7 @@ Joint.CovarianceCorrelation.determine<-function()
   Biplot.B_<<-Biplot.B3D_[,1:2]
   Biplot.Binterpolate_<<-(sqrt(n.in-1)*V3D%*%sqrt(solve(lambda.r.3D)))[,1:2]
   }
-
+# cat("ENDLISTING The plug-in mechanisms for Covariance/Correlation biplots. BEGINLISTING")
 Joint.CovarianceCorrelation.layout<-NULL
 Joint.CovarianceCorrelation.plot<-function(screen=TRUE) Biplot.linear.plot(screen)
 Joint.CovarianceCorrelation.predictions<-function() Biplot.linear.predictions()
@@ -3408,6 +3468,7 @@ Joint.CovarianceCorrelation.plot3D<-function() Biplot.linear.plot3D()
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Joint.CVA}{Menu bar (functions): Joint: CVA}{CVA} BEGINLISTING")
 
+# cat("ENDLISTING Setup for \\0ac{CVA} biplots. BEGINLISTING")
 Joint.CVA.cmd<-function(FollowThrough=TRUE)
   {
   View.ClipAround.var<<-tclVar("0")
@@ -3435,8 +3496,9 @@ Joint.CVA.cmd<-function(FollowThrough=TRUE)
 
   if (FollowThrough) Biplot.Axes.FollowThrough.cmd()
   }
-
+# cat("ENDLISTING The default \\0ac{CVA} biplot title. BEGINLISTING")
 Joint.CVA.title<-"CVA biplot"
+# cat("ENDLISTING Calculation of the basic statistical quantities for \\0ac{CVA} biplots. BEGINLISTING")
 Joint.CVA.determine<-function()
   {
   Xbar<-apply(Biplot.Xtransformed,2,function(x) tapply(x,factor(group[samples.in],exclude=NULL),mean))
@@ -3471,6 +3533,7 @@ Joint.CVA.determine<-function()
   AxesTab.predictivities<<-diag(t(Xbarhat)%*%N%*%Xbarhat)/diag(t(Xbar)%*%N%*%Xbar)
   AxesTab.predictivities1dim<<-diag(t(Xbarhat1)%*%N%*%Xbarhat1)/diag(t(Xbar)%*%N%*%Xbar)
   }
+# cat("ENDLISTING The plug-in mechanisms for \\0ac{CVA} biplots. BEGINLISTING")
 Joint.CVA.layout<-NULL
 Joint.CVA.plot<-function(screen=TRUE) Biplot.linear.plot(screen)
 Joint.CVA.predictions<-function() Biplot.linear.predictions()
@@ -3504,107 +3567,6 @@ Points.FollowThrough.cmd<-function()
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Points.DistanceMetric}{Menu bar (functions): Points: Distance metric}{Distance metric} BEGINLISTING")
 
-# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Pythagoras}{Menu bar (functions): Points: Distance metric: Pythagoras}{Pythagoras} BEGINLISTING")
-
-Points.DistanceMetric.Pythagoras.func<-function(X,Y)
-  { # If Y is not missing, X must be a vector.
-  if (missing(Y)) as.matrix(dist(X))
-    else c(PythagorasDistance(matrix(X,nrow=1),Y))
-  }
-Points.DistanceMetric.Pythagoras.derivfunc<-NULL
-
-Points.DistanceMetric.Pythagoras.cmd<-function(FollowThrough=TRUE)
-  {
-  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2")) Biplot.Axes.var<<-tclVar("11")
-  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
-  Points.skipped<<-FALSE
-  Points.DistanceMetric.func<<-Points.DistanceMetric.Pythagoras.func
-  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.Pythagoras.derivfunc
-  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
-  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
-  }
-
-#######################################
-# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.SquareRootOfManhattan}{Menu bar (functions): Points: Distance metric: Square-root-of-Manhattan}{Square-root-of-Manhattan} BEGINLISTING")
-
-Points.DistanceMetric.SquareRootOfManhattan.func<-function(X,Y)
-  { # If Y is missing, X must be a vector.
-  if (missing(Y)) as.matrix(dist(X,method="manhattan"))^.5
-    else rowSums(abs(sweep(Y,2,X,"-")))^.5
-  }
-Points.DistanceMetric.SquareRootOfManhattan.derivfunc<-NULL
-
-Points.DistanceMetric.SquareRootOfManhattan.cmd<-function(FollowThrough=TRUE)
-  {
-  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2")) Biplot.Axes.var<<-tclVar("13")
-  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
-  Points.skipped<<-FALSE
-  Points.DistanceMetric.func<<-Points.DistanceMetric.SquareRootOfManhattan.func
-  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.SquareRootOfManhattan.func
-  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
-  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
-  }
-
-#######################################
-# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Clark}{Menu bar (functions): Points: Distance metric: Clark}{Clark} BEGINLISTING")
-
-Points.DistanceMetric.Clark.func<-function(X,Y)
-  { # If Y is missing, X must be a vector.
-  if (missing(Y))
-    {
-    n<-nrow(X)
-    distmat2<-matrix(0,nrow=n,ncol=n)
-    for (i in 1:(n-1)) for (j in (i+1):n) distmat2[i,j]<-sum(((X[i,]-X[j,])/(X[i,]+X[j,]))^2)
-    distmat<-(temp1<-distmat2^.5)+t(temp1)
-    distmat
-    }
-    else
-      {
-      n<-length(X)
-      temp1<-t(apply(Y,1,function(y) (X-y)/(X+y)))
-      rowSums(temp1^2)^.5
-      }
-  }
-Points.DistanceMetric.Clark.derivfunc<-NULL
-
-Points.DistanceMetric.Clark.cmd<-function(FollowThrough=TRUE)
-  {
-  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2")) Biplot.Axes.var<<-tclVar("13")
-  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
-  Points.skipped<<-FALSE
-  Points.DistanceMetric.func<<-Points.DistanceMetric.Clark.func
-  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.Clark.derivfunc
-  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
-  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
-  }
-
-#######################################
-
-# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Mahalanobis}{Menu bar (functions): Points: Distance metric: Mahalanobis}{Mahalanobis} BEGINLISTING")
-
-Points.DistanceMetric.Mahalanobis.func<-function(X,Y)
-  { # If Y is missing, X must be a vector.
-  temp1<-svd(cov(Biplot.Xtransformed))
-  temp2<-temp1$u%*%diag(temp1$d^-.5)%*%temp1$v
-  temp3<-X%*%temp2
-  if (missing(Y)) as.matrix(dist(temp3))
-    else PythagorasDistance(temp3,Y%*%temp2)
-  }
-Points.DistanceMetric.Mahalanobis.derivfunc<-NULL
-
-Points.DistanceMetric.Mahalanobis.cmd<-function(FollowThrough=TRUE)
-  {
-  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2","11","12","13","14")) Biplot.Axes.var<<-tclVar("10")
-  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
-  Points.skipped<<-FALSE
-  Points.DistanceMetric.func<<-Points.DistanceMetric.Mahalanobis.func
-  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.Mahalanobis.derivfunc
-  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
-  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
-  }
-
-#######################################
-
 Points.DistanceMetric.var<-tclVar("0")
 Points.DistanceMetric.func<-NULL
 Points.DistanceMetric.derivfunc<-NULL
@@ -3623,10 +3585,112 @@ Points.DistanceMetric.FollowThrough.cmd<-function()
     "12"=Points.MDS.MonotoneSplineTransformation.autcmd())
   }
 
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Pythagoras}{Menu bar (functions): Points: Distance metric: Pythagoras}{Pythagoras} BEGINLISTING")
+
+# cat("ENDLISTING If \\0code{Y} is missing, calculates the Pythagoras distances between the rows of matrix \\0code{X}; otherwise calculates the Pythagoras distances between vector \\0code{X} and the rows of matrix \\0code{Y}. BEGINLISTING")
+Points.DistanceMetric.Pythagoras.func<-function(X,Y)
+  { # If Y is not missing, X must be a vector.
+  if (missing(Y)) as.matrix(dist(X))
+    else c(PythagorasDistance(matrix(X,nrow=1),Y))
+  }
+Points.DistanceMetric.Pythagoras.derivfunc<-NULL
+
+# cat("ENDLISTING Setup for Pythagoras distance. BEGINLISTING")
+Points.DistanceMetric.Pythagoras.cmd<-function(FollowThrough=TRUE)
+  {
+  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2")) Biplot.Axes.var<<-tclVar("11")
+  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
+  Points.skipped<<-FALSE
+  Points.DistanceMetric.func<<-Points.DistanceMetric.Pythagoras.func
+  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.Pythagoras.derivfunc
+  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
+  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
+  }
+
+#######################################
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.SquareRootOfManhattan}{Menu bar (functions): Points: Distance metric: Square-root-of-Manhattan}{Square-root-of-Manhattan} BEGINLISTING")
+# cat("ENDLISTING If \\0code{Y} is missing, calculates the Square-root-of-Manhattan distances between the rows of a matrix \\0code{X}; otherwise calculates the Square-root-of-Manhattan distances between vector \\0code{X} and the rows of matrix \\0code{Y}. BEGINLISTING")
+Points.DistanceMetric.SquareRootOfManhattan.func<-function(X,Y)
+  { # If Y is missing, X must be a vector.
+  if (missing(Y)) as.matrix(dist(X,method="manhattan"))^.5
+    else rowSums(abs(sweep(Y,2,X,"-")))^.5
+  }
+Points.DistanceMetric.SquareRootOfManhattan.derivfunc<-NULL
+# cat("ENDLISTING Setup for Square-root-of-Manhattan distance. BEGINLISTING")
+Points.DistanceMetric.SquareRootOfManhattan.cmd<-function(FollowThrough=TRUE)
+  {
+  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2")) Biplot.Axes.var<<-tclVar("13")
+  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
+  Points.skipped<<-FALSE
+  Points.DistanceMetric.func<<-Points.DistanceMetric.SquareRootOfManhattan.func
+  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.SquareRootOfManhattan.func
+  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
+  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
+  }
+
+#######################################
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Clark}{Menu bar (functions): Points: Distance metric: Clark}{Clark} BEGINLISTING")
+# cat("ENDLISTING If \\0code{Y} is missing, calculates the Clark distances between the rows of a matrix \\0code{X}; otherwise calculates the Clark distances between vector \\0code{X} and the rows of matrix \\0code{Y}. BEGINLISTING")
+Points.DistanceMetric.Clark.func<-function(X,Y)
+  { # If Y is missing, X must be a vector.
+  if (missing(Y))
+    {
+    n<-nrow(X)
+    distmat2<-matrix(0,nrow=n,ncol=n)
+    for (i in 1:(n-1)) for (j in (i+1):n) distmat2[i,j]<-sum(((X[i,]-X[j,])/(X[i,]+X[j,]))^2)
+    distmat<-(temp1<-distmat2^.5)+t(temp1)
+    distmat
+    }
+    else
+      {
+      n<-length(X)
+      temp1<-t(apply(Y,1,function(y) (X-y)/(X+y)))
+      rowSums(temp1^2)^.5
+      }
+  }
+Points.DistanceMetric.Clark.derivfunc<-NULL
+# cat("ENDLISTING Setup for Clark distance. BEGINLISTING")
+Points.DistanceMetric.Clark.cmd<-function(FollowThrough=TRUE)
+  {
+  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2")) Biplot.Axes.var<<-tclVar("13")
+  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
+  Points.skipped<<-FALSE
+  Points.DistanceMetric.func<<-Points.DistanceMetric.Clark.func
+  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.Clark.derivfunc
+  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
+  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
+  }
+
+#######################################
+
+# cat("ENDLISTING \\0sourcefive{SC.MenuBar.Functions.Points.DistanceMetric.Mahalanobis}{Menu bar (functions): Points: Distance metric: Mahalanobis}{Mahalanobis} BEGINLISTING")
+# cat("ENDLISTING If \\0code{Y} is missing, calculates the Mahalanobis distances between the rows of a matrix \\0code{X}; otherwise calculates the Mahalanobis distances between vector \\0code{X} and the rows of matrix \\0code{Y}. BEGINLISTING")
+Points.DistanceMetric.Mahalanobis.func<-function(X,Y)
+  { # If Y is missing, X must be a vector.
+  temp1<-svd(cov(Biplot.Xtransformed))
+  temp2<-temp1$u%*%diag(temp1$d^-.5)%*%temp1$v
+  temp3<-X%*%temp2
+  if (missing(Y)) as.matrix(dist(temp3))
+    else PythagorasDistance(temp3,Y%*%temp2)
+  }
+Points.DistanceMetric.Mahalanobis.derivfunc<-NULL
+# cat("ENDLISTING Setup for Mahalanobis distance. BEGINLISTING")
+Points.DistanceMetric.Mahalanobis.cmd<-function(FollowThrough=TRUE)
+  {
+  if (tclvalue(Points.var)=="0" && tclvalue(Biplot.Axes.var)%in%c("0","1","2","11","12","13","14")) Biplot.Axes.var<<-tclVar("10")
+  if (tclvalue(Points.var)%in%c("10","11","12") && tclvalue(Biplot.Axes.var)%in%c("0","1","2","13","14")) Biplot.Axes.var<<-tclVar("11")
+  Points.skipped<<-FALSE
+  Points.DistanceMetric.func<<-Points.DistanceMetric.Mahalanobis.func
+  Points.DistanceMetric.derivfunc<<-Points.DistanceMetric.Mahalanobis.derivfunc
+  Points.DistanceMetric.DissimilarityMatrix<<-Points.DistanceMetric.func(Biplot.Xtransformed)
+  if (FollowThrough) Points.DistanceMetric.FollowThrough.cmd()
+  }
+
+#######################################
+
 ##############################################################################
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Points.PCO}{Menu bar (functions): Points: PCO}{PCO} BEGINLISTING")
-
 
 Points.PCO.cmd<-function(FollowThrough=TRUE)
   {
@@ -6751,6 +6815,8 @@ Biplot.NonLinear.determine.interpolative<-function()
       Biplot.axis<<-temp7
       Biplot.axis3D<<-temp8
       }
+#print(Biplot.axis)
+print(Biplot.variable)
   }
 
 #######################################
