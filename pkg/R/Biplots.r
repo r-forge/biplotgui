@@ -1,5 +1,9 @@
 # To fix: The circular non-linear export isn't complete - no marker labels
 # To change: Make the default biplot when Mahalanobis PCO is chosen, the CVA biplot (from Sugnet).
+# Change what the prettys are performed on.
+
+# Loading of the manual doesn't seem to work in Vista.
+
 
 ################################################################################
 ################################################################################
