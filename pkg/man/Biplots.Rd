@@ -5,7 +5,7 @@
   Initialises a GUI with which users can construct and interact with biplots.
 }
 \usage{
-Biplots(Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data), AxisLabels = colnames(Data), excel = NULL, ExcelGroupsCol = 0)
+Biplots(Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),  AxisLabels = colnames(Data), excel = NULL, ExcelGroupsCol = 0)
 }
 \arguments{
   \item{Data}{ A matrix or data frame of numerical data. Its \eqn{n}{n} samples (observations) will be represented as points in the biplots; its \eqn{p}{p} variables will be represented as calibrated biplot axes. }

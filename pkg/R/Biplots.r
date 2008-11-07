@@ -75,7 +75,8 @@ RequirePackage<-function(package)
 # `rgl' is loaded when a 3D biplot is to be drawn for the first time.
 
 # cat("ENDLISTING Loads the \\0code{BWidget} tcl package. BEGINLISTING")
-tclRequire("BWidget")
+tclRequire("BWidget")
+
 #####################################################################################################################
 ### GENERAL INITIALISATION : MAIN VARIABLES #########################################################################
 #####################################################################################################################
@@ -697,6 +698,69 @@ legend2<-function (x, y = NULL, legend, fill = NULL, col = par("col"),lines.col=
 
 ##############################################################################
 
+my.plot.tile.list<-function (x, verbose = FALSE, close = FALSE, pch = 1, polycol = NA,  showpoints = TRUE, asp = 1, ...)
+{
+    object <- x
+    if (!inherits(object, "tile.list"))
+        stop("Argument \"object\" is not of class tile.list.\n")
+    n <- length(object)
+    x.all <- unlist(lapply(object, function(w) {
+        c(w$pt[1], w$x)
+    }))
+    y.all <- unlist(lapply(object, function(w) {
+        c(w$pt[2], w$y)
+    }))
+    x.pts <- unlist(lapply(object, function(w) {
+        w$pt[1]
+    }))
+    y.pts <- unlist(lapply(object, function(w) {
+        w$pt[2]
+    }))
+    rx <- range(x.all)
+    ry <- range(y.all)
+    #plot(x.all, y.all, type = "n", asp = asp, xlab = "x", ylab = "y",...)
+    polycol <- apply(col2rgb(polycol, TRUE), 2, function(x) {
+        do.call(rgb, as.list(x/255))
+    })
+    polycol <- rep(polycol, length = length(object))
+    hexbla <- do.call(rgb, as.list(col2rgb("black", TRUE)/255))
+    hexwhi <- do.call(rgb, as.list(col2rgb("white", TRUE)/255))
+    ptcol <- ifelse(polycol == hexbla, hexwhi, hexbla)
+    lnwid <- ifelse(polycol == hexbla, 2, 1)
+    for (i in 1:n) {
+        inner <- !any(object[[i]]$bp)
+        if (close | inner)
+            polygon(object[[i]], col = polycol[i], border = ptcol[i],
+                lwd = lnwid[i])
+        else {
+            x <- object[[i]]$x
+            y <- object[[i]]$y
+            bp <- object[[i]]$bp
+            ni <- length(x)
+            for (j in 1:ni) {
+                jnext <- if (j < ni)
+                  j + 1
+                else 1
+                do.it <- mid.in(x[c(j, jnext)], y[c(j, jnext)],
+                  rx, ry)
+                if (do.it)
+                  segments(x[j], y[j], x[jnext], y[jnext], col = ptcol[i],
+                    lwd = lnwid[i])
+            }
+        }
+        if (verbose & showpoints)
+            points(object[[i]]$pt[1], object[[i]]$pt[2], pch = pch,
+                col = ptcol[i])
+        if (verbose & i < n)
+            readline("Go? ")
+    }
+    if (showpoints)
+        points(x.pts, y.pts, pch = pch, col = ptcol)
+    invisible()
+}
+
+##############################################################################
+                                                                              
 # cat("ENDLISTING Converts the text names of colours (\\0code{textcol}) to the corresponding hexadecimal codes. If an element of \\0code{textcol} has value `SystemButtonFace', an exception is made for it in Windows. BEGINLISTING") #Some work is still required for Unix-alike. At present, `SystemButtonFace' is treated as `white' under that platform.
 text2hex<-function(textcol) 
 {
@@ -1886,7 +1950,7 @@ Format.ByGroup.cmd<-function(WhichGroupInitially=1,WhichTabInitially=1)
 
       bparp.func()
       # cat("ENDLISTING Redraws the biplot. BEGINLISTING")
-      Biplot.replot()
+      if (WhichTabInitially==1) Biplot.replot()
       # cat("ENDLISTING If necessary, redraws the point predictivities. BEGINLISTING")
       if (tclvalue(Biplot.Axes.var)%in%c("0","2")) PointsTab.predictivities.replot()
       # cat("ENDLISTING If necessary, redraws the group predictivities. BEGINLISTING")
@@ -4651,7 +4715,7 @@ Axes.CircularNonLinear.determine<-function(rho=2)
 
       markers<-zapsmall(seq(PrettyMarkers[1],PrettyMarkers[length(PrettyMarkers)],by=PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[j]]))
       PrettyMarkers<-PrettyMarkersTemp
-      ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+      ttemp<-max(max(nchar(format(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
       PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
 
       markers<-markers[markers-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[j]]/10>=min(Data[samples.in,variables.in[j]]) & markers+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[j]]/10<=max(Data[samples.in,variables.in[j]])]
@@ -4817,7 +4881,8 @@ Axes.Default.cmd<-function()
     "2"={ Biplot.Axes.var<<-tclVar("13"); Axes.CircularNonLinear.cmd() },
     "3"={ Biplot.Axes.var<<-tclVar("10"); Axes.None.cmd() })
     else Axes.Regression.cmd()
-  }
+  }
+
 ##############################################################################
 ### MENU BAR : FUNCTIONS : ADDITIONAL ########################################
 ##############################################################################
@@ -5757,11 +5822,30 @@ Additional.ClassificationRegion.cmd<-function()
 
     onOK<-function()
       {
-      Additional.ClassificationRegion.dimensions<<-which(tclvalue(tkget(combo1))==DimensionsPossibilities)
-      bpar$ClassificationRegion.PixelsPerBiplotDimension<<-round(as.numeric(tclvalue(NewPixels)),0)
-      Additional.ClassificationRegion.var<<-tclVar("1")
-      tkdestroy(top)
-      }
+      if (which(tclvalue(tkget(combo1))==DimensionsPossibilities)==2)
+        {
+        if (data.class(try(.find.package("deldir"),TRUE))=="try-error")
+          {
+          tkmessageBox(title="Two-dimensional classification regions",parent=GUI.TopLevel,message="This option requires the `deldir' package. \nPlease download and install.",icon="info",type="ok")
+          tkfocus(top)
+          }
+          else 
+            {
+            require("deldir",quietly=TRUE)
+            Additional.ClassificationRegion.dimensions<<-which(tclvalue(tkget(combo1))==DimensionsPossibilities)
+            bpar$ClassificationRegion.PixelsPerBiplotDimension<<-round(as.numeric(tclvalue(NewPixels)),0)
+            Additional.ClassificationRegion.var<<-tclVar("1")
+            tkdestroy(top) 
+            }
+        }
+        else
+          {  
+          Additional.ClassificationRegion.dimensions<<-which(tclvalue(tkget(combo1))==DimensionsPossibilities)
+          bpar$ClassificationRegion.PixelsPerBiplotDimension<<-round(as.numeric(tclvalue(NewPixels)),0)
+          Additional.ClassificationRegion.var<<-tclVar("1")
+          tkdestroy(top) 
+          }
+        }
 
     onOff<-function()
       {
@@ -5824,7 +5908,7 @@ Additional.ClassificationRegion.cmd<-function()
     Additional.PointDensities.var<<-tclVar("0")
     Additional.PointDensities.estimate<<-NULL
     }
-
+  
   # Does not call `Additional.ClassificationRegion.autcmd'. It is called from within the plotting functions themselves.
   }
 Additional.ClassificationRegion.var<-tclVar("0")
@@ -5832,15 +5916,24 @@ Additional.ClassificationRegion.dimensions<-p
 
 Additional.ClassificationRegion.autcmd<-function(FollowThrough=TRUE) # `Additional.PointDensities.autcmd' and `Additional.ClassificationRegion.autcmd' are the exceptions. They are called from within the plotting functions themselves.
   {
-  xseq<-seq(Biplot.par$usr[1],Biplot.par$usr[2],length=bpar$ClassificationRegion.PixelsPerBiplotDimension)
-  yseq<-seq(Biplot.par$usr[3],Biplot.par$usr[4],length=bpar$ClassificationRegion.PixelsPerBiplotDimension)
-  if (Additional.ClassificationRegion.dimensions==1) L<-as.matrix(xseq)
-    else if (Additional.ClassificationRegion.dimensions==2) L<-cbind(rep(xseq,each=length(yseq)),rep(yseq,length(xseq)))
-      else L<-cbind(rep(xseq,each=length(yseq)),rep(yseq,length(xseq)),matrix(0,nrow=bpar$ClassificationRegion.PixelsPerBiplotDimension^2,ncol=Additional.ClassificationRegion.dimensions-2))
-  dd<-PythagorasDistance(apply(Biplot.Xtransformed,2,function(x) tapply(x,factor(group[samples.in],exclude=NULL),mean))%*%Biplot.Bclassify[,1:Additional.ClassificationRegion.dimensions],L)
-  class.region<-matrix(apply(dd,2,which.min),byrow=TRUE,nrow=length(xseq))
-  if (Additional.ClassificationRegion.dimensions==1) image(xseq,yseq,matrix(class.region,nrow=length(class.region),ncol=bpar$ClassificationRegion.PixelsPerBiplotDimension),add=TRUE,col=bpar$gClassificationRegion.col.bg)
-    else image(xseq,yseq,class.region,add=TRUE,col=bpar$gClassificationRegion.col.bg)
+  if (Additional.ClassificationRegion.dimensions==2)
+    {
+    temp1<-apply(Biplot.Xtransformed,2,function(x) tapply(x,factor(group[samples.in],exclude=NULL),mean))%*%Biplot.Bclassify[,1:2]
+    temp2<-deldir(temp1[,1],temp1[,2],rw=c(Biplot.par$usr[1],Biplot.par$usr[2],Biplot.par$usr[3],Biplot.par$usr[4]))    
+    my.plot.tile.list(tile.list(temp2),polycol=bpar$gClassificationRegion.col.bg,close=TRUE,asp=NA,pch=NA)
+    }
+    else
+      {
+      xseq<-seq(Biplot.par$usr[1],Biplot.par$usr[2],length=bpar$ClassificationRegion.PixelsPerBiplotDimension)
+      yseq<-seq(Biplot.par$usr[3],Biplot.par$usr[4],length=bpar$ClassificationRegion.PixelsPerBiplotDimension)
+      if (Additional.ClassificationRegion.dimensions==1) L<-as.matrix(xseq)
+        else if (Additional.ClassificationRegion.dimensions==2) L<-cbind(rep(xseq,each=length(yseq)),rep(yseq,length(xseq)))
+          else L<-cbind(rep(xseq,each=length(yseq)),rep(yseq,length(xseq)),matrix(0,nrow=bpar$ClassificationRegion.PixelsPerBiplotDimension^2,ncol=Additional.ClassificationRegion.dimensions-2))
+      dd<-PythagorasDistance(apply(Biplot.Xtransformed,2,function(x) tapply(x,factor(group[samples.in],exclude=NULL),mean))%*%Biplot.Bclassify[,1:Additional.ClassificationRegion.dimensions],L)
+      class.region<-matrix(apply(dd,2,which.min),byrow=TRUE,nrow=length(xseq))
+      if (Additional.ClassificationRegion.dimensions==1) image(xseq,yseq,matrix(class.region,nrow=length(class.region),ncol=bpar$ClassificationRegion.PixelsPerBiplotDimension),add=TRUE,col=bpar$gClassificationRegion.col.bg)
+        else image(xseq,yseq,class.region,add=TRUE,col=bpar$gClassificationRegion.col.bg)
+      }
   }
 
 ##############################################################################
@@ -5878,10 +5971,10 @@ Help.HomePage.cmd<-function()
 
 # cat("ENDLISTING \\0sourcefour{SC.MenuBar.Functions.Help.ReportABug}{Menu bar (functions): Help: Report a bug}{Report a bug} BEGINLISTING")
 
-Help.ReportABug.cmd<-function()
-  {
-  shell.exec("http://r-forge.r-project.org/tracker/?group_id=225")
-  }
+#Help.ReportABug.cmd<-function()
+#  {
+#  shell.exec("http://r-forge.r-project.org/tracker/?group_id=225")
+#  }
 
 ##############################################################################
 
@@ -6405,7 +6498,7 @@ tkadd(MenuBar.menu,"cascade",label="Additional",underline="0",menu=MenuBar.Addit
 MenuBar.Help<-tk2menu(MenuBar.menu,tearoff=FALSE)
 tkadd(MenuBar.Help,"command",label="Manual (in PDF)",underline="0",accelerator="F1",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.Manual.cmd)
 tkadd(MenuBar.Help,"command",label="Home page",underline="0",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.HomePage.cmd)
-tkadd(MenuBar.Help,"command",label="Report a bug",underline="0",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.ReportABug.cmd)
+#tkadd(MenuBar.Help,"command",label="Report a bug",underline="0",state=if (.Platform$OS.type != "windows") "disabled" else "normal",command=Help.ReportABug.cmd)
 tkadd(MenuBar.Help,"separator")
 tkadd(MenuBar.Help,"checkbutton",label="Show pop-up help",underline="6",variable=Help.ShowPopUpHelp.var,command=function()
   {
@@ -6588,7 +6681,7 @@ Biplot.linear.plot<-function(screen=TRUE)
     mu<-SettingsBox.transformation.func(IN=pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]),WhichCol=i)
 
     PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
-    ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+    ttemp<-max(max(nchar(format(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
     PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
 
     Coord<-t(sapply(mu,function(a) B[i,]*a))
@@ -6785,7 +6878,7 @@ Biplot.NonLinear.determine.interpolative<-function()
 
     markers<-zapsmall(seq(PrettyMarkers[1],PrettyMarkers[length(PrettyMarkers)],by=PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]))
     PrettyMarkers<-PrettyMarkersTemp
-    ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+    ttemp<-max(max(nchar(format(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
     PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
 
     markers<-markers[markers-PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10>=min(Data[samples.in,variables.in[i]]) & markers+PrettyMarkersIncrement/boptions$axes.tick.inter.n[variables.in[i]]/10<=max(Data[samples.in,variables.in[i]])]
@@ -6820,7 +6913,7 @@ Biplot.NonLinear.determine.interpolative<-function()
       Biplot.axis3D<<-temp8
       }
 #print(Biplot.axis)
-print(Biplot.variable)
+#print(Biplot.variable)
   }
 
 #######################################
@@ -7229,10 +7322,7 @@ Biplot.plot.SampleGroupMeans<-function()
     temp9<-bpar$gSampleGroupMeans.label.VertOffset[Additional.Interpolate.SampleGroupMeans.for]
     })
 
-  if (bpar$SampleGroupMeans.LabelsInBiplot)
-    {
-    text(Additional.Interpolate.SampleGroupMeans.coordinates[,1]+temp8*strwidth("x",cex=temp6),Additional.Interpolate.SampleGroupMeans.coordinates[,2]+temp9*strheight("x",cex=temp6),labels=Additional.Interpolate.SampleGroupMeans.label.text,font=temp5,cex=temp6,col=temp7)
-  }
+  if (bpar$SampleGroupMeans.LabelsInBiplot) text(Additional.Interpolate.SampleGroupMeans.coordinates[,1]+temp8*strwidth("x",cex=temp6),Additional.Interpolate.SampleGroupMeans.coordinates[,2]+temp9*strheight("x",cex=temp6),labels=Additional.Interpolate.SampleGroupMeans.label.text,font=temp5,cex=temp6,col=temp7)
   points(Additional.Interpolate.SampleGroupMeans.coordinates[,1],Additional.Interpolate.SampleGroupMeans.coordinates[,2],pch=temp1,cex=temp2,col=temp3,bg=temp4)
   }
 
@@ -7536,7 +7626,7 @@ Biplot.linear.plot3D<-function()
     for (i in 1:p.in)
       {
       PrettyMarkers<-zapsmall(pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]))
-      ttemp<-max(max(nchar(as.character(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
+      ttemp<-max(max(nchar(format(abs(PrettyMarkers)-trunc(abs(PrettyMarkers)))))-2,0)
       PrettyMarkersCharacter<-format(PrettyMarkers,nsmall=ttemp,trim=TRUE)
 
       mu<-SettingsBox.transformation.func(IN=pretty(Data[samples.in,variables.in[i]],n=bpar$axes.tick.n[variables.in[i]]),WhichCol=i)
