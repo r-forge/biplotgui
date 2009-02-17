@@ -15,7 +15,7 @@ A data frame with 15 observations on the following 8 variables.
     \item{\code{Mil.}}{Military spending as a percentage of GDP. A numeric vector.}
     \item{\code{Oil.cons.}}{Oil consumption in barrels per annum per capita. A numeric vector.}
     \item{\code{Pop.}}{Population in millions. A numeric vector.}
-    \item{\code{Tel.}}{Number of fixed line telephones per capita. A numeric vector.}
+    \item{\code{Tel.}}{Number of fixed line telephones per 1000 people. A numeric vector.}
     \item{\code{Unempl.}}{Percentage unemployed. A numeric vector.}
   }}
 \details{
@@ -26,7 +26,6 @@ A data frame with 15 observations on the following 8 variables.
 }
 \examples{
 data(Countries)
-# Paste the following into an interactive R session (without the ##):
-## Biplots(Data = Countries)
+\dontrun{Biplots(Data = Countries)}
 }
 \keyword{datasets}

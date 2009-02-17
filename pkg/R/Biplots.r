@@ -2,18 +2,8 @@ Biplots <-
 function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data), 
     AxisLabels = colnames(Data), excel = NULL, ExcelGroupsCol = 0) 
 {
-    RequirePackage <- function(package) {
-        if (data.class(try(.find.package(package), TRUE)) == 
-            "try-error") 
-            stop(paste("Cannot find the `", package, "' package. Please download and install.", 
-                sep = ""))
-        else require(package, character.only = TRUE, quietly = TRUE)
-    }
     tclRequire("BWidget")
     if (!missing(excel)) {
-        if (.Platform$OS.type != "windows") 
-            stop("Data can only be imported directly from Excel 1997-2003 files if BiplotGUI is run under Windows.")
-        RequirePackage("xlsReadWrite")
         Data <- read.xls(excel)
         if (ExcelGroupsCol > 0) {
             groups <- Data[, ExcelGroupsCol]
@@ -5697,22 +5687,9 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             rm(Rico)
             tkwait.window(top)
         }
-        if (data.class(try(.find.package("KernSmooth"), TRUE)) == 
-            "try-error" || data.class(try(.find.package("vcd"), 
-            TRUE)) == "try-error") {
-            tkmessageBox(title = "Point densities", parent = GUI.TopLevel, 
-                message = "This option requires the `KernSmooth' and `vcd' packages. \nPlease download and install.", 
-                icon = "info", type = "ok")
-            tkfocus(GUI.TopLevel)
-            Additional.PointDensities.var <<- tclVar("0")
-        }
-        else {
-            require("KernSmooth", quietly = TRUE)
-            require("vcd", quietly = TRUE)
-            Additional.PointDensities.var <<- tclVar("1")
-            Additional.ClassificationRegion.var <<- tclVar("0")
-            local.GUI.func()
-        }
+        Additional.PointDensities.var <<- tclVar("1")
+        Additional.ClassificationRegion.var <<- tclVar("0")
+        local.GUI.func()
         if (tclvalue(Additional.PointDensities.var) != "1") 
             Additional.PointDensities.estimate <<- NULL
     }
@@ -5768,22 +5745,12 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             onOK <- function() {
                 if (which(tclvalue(tkget(combo1)) == DimensionsPossibilities) == 
                   2) {
-                  if (data.class(try(.find.package("deldir"), 
-                    TRUE)) == "try-error") {
-                    tkmessageBox(title = "Two-dimensional classification regions", 
-                      parent = GUI.TopLevel, message = "This option requires the `deldir' package. \nPlease download and install.", 
-                      icon = "info", type = "ok")
-                    tkfocus(top)
-                  }
-                  else {
-                    require("deldir", quietly = TRUE)
-                    Additional.ClassificationRegion.dimensions <<- which(tclvalue(tkget(combo1)) == 
-                      DimensionsPossibilities)
-                    bpar$ClassificationRegion.PixelsPerBiplotDimension <<- round(as.numeric(tclvalue(NewPixels)), 
-                      0)
-                    Additional.ClassificationRegion.var <<- tclVar("1")
-                    tkdestroy(top)
-                  }
+                  Additional.ClassificationRegion.dimensions <<- which(tclvalue(tkget(combo1)) == 
+                    DimensionsPossibilities)
+                  bpar$ClassificationRegion.PixelsPerBiplotDimension <<- round(as.numeric(tclvalue(NewPixels)), 
+                    0)
+                  Additional.ClassificationRegion.var <<- tclVar("1")
+                  tkdestroy(top)
                 }
                 else {
                   Additional.ClassificationRegion.dimensions <<- which(tclvalue(tkget(combo1)) == 
@@ -7205,25 +7172,25 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             y = OUT2[[i]]$yvarnamepos(par("usr"), i), rectangles = matrix(c(1.1 * 
                 strwidth(colnames(Data)[i], cex = 0.8), 1.3 * 
                 strheight(colnames(Data)[i], cex = 0.8)), ncol = 2), 
-            inches = F, add = T, bg = "white", xpd = NA)
+            inches = FALSE, add = TRUE, bg = "white", xpd = NA)
         for (i in side2) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
             i), y = OUT2[[i]]$yvarnamepos(par("usr"), i) + 0.5 * 
             strwidth(colnames(Data)[i], cex = 0.8), rectangles = matrix(c(1.3 * 
             strheight(colnames(Data)[i], cex = 0.8), 1.1 * strwidth(colnames(Data)[i], 
-            cex = 0.8)), ncol = 2), inches = F, add = T, bg = "white", 
-            xpd = NA)
+            cex = 0.8)), ncol = 2), inches = FALSE, add = TRUE, 
+            bg = "white", xpd = NA)
         for (i in side3) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
             i) - 0.5 * strwidth(colnames(Data)[i], cex = 0.8), 
             y = OUT2[[i]]$yvarnamepos(par("usr"), i), rectangles = matrix(c(1.1 * 
                 strwidth(colnames(Data)[i], cex = 0.8), 1.3 * 
                 strheight(colnames(Data)[i], cex = 0.8)), ncol = 2), 
-            inches = F, add = T, bg = "white", xpd = NA)
+            inches = FALSE, add = TRUE, bg = "white", xpd = NA)
         for (i in side4) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
             i), y = OUT2[[i]]$yvarnamepos(par("usr"), i) - 0.5 * 
             strwidth(colnames(Data)[i], cex = 0.8), rectangles = matrix(c(1.3 * 
             strheight(colnames(Data)[i], cex = 0.8), 1.1 * strwidth(colnames(Data)[i], 
-            cex = 0.8)), ncol = 2), inches = F, add = T, bg = "white", 
-            xpd = NA)
+            cex = 0.8)), ncol = 2), inches = FALSE, add = TRUE, 
+            bg = "white", xpd = NA)
         for (i in 1:p.in) text(OUT2[[i]]$xvarnamepos(par("usr"), 
             i), OUT2[[i]]$yvarnamepos(par("usr"), i), label = colnames(Data)[i], 
             col = bpar$axes.label.col[i], srt = OUT2[[i]]$srtvalue, 
@@ -11619,16 +11586,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         .Tcl("update")
     }
     Other.DisplayInExternalWindow.In3D.cmd <- function() {
-        if (data.class(try(.find.package("rgl"), TRUE)) == "try-error") {
-            tkmessageBox(title = "In 3D", parent = GUI.TopLevel, 
-                message = "This option requires the `rgl' package. \nPlease download and install.", 
-                icon = "info", type = "ok")
-            tkfocus(GUI.TopLevel)
-        }
-        else {
-            require("rgl", quietly = TRUE)
-            Biplot.plot3D()
-        }
+        Biplot.plot3D()
     }
     Other.HidePoints.var <- tclVar("0")
     Other.HidePoints.cmd <- function() {

@@ -28,7 +28,6 @@
 }
 \examples{
 data(FighterAircraft)
-# Paste the following into an interactive R session (without the ##):
-## Biplots(Data = FighterAircraft)
+\dontrun{Biplots(Data = FighterAircraft)}
 }
 \keyword{datasets}
