@@ -1,0 +1,8 @@
+useDynLib(BiplotGUI)
+
+export(Biplots)
+
+importFrom(colorspace,heat_hcl,sequential_hcl,terrain_hcl)
+importFrom(KernSmooth,bkde2D)
+importFrom(MASS,ginv,eqscplot)
+importFrom(xlsReadWrite,read.xls)
