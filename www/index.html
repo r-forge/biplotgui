@@ -35,108 +35,95 @@ interact with biplots.</font> </p>
       <ul>
         <li>
         <div><font size="2">A&nbsp;graphical user interface (GUI), making the 
-        package easy to use </font></div>
+        package easy to use. </font></div>
         <li>
         <div><font size="2">Support for different types of biplots (PCA, 
         covariance/correlation, CVA, regression, Procrustes, circular 
-        non-linear), both interpolative and predictive </font></div>
+        non-linear), both predictive and interpolative. </font></div>
         <li>
         <div><font size="2">Support for different scaling techniques (PCO, metric 
-        MDS, non-metric MDS, semi-metric MDS) </font></div>
+        MDS, non-metric MDS, semi-metric MDS). </font></div>
         <li>
-        <div><font size="2">Various data transformations&nbsp;and distance metrics 
+        <div><font size="2">Various data transformations&nbsp;and distance metrics. 
         </font></div>
         <li>
         <div><font size="2">Additional descriptors (convex hulls, alpha-bags, 
-        point densities, classification regions) </font></div>
+        point densities, classification regions). </font></div>
         <li>
-        <div><font size="2">Intermediate quantities for export back to R 
+        <div><font size="2">Intermediate quantities for export back to R. 
         </font></div>
         <li>
         <div><font size="2">Diagnostics (graphs of convergence; point, group and 
-        axis predictivities; Shepard diagrams) </font></div>
+        axis predictivities; Shepard diagrams). </font></div>
         <li>
         <div><font size="2">Interactivity (variable value prediction, zooming, 
-        point and axis drag-and-drop, 3D biplots) </font></div>
+        point and axis drag-and-drop, 3D biplots). </font></div>
         <li>
-        <div><font size="2">Highly customisable graphics </font></div>
+        <div><font size="2"> Customisable graphics. </font></div>
         <li>
-        <div><font size="2">Import of data directly from Excel 1997-2003 files 
+        <div><font size="2">Import of data directly from Excel 1997-2003 files. 
         </font></div>
         <li>
-        <div><font size="2">Free and open-source</font> </div></li></ul>
-      <h4><a 
-      href="http://cran.r-project.org/web/packages/BiplotGUI/index.html">Download</a> 
+        <div><font size="2">The package 
+        is free and open-source.</font> </div></li></ul>
+      <h4>Requirements 
       </h4>
-      <p><font size="2">Click </font><a 
-      href="http://cran.r-project.org/web/packages/BiplotGUI/index.html"><font 
-      size=2>here</font></a><font size="2"> to download version 0.0-2 of the 
-      BiplotGUI&nbsp;package&nbsp;from CRAN. </font></p>
-      <p><font size="2">Alternatively, click&nbsp; </font><a 
-      href="http://r-forge.r-project.org/projects/biplotgui/"><font 
-      size=2>here</font></a><font size="2"> for help, to report bugs, or to 
-      download the developement version of the package.</font> </p>
-      <h4>Requirements </h4>
       <ul>
         <li>
-        <div><font size="2">At present, BiplotGUI runs only in Windows. 
-        </font></div>
+      <div><font size="2">R needs to be installed. <a 
+        href="http://cran.r-project.org/bin/windows/base/">R 2.8.1</a> can 
+        &nbsp;<font size="2">be downloaded from <a 
+        href="http://cran.r-project.org">CRAN</a>    
+        . </font></font> 
+      </div>
         <li>
-        <div><font size="2">BiplotGUI requires at least version 2.7 of R. 
-        </font><a href="http://cran.r-project.org/bin/windows/base/"><font 
-        size=2>Version 2.8.0 </font></a><font size="2">can be downloaded from 
-        CRAN. </font></div>
+      <div><font size="2">At present, BiplotGUI runs only 
+        in Windows.</font> 
+      </div></li></ul>
+      <h4>Installation 
+      </h4>
+      <ul>
         <li>
-        <div><font size="2">Various other R packages are required: </font></div>
-        <ul>
-          <li>
-          <div><font size="2">MASS (included in&nbsp;the base&nbsp;distribution of 
-          R) </font></div>
-          <li>
-          <div><font size="2">tcltk (included in the base distribution of R) 
-          </font></div>
-          <li>
-          <div><a 
-          href="http://cran.r-project.org/web/packages/tcltk2/index.html"><font 
-          size=2>tcltk2</font></a><font size="2"> (at least version 1.0-7) 
-          </font></div>
-          <li>
-          <div><a 
-          href="http://cran.r-project.org/web/packages/tkrplot/index.html"><font 
-          size=2>tkrplot</font></a><font size="2"> (at least version 0.0-18) 
-          </font></div></li></ul>
+      <div><font size="2">To install the BiplotGUI package 
+        and all its dependencies from within R, the following command can be 
+        entered at the&nbsp;prompt of the R console: <font 
+        face=Courier>install.packages("BiplotGUI")</font><font 
+        face=Arial>.</font></font> 
+      </div>
         <li>
-        <div><font size="2">While not required, some R packages are highly 
-        recommended. Without them, certain features of the BiplotGUI package 
-        will be unavailable, while the other features will operate normally. 
-        </font></div>
-        <ul>
-          <li>
-          <div><a 
-          href="http://cran.r-project.org/web/packages/KernSmooth/index.html"><font 
-          size=2>KernSmooth</font></a><font size="2"> for the estimation of point 
-          densities </font></div>
-          <li>
-          <div><a 
-          href="http://cran.r-project.org/web/packages/rgl/index.html"><font 
-          size=2>rgl</font></a><font size="2"> (at least version 0.79) for the 
-          creation of dynamic 3D biplots </font></div>
-          <li>
-          <div><a 
-          href="http://cran.r-project.org/web/packages/vcd/index.html"><font 
-          size=2>vcd</font></a><font size="2"> for the colours to be used in the 
-          representation of point densities (vcd itself requires </font><a 
-          href="http://cran.r-project.org/web/packages/colorspace/index.html"><font 
-          size=2>colorspace</font></a><font size="2"> ) </font></div>
-          <li>
-          <div><a 
-          href="http://cran.r-project.org/web/packages/xlsReadWrite/index.html"><font 
-          size=2>xlsReadWrite</font></a><font size="2"> for the import of data 
-          from Excel 1997-2003 files</font> </div></li></ul></li></ul>
+      <div><font size="2">Alternatively, BiplotGUI <a 
+        href="http://cran.r-project.org/web/packages/BiplotGUI/index.html">version 
+        0.0-4</a> can be downloaded from CRAN, and installed manually. The 
+        package dependencies (<span lang="EN"><a 
+        href="http://cran.r-project.org/web/packages/deldir/index.html">deldir</a>, 
+        <a 
+        href="http://cran.r-project.org/web/packages/KernSmooth/index.html">KernSmooth</a>, 
+        MASS, <a 
+        href="http://cran.r-project.org/web/packages/rgl/index.html">rgl</a>, 
+        tcltk, <a 
+        href="http://cran.r-project.org/web/packages/tcltk2/index.html">tcltk2</a>, 
+        <a 
+        href="http://cran.r-project.org/web/packages/tkrplot/index.html">tkrplot</a>, 
+        <a href="http://cran.r-project.org/web/packages/vcd/index.html">vcd</a>, 
+        <a 
+        href="http://cran.r-project.org/web/packages/xlsReadWrite/index.html">xlsReadWrite</a></span>) 
+        also need to be installed.</font> 
+      </div></li></ul>
       <h4><a href="BiplotGUIManual.pdf">Manual</a> </h4>
       <h4><a href="Screenshots/index.html">Screenshots</a> </h4>
       <h4><a href="Examples/index.html">Examples</a> </h4>
       <hr>
+       <font size="2">
+      <p>
+      <p></p></font>
+      <p><font size="2">Click </font><a 
+      href="http://r-forge.r-project.org/projects/biplotgui/"><font 
+      size=2>here</font></a><font size="2"> for help, to report bugs, or to 
+      download the developement version of the package.</font></p>
+      <p>
+      <hr>
+
+      <p></p>
 
       <h4>Author </h4>
       <p><font size="2">Anthony la Grange</font> </p>
@@ -151,7 +138,7 @@ interact with biplots.</font> </p>
       License, Version 3 </font></a><font size="2">or any later version published 
       by the </font><a href="http://www.fsf.org/"><font size="2">Free Software 
       Foundation </font></a><font size="2">.</font> </p>
-      <h4><font size="1">Last updated:&nbsp;20 October 2008</font> 
+      <h4><font size="1">Last updated:&nbsp;17 February 2009</font> 
   </h4></td></tr></tbody></table></p>
 <p>&nbsp;</p>
 <p>&nbsp;</p></font>
