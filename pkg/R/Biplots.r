@@ -983,14 +983,15 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 temp1, state = "normal", variable = Points.MDS.ApproachToTies.var)
         else for (temp1 in 6:7) tkentryconfigure(MenuBar.Points.MDS, 
             temp1, state = "disabled", variable = Points.MDS.ApproachToTies.var)
-        if (tclvalue(Points.DistanceMetric.var) == "3" && tclvalue(Points.var) == 
-            "0") 
+        if (tclvalue(Points.DissimilarityMetric.var) == "3" && 
+            tclvalue(Points.var) == "0") 
             for (temp1 in 2:3) tkentryconfigure(MenuBar.Axes, 
                 temp1, state = "disabled")
         else for (temp1 in 2:3) tkentryconfigure(MenuBar.Axes, 
             temp1, state = "normal")
-        if ((tclvalue(Points.DistanceMetric.var) == "3" && tclvalue(Points.var) == 
-            "0") || tclvalue(Points.var) %in% c("10", "11", "12")) 
+        if ((tclvalue(Points.DissimilarityMetric.var) == "3" && 
+            tclvalue(Points.var) == "0") || tclvalue(Points.var) %in% 
+            c("10", "11", "12")) 
             for (temp1 in 5) tkentryconfigure(MenuBar.Axes, temp1, 
                 state = "disabled")
         else for (temp1 in 5) tkentryconfigure(MenuBar.Axes, 
@@ -3587,26 +3588,27 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             `11` = Axes.Regression.cmd(), `12` = Axes.Procrustes.cmd(), 
             `13` = Axes.CircularNonLinear.cmd())
     }
-    Points.DistanceMetric.var <- tclVar("0")
-    Points.DistanceMetric.func <- NULL
-    Points.DistanceMetric.derivfunc <- NULL
-    Points.DistanceMetric.DissimilarityMatrix <- NULL
-    Points.DistanceMetric.DisparityMatrix <- NULL
-    Points.DistanceMetric.DistanceMatrix <- NULL
-    Points.DistanceMetric.FollowThrough.cmd <- function() {
+    Points.DissimilarityMetric.var <- tclVar("0")
+    Points.DissimilarityMetric.func <- NULL
+    Points.DissimilarityMetric.derivfunc <- NULL
+    Points.DissimilarityMetric.DissimilarityMatrix <- NULL
+    Points.DissimilarityMetric.DisparityMatrix <- NULL
+    Points.DissimilarityMetric.DistanceMatrix <- NULL
+    Points.DissimilarityMetric.FollowThrough.cmd <- function() {
         tkconfigure(Other.ProgressBar.pb, value = 2/6 * 100)
         .Tcl("update")
         switch(tclvalue(Points.var), `0` = Points.PCO.cmd(), 
             `10` = Points.MDS.IdentityTransformation.cmd(), `11` = Points.MDS.MonotoneRegression.cmd(), 
             `12` = Points.MDS.MonotoneSplineTransformation.autcmd())
     }
-    Points.DistanceMetric.Pythagoras.func <- function(X, Y) {
+    Points.DissimilarityMetric.Pythagoras.func <- function(X, 
+        Y) {
         if (missing(Y)) 
             as.matrix(dist(X))
         else c(PythagorasDistance(matrix(X, nrow = 1), Y))
     }
-    Points.DistanceMetric.Pythagoras.derivfunc <- NULL
-    Points.DistanceMetric.Pythagoras.cmd <- function(FollowThrough = TRUE) {
+    Points.DissimilarityMetric.Pythagoras.derivfunc <- NULL
+    Points.DissimilarityMetric.Pythagoras.cmd <- function(FollowThrough = TRUE) {
         if (tclvalue(Points.var) == "0" && tclvalue(Biplot.Axes.var) %in% 
             c("0", "1", "2")) 
             Biplot.Axes.var <<- tclVar("11")
@@ -3615,20 +3617,20 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "14")) 
             Biplot.Axes.var <<- tclVar("11")
         Points.skipped <<- FALSE
-        Points.DistanceMetric.func <<- Points.DistanceMetric.Pythagoras.func
-        Points.DistanceMetric.derivfunc <<- Points.DistanceMetric.Pythagoras.derivfunc
-        Points.DistanceMetric.DissimilarityMatrix <<- Points.DistanceMetric.func(Biplot.Xtransformed)
+        Points.DissimilarityMetric.func <<- Points.DissimilarityMetric.Pythagoras.func
+        Points.DissimilarityMetric.derivfunc <<- Points.DissimilarityMetric.Pythagoras.derivfunc
+        Points.DissimilarityMetric.DissimilarityMatrix <<- Points.DissimilarityMetric.func(Biplot.Xtransformed)
         if (FollowThrough) 
-            Points.DistanceMetric.FollowThrough.cmd()
+            Points.DissimilarityMetric.FollowThrough.cmd()
     }
-    Points.DistanceMetric.SquareRootOfManhattan.func <- function(X, 
+    Points.DissimilarityMetric.SquareRootOfManhattan.func <- function(X, 
         Y) {
         if (missing(Y)) 
             as.matrix(dist(X, method = "manhattan"))^0.5
         else rowSums(abs(sweep(Y, 2, X, "-")))^0.5
     }
-    Points.DistanceMetric.SquareRootOfManhattan.derivfunc <- NULL
-    Points.DistanceMetric.SquareRootOfManhattan.cmd <- function(FollowThrough = TRUE) {
+    Points.DissimilarityMetric.SquareRootOfManhattan.derivfunc <- NULL
+    Points.DissimilarityMetric.SquareRootOfManhattan.cmd <- function(FollowThrough = TRUE) {
         if (tclvalue(Points.var) == "0" && tclvalue(Biplot.Axes.var) %in% 
             c("0", "1", "2")) 
             Biplot.Axes.var <<- tclVar("13")
@@ -3637,13 +3639,13 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "14")) 
             Biplot.Axes.var <<- tclVar("11")
         Points.skipped <<- FALSE
-        Points.DistanceMetric.func <<- Points.DistanceMetric.SquareRootOfManhattan.func
-        Points.DistanceMetric.derivfunc <<- Points.DistanceMetric.SquareRootOfManhattan.func
-        Points.DistanceMetric.DissimilarityMatrix <<- Points.DistanceMetric.func(Biplot.Xtransformed)
+        Points.DissimilarityMetric.func <<- Points.DissimilarityMetric.SquareRootOfManhattan.func
+        Points.DissimilarityMetric.derivfunc <<- Points.DissimilarityMetric.SquareRootOfManhattan.func
+        Points.DissimilarityMetric.DissimilarityMatrix <<- Points.DissimilarityMetric.func(Biplot.Xtransformed)
         if (FollowThrough) 
-            Points.DistanceMetric.FollowThrough.cmd()
+            Points.DissimilarityMetric.FollowThrough.cmd()
     }
-    Points.DistanceMetric.Clark.func <- function(X, Y) {
+    Points.DissimilarityMetric.Clark.func <- function(X, Y) {
         if (missing(Y)) {
             n <- nrow(X)
             distmat2 <- matrix(0, nrow = n, ncol = n)
@@ -3658,8 +3660,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             rowSums(temp1^2)^0.5
         }
     }
-    Points.DistanceMetric.Clark.derivfunc <- NULL
-    Points.DistanceMetric.Clark.cmd <- function(FollowThrough = TRUE) {
+    Points.DissimilarityMetric.Clark.derivfunc <- NULL
+    Points.DissimilarityMetric.Clark.cmd <- function(FollowThrough = TRUE) {
         if (tclvalue(Points.var) == "0" && tclvalue(Biplot.Axes.var) %in% 
             c("0", "1", "2")) 
             Biplot.Axes.var <<- tclVar("13")
@@ -3668,13 +3670,14 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "14")) 
             Biplot.Axes.var <<- tclVar("11")
         Points.skipped <<- FALSE
-        Points.DistanceMetric.func <<- Points.DistanceMetric.Clark.func
-        Points.DistanceMetric.derivfunc <<- Points.DistanceMetric.Clark.derivfunc
-        Points.DistanceMetric.DissimilarityMatrix <<- Points.DistanceMetric.func(Biplot.Xtransformed)
+        Points.DissimilarityMetric.func <<- Points.DissimilarityMetric.Clark.func
+        Points.DissimilarityMetric.derivfunc <<- Points.DissimilarityMetric.Clark.derivfunc
+        Points.DissimilarityMetric.DissimilarityMatrix <<- Points.DissimilarityMetric.func(Biplot.Xtransformed)
         if (FollowThrough) 
-            Points.DistanceMetric.FollowThrough.cmd()
+            Points.DissimilarityMetric.FollowThrough.cmd()
     }
-    Points.DistanceMetric.Mahalanobis.func <- function(X, Y) {
+    Points.DissimilarityMetric.Mahalanobis.func <- function(X, 
+        Y) {
         temp1 <- svd(cov(Biplot.Xtransformed))
         temp2 <- temp1$u %*% diag(temp1$d^-0.5) %*% temp1$v
         temp3 <- X %*% temp2
@@ -3682,8 +3685,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             as.matrix(dist(temp3))
         else PythagorasDistance(temp3, Y %*% temp2)
     }
-    Points.DistanceMetric.Mahalanobis.derivfunc <- NULL
-    Points.DistanceMetric.Mahalanobis.cmd <- function(FollowThrough = TRUE) {
+    Points.DissimilarityMetric.Mahalanobis.derivfunc <- NULL
+    Points.DissimilarityMetric.Mahalanobis.cmd <- function(FollowThrough = TRUE) {
         if (tclvalue(Points.var) == "0" && tclvalue(Biplot.Axes.var) %in% 
             c("0", "1", "2", "11", "12", "13", "14")) 
             Biplot.Axes.var <<- tclVar("10")
@@ -3692,33 +3695,36 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "14")) 
             Biplot.Axes.var <<- tclVar("11")
         Points.skipped <<- FALSE
-        Points.DistanceMetric.func <<- Points.DistanceMetric.Mahalanobis.func
-        Points.DistanceMetric.derivfunc <<- Points.DistanceMetric.Mahalanobis.derivfunc
-        Points.DistanceMetric.DissimilarityMatrix <<- Points.DistanceMetric.func(Biplot.Xtransformed)
+        Points.DissimilarityMetric.func <<- Points.DissimilarityMetric.Mahalanobis.func
+        Points.DissimilarityMetric.derivfunc <<- Points.DissimilarityMetric.Mahalanobis.derivfunc
+        Points.DissimilarityMetric.DissimilarityMatrix <<- Points.DissimilarityMetric.func(Biplot.Xtransformed)
         if (FollowThrough) 
-            Points.DistanceMetric.FollowThrough.cmd()
+            Points.DissimilarityMetric.FollowThrough.cmd()
     }
     Points.PCO.cmd <- function(FollowThrough = TRUE) {
-        if (tclvalue(Points.DistanceMetric.var) == "0" && tclvalue(Biplot.Axes.var) %in% 
-            c("0", "1", "2")) 
-            Biplot.Axes.var <<- tclVar("11")
-        if (tclvalue(Points.DistanceMetric.var) %in% c("1", "2") && 
+        if (tclvalue(Points.DissimilarityMetric.var) == "0" && 
             tclvalue(Biplot.Axes.var) %in% c("0", "1", "2")) 
+            Biplot.Axes.var <<- tclVar("11")
+        if (tclvalue(Points.DissimilarityMetric.var) %in% c("1", 
+            "2") && tclvalue(Biplot.Axes.var) %in% c("0", "1", 
+            "2")) 
             Biplot.Axes.var <<- tclVar("13")
-        if (tclvalue(Points.DistanceMetric.var) == "3" && tclvalue(Biplot.Axes.var) %in% 
-            c("0", "1", "2", "11", "12", "13", "14")) 
+        if (tclvalue(Points.DissimilarityMetric.var) == "3" && 
+            tclvalue(Biplot.Axes.var) %in% c("0", "1", "2", "11", 
+                "12", "13", "14")) 
             Biplot.Axes.var <<- tclVar("10")
         Points.MDS.ApproachToTies.var <<- tclVar("-1")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
         }
         temp0 <- matrix(0, nrow = n.in, ncol = n.in)
         temp0[cbind(1:n.in, 1:n.in)] <- 1
         temp0 <- temp0 - 1/n.in
-        Bpco <- -0.5 * temp0 %*% (Points.DistanceMetric.DissimilarityMatrix^2) %*% 
+        Bpco <- -0.5 * temp0 %*% (Points.DissimilarityMetric.DissimilarityMatrix^2) %*% 
             temp0
         temp1 <- eigen(Bpco, symmetric = TRUE)
         temp1$vectors <- (apply(temp1$vectors, 2, function(x) x * 
@@ -3727,8 +3733,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             "*")
         Biplot.Y3D <<- Biplot.Yfull[, 1:3]
         Biplot.Y <<- Biplot.Yfull[, 1:2]
-        Points.DistanceMetric.DisparityMatrix <<- Points.DistanceMetric.DissimilarityMatrix
-        Points.DistanceMetric.DistanceMatrix <<- as.matrix(dist(Biplot.Y))
+        Points.DissimilarityMetric.DisparityMatrix <<- Points.DissimilarityMetric.DissimilarityMatrix
+        Points.DissimilarityMetric.DistanceMatrix <<- as.matrix(dist(Biplot.Y))
         samples.in.PreviousScaling <<- samples.in
         PointsTab.update <<- TRUE
         if (FollowThrough) 
@@ -3736,13 +3742,13 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     }
     Points.MDS.cmd <- function() {
         Identity <- function(DissMat, Y, WeightMat) {
-            Points.DistanceMetric.DistanceMatrix <<- as.matrix(dist(Y))
+            Points.DissimilarityMetric.DistanceMatrix <<- as.matrix(dist(Y))
             DissMat
         }
         MonotoneRegression <- function(DissMat, Y, WeightMat) {
             diss <- DissMat[lower.tri(DissMat)]
-            Points.DistanceMetric.DistanceMatrix <<- as.matrix(dist(Y))
-            dist <- Points.DistanceMetric.DistanceMatrix[lower.tri(Points.DistanceMetric.DistanceMatrix)]
+            Points.DissimilarityMetric.DistanceMatrix <<- as.matrix(dist(Y))
+            dist <- Points.DissimilarityMetric.DistanceMatrix[lower.tri(Points.DissimilarityMetric.DistanceMatrix)]
             disp <- dist[order(diss, dist)]
             disp0 <- disp
             if (tclvalue(Points.MDS.ApproachToTies.var) == "1" && 
@@ -3778,8 +3784,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             M <- Points.MDS.SplineM
             initb <- runif(ncol(M))
             diss <- DissMat[lower.tri(DissMat)]
-            Points.DistanceMetric.DistanceMatrix <<- as.matrix(dist(Y))
-            dist <- Points.DistanceMetric.DistanceMatrix[lower.tri(Points.DistanceMetric.DistanceMatrix)][order(diss)]
+            Points.DissimilarityMetric.DistanceMatrix <<- as.matrix(dist(Y))
+            dist <- Points.DissimilarityMetric.DistanceMatrix[lower.tri(Points.DissimilarityMetric.DistanceMatrix)][order(diss)]
             b <- oldb <- initb
             for (i in 1:boptions$MDS.MaximumIterations) {
                 for (j in 1:length(b)) {
@@ -3799,7 +3805,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 DispMat^2)/2)^0.5
         }
         if (is.null(Biplot.Y)) {
-            Bpco <- -0.5 * (diag(n.in) - 1/n.in) %*% (Points.DistanceMetric.DissimilarityMatrix^2) %*% 
+            Bpco <- -0.5 * (diag(n.in) - 1/n.in) %*% (Points.DissimilarityMetric.DissimilarityMatrix^2) %*% 
                 (diag(n.in) - 1/n.in)
             temp1 <- eigen(Bpco)
             temp1$vectors <- (apply(temp1$vectors, 2, function(x) x * 
@@ -3829,13 +3835,13 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             vscale = BiplotRegion.VerticalScale.func())
         .Tcl("update")
         Transformation <- function(Y) switch(tclvalue(Points.var), 
-            `10` = Identity(Points.DistanceMetric.DissimilarityMatrix, 
-                Y, WeightMat), `11` = MonotoneRegression(Points.DistanceMetric.DissimilarityMatrix, 
-                Y, WeightMat), `12` = MonotoneSpline(Points.DistanceMetric.DissimilarityMatrix, 
+            `10` = Identity(Points.DissimilarityMetric.DissimilarityMatrix, 
+                Y, WeightMat), `11` = MonotoneRegression(Points.DissimilarityMetric.DissimilarityMatrix, 
+                Y, WeightMat), `12` = MonotoneSpline(Points.DissimilarityMetric.DissimilarityMatrix, 
                 Y, WeightMat))
-        if (!identical(Points.DistanceMetric.DissimilarityMatrix, 
-            t(Points.DistanceMetric.DissimilarityMatrix))) 
-            stop("`Points.DistanceMetric.DissimilarityMatrix' is required to be symmetric.")
+        if (!identical(Points.DissimilarityMetric.DissimilarityMatrix, 
+            t(Points.DissimilarityMetric.DissimilarityMatrix))) 
+            stop("`Points.DissimilarityMetric.DissimilarityMatrix' is required to be symmetric.")
         if (!identical(WeightMat, t(WeightMat))) 
             stop("`WeightMat' is required to be symmetric.")
         Wupper <- WeightMat
@@ -3852,19 +3858,19 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             0.5 * sum(WeightMat * (DispMat - as.matrix(dist(Y)))^2)
         }
         Z <- Yinitial
-        Points.DistanceMetric.DisparityMatrix <<- Transformation(Z)
+        Points.DissimilarityMetric.DisparityMatrix <<- Transformation(Z)
         ConvergenceTab.points.StressVector <<- Stressfunc(Z, 
-            Points.DistanceMetric.DisparityMatrix)
+            Points.DissimilarityMetric.DisparityMatrix)
         betahat <- 1
         Other.Stop.var <<- FALSE
         tkconfigure(Other.Stop.but, state = "normal")
         tcl(DiagnosticTabs.nb, "tab", 0, state = "normal")
         for (i in 1:boptions$MDS.MaximumIterations) {
-            Biplot.Y <<- ginv(V) %*% Bfunc(Z, Points.DistanceMetric.DisparityMatrix) %*% 
+            Biplot.Y <<- ginv(V) %*% Bfunc(Z, Points.DissimilarityMetric.DisparityMatrix) %*% 
                 Z
-            Points.DistanceMetric.DisparityMatrix <<- Transformation(Biplot.Y)
+            Points.DissimilarityMetric.DisparityMatrix <<- Transformation(Biplot.Y)
             ConvergenceTab.points.StressVector <<- c(ConvergenceTab.points.StressVector, 
-                Stressfunc(Biplot.Y, Points.DistanceMetric.DisparityMatrix))
+                Stressfunc(Biplot.Y, Points.DissimilarityMetric.DisparityMatrix))
             if (tclvalue(Other.LiveUpdates.var) == "1" && i%%boptions$IterationsToLiveUpdate == 
                 0) {
                 if (tclvalue(Additional.ConvexHull.var) == "1") 
@@ -3904,7 +3910,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 sign(x[which.max(abs(x))])))
             Biplot.Y <<- Biplot.Y %*% temp1$vectors + mu
         }
-        Points.DistanceMetric.DistanceMatrix <<- as.matrix(dist(Biplot.Y))
+        Points.DissimilarityMetric.DistanceMatrix <<- as.matrix(dist(Biplot.Y))
         samples.in.PreviousScaling <<- samples.in
         ConvergenceTab.update <<- TRUE
         PointsTab.update <<- TRUE
@@ -3919,10 +3925,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             Biplot.Axes.var <<- tclVar("11")
         Points.MDS.ApproachToTies.var <<- tclVar("-1")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
         }
         Points.MDS.cmd()
         if (FollowThrough) 
@@ -3934,10 +3941,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             Biplot.Axes.var <<- tclVar("11")
         Points.MDS.ApproachToTies.var <<- tclVar("0")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
         }
         Points.MDS.cmd()
         if (FollowThrough) 
@@ -4015,10 +4023,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     }
     Points.MDS.MonotoneSplineTransformation.autcmd <- function(FollowThrough = TRUE) {
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
         }
         k <- Points.MDS.MonotoneSplineTransformation.AllKnots - 
             2
@@ -4058,7 +4067,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             M <- cbind(1, M)
             Points.MDS.SplineM <<- M
         }
-        MonotoneSplineSetup(Points.DistanceMetric.DissimilarityMatrix)
+        MonotoneSplineSetup(Points.DissimilarityMetric.DissimilarityMatrix)
         Points.MDS.cmd()
         if (FollowThrough) 
             Points.FollowThrough.cmd()
@@ -4090,10 +4099,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         Additional.Interpolate.SampleGroupMeans.var <<- tclVar("0")
         Additional.ClassificationRegion.var <<- tclVar("0")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
             switch(tclvalue(Points.var), `0` = Points.PCO.cmd(FALSE), 
                 `10` = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 `11` = Points.MDS.MonotoneRegression.cmd(FALSE), 
@@ -4372,10 +4382,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             View.AxisLabels.var <<- tclVar("1")
         Additional.ClassificationRegion.var <<- tclVar("0")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
             switch(tclvalue(Points.var), `0` = Points.PCO.cmd(FALSE), 
                 `10` = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 `11` = Points.MDS.MonotoneRegression.cmd(FALSE), 
@@ -4432,10 +4443,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             View.AxisLabels.var <<- tclVar("1")
         Additional.ClassificationRegion.var <<- tclVar("0")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
             switch(tclvalue(Points.var), `0` = Points.PCO.cmd(FALSE), 
                 `10` = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 `11` = Points.MDS.MonotoneRegression.cmd(FALSE), 
@@ -4565,10 +4577,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         View.ExteriorAxes.var <<- tclVar("0")
         Additional.ClassificationRegion.var <<- tclVar("0")
         if (Points.skipped) {
-            switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(FALSE), 
-                `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(FALSE), 
-                `2` = Points.DistanceMetric.Clark.cmd(FALSE), 
-                `3` = Points.DistanceMetric.Mahalanobis.cmd(FALSE))
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = Points.DissimilarityMetric.Pythagoras.cmd(FALSE), 
+                `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(FALSE), 
+                `2` = Points.DissimilarityMetric.Clark.cmd(FALSE), 
+                `3` = Points.DissimilarityMetric.Mahalanobis.cmd(FALSE))
             switch(tclvalue(Points.var), `0` = Points.PCO.cmd(FALSE), 
                 `10` = Points.MDS.IdentityTransformation.cmd(FALSE), 
                 `11` = Points.MDS.MonotoneRegression.cmd(FALSE), 
@@ -4607,7 +4620,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             I <- diag(1, nrow = n.in, ncol = n.in)
             one <- rep(1, n.in)
             N <- (one %*% t(one))/n.in
-            Delta <- Points.DistanceMetric.func(Biplot.Xtransformed)^2
+            Delta <- Points.DissimilarityMetric.func(Biplot.Xtransformed)^2
             D <- -0.5 * Delta
             B <- (I - N) %*% D %*% (I - N)
             eigenB <- eigen(B, symmetric = TRUE)
@@ -4632,15 +4645,18 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             derivat <- function(x.vec, mu) {
                 n <- length(x.vec)
                 antw <- rep(NA, n)
-                if (tclvalue(Points.DistanceMetric.var) == "1") {
+                if (tclvalue(Points.DissimilarityMetric.var) == 
+                  "1") {
                   afgeleide.funksie <- TRUE
                   antw <- 1/2 * sign(x.vec - mu)
                 }
-                if (tclvalue(Points.DistanceMetric.var) == "0") {
+                if (tclvalue(Points.DissimilarityMetric.var) == 
+                  "0") {
                   afgeleide.funksie <- TRUE
                   antw <- (x.vec - mu)
                 }
-                if (tclvalue(Points.DistanceMetric.var) == "2") {
+                if (tclvalue(Points.DissimilarityMetric.var) == 
+                  "2") {
                   afgeleide.funksie <- TRUE
                   antw <- 2 * x.vec * ((x.vec - mu)/(x.vec + 
                     mu)^3)
@@ -4690,7 +4706,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 lambda.inv <- diag(lambda.diag.inv)
                 B.inv <- U %*% (lambda.inv^2) %*% t(U)
                 dd <- rep(0, n.in)
-                dd13 <- switch(tclvalue(Points.DistanceMetric.var), 
+                dd13 <- switch(tclvalue(Points.DissimilarityMetric.var), 
                   `0` = apply(Xmat, 1, function(x) sum(x^2)) - 
                     apply(Xmat, 1, function(x, j) x[j]^2, j = j), 
                   `1` = apply(Xmat, 1, function(x) sum(abs(x))) - 
@@ -4699,7 +4715,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                     apply(Xmat, 1, function(x, j) (x[j]/x[j])^2, 
                       j = j))
                 for (mu in axis.vals) {
-                  dd <- dd13 + switch(tclvalue(Points.DistanceMetric.var), 
+                  dd <- dd13 + switch(tclvalue(Points.DissimilarityMetric.var), 
                     `0` = apply(Xmat, 1, function(x, mu, j) (x[j] - 
                       mu)^2, mu = mu, j = j), `1` = apply(Xmat, 
                       1, function(x, mu, j) abs(x[j] - mu), mu = mu, 
@@ -4845,19 +4861,20 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     Axes.CircularNonLinear.plot3D <- function() Biplot.NonLinear.plot3D()
     Axes.Default.cmd <- function() {
         if (tclvalue(Points.var) == "0") 
-            switch(tclvalue(Points.DistanceMetric.var), `0` = {
-                Biplot.Axes.var <<- tclVar("11")
-                Axes.Regression.cmd()
-            }, `1` = {
-                Biplot.Axes.var <<- tclVar("13")
-                Axes.CircularNonLinear.cmd()
-            }, `2` = {
-                Biplot.Axes.var <<- tclVar("13")
-                Axes.CircularNonLinear.cmd()
-            }, `3` = {
-                Biplot.Axes.var <<- tclVar("10")
-                Axes.None.cmd()
-            })
+            switch(tclvalue(Points.DissimilarityMetric.var), 
+                `0` = {
+                  Biplot.Axes.var <<- tclVar("11")
+                  Axes.Regression.cmd()
+                }, `1` = {
+                  Biplot.Axes.var <<- tclVar("13")
+                  Axes.CircularNonLinear.cmd()
+                }, `2` = {
+                  Biplot.Axes.var <<- tclVar("13")
+                  Axes.CircularNonLinear.cmd()
+                }, `3` = {
+                  Biplot.Axes.var <<- tclVar("10")
+                  Axes.None.cmd()
+                })
         else Axes.Regression.cmd()
     }
     Additional.FollowThrough.cmd <- function() {
@@ -6220,37 +6237,39 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     tkadd(MenuBar.menu, "cascade", label = "Joint", underline = "0", 
         menu = MenuBar.Joint)
     MenuBar.Points <- tk2menu(MenuBar.menu, tearoff = FALSE)
-    MenuBar.Points.DistanceMetric <- tk2menu(MenuBar.menu, tearoff = FALSE)
-    tkadd(MenuBar.Points.DistanceMetric, "radiobutton", label = "Pythagoras", 
-        underline = "0", variable = Points.DistanceMetric.var, 
+    MenuBar.Points.DissimilarityMetric <- tk2menu(MenuBar.menu, 
+        tearoff = FALSE)
+    tkadd(MenuBar.Points.DissimilarityMetric, "radiobutton", 
+        label = "Pythagoras", underline = "0", variable = Points.DissimilarityMetric.var, 
         value = "0", command = function() {
             GUI.BindingsOff()
-            Points.DistanceMetric.Pythagoras.cmd()
+            Points.DissimilarityMetric.Pythagoras.cmd()
             GUI.BindingsOn()
         })
-    tkadd(MenuBar.Points.DistanceMetric, "radiobutton", label = "Square-root-of-Manhattan", 
-        underline = "0", variable = Points.DistanceMetric.var, 
-        value = "1", command = function() {
+    tkadd(MenuBar.Points.DissimilarityMetric, "radiobutton", 
+        label = "Square-root-of-Manhattan", underline = "0", 
+        variable = Points.DissimilarityMetric.var, value = "1", 
+        command = function() {
             GUI.BindingsOff()
-            Points.DistanceMetric.SquareRootOfManhattan.cmd()
+            Points.DissimilarityMetric.SquareRootOfManhattan.cmd()
             GUI.BindingsOn()
         })
-    tkadd(MenuBar.Points.DistanceMetric, "radiobutton", label = "Clark", 
-        underline = "0", variable = Points.DistanceMetric.var, 
+    tkadd(MenuBar.Points.DissimilarityMetric, "radiobutton", 
+        label = "Clark", underline = "0", variable = Points.DissimilarityMetric.var, 
         value = "2", command = function() {
             GUI.BindingsOff()
-            Points.DistanceMetric.Clark.cmd()
+            Points.DissimilarityMetric.Clark.cmd()
             GUI.BindingsOn()
         })
-    tkadd(MenuBar.Points.DistanceMetric, "radiobutton", label = "Mahalanobis", 
-        underline = "0", variable = Points.DistanceMetric.var, 
+    tkadd(MenuBar.Points.DissimilarityMetric, "radiobutton", 
+        label = "Mahalanobis", underline = "0", variable = Points.DissimilarityMetric.var, 
         value = "3", command = function() {
             GUI.BindingsOff()
-            Points.DistanceMetric.Mahalanobis.cmd()
+            Points.DissimilarityMetric.Mahalanobis.cmd()
             GUI.BindingsOn()
         })
-    tkadd(MenuBar.Points, "cascade", label = "Distance metric", 
-        underline = "0", menu = MenuBar.Points.DistanceMetric)
+    tkadd(MenuBar.Points, "cascade", label = "Dissimilarity metric", 
+        underline = "0", menu = MenuBar.Points.DissimilarityMetric)
     tkadd(MenuBar.Points, "separator")
     tkadd(MenuBar.Points, "radiobutton", label = "PCO", underline = "0", 
         variable = Points.var, value = "0", accelerator = "A", 
@@ -7205,7 +7224,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         temp0 <- matrix(0, nrow = n.in, ncol = n.in)
         temp0[cbind(1:n.in, 1:n.in)] <- 1
         temp0 <- temp0 - 1/n.in
-        D <- -0.5 * Points.DistanceMetric.DissimilarityMatrix^2
+        D <- -0.5 * Points.DissimilarityMetric.DissimilarityMatrix^2
         B <- temp0 %*% D %*% temp0
         eigenB <- eigen(B, symmetric = TRUE)
         eigenB$vectors <- (apply(eigenB$vectors, 2, function(x) x * 
@@ -7224,7 +7243,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         Biplot.Yfull <- V %*% diag(eigenB$values[1:rB]^0.5)
         Biplot.Y <<- Biplot.Yfull[, 1:2]
         Biplot.Y3D <<- Biplot.Yfull[, 1:3]
-        d <- function(x) -0.5 * (Points.DistanceMetric.func(x, 
+        d <- function(x) -0.5 * (Points.DissimilarityMetric.func(x, 
             Biplot.Xtransformed))^2
         if (substr(tclvalue(tkget(SettingsBox.transformation.combo)), 
             start = 1, stop = 3) == "Log") 
@@ -9116,9 +9135,10 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             switch(tclvalue(Biplot.Axes.var), `0` = Joint.PCA.cmd(), 
                 `1` = Joint.CovarianceCorrelation.cmd(), `2` = Joint.CVA.cmd())
         }
-        else switch(tclvalue(Points.DistanceMetric.var), `0` = Points.DistanceMetric.Pythagoras.cmd(), 
-            `1` = Points.DistanceMetric.SquareRootOfManhattan.cmd(), 
-            `2` = Points.DistanceMetric.Clark.cmd(), `3` = Points.DistanceMetric.Mahalanobis.cmd())
+        else switch(tclvalue(Points.DissimilarityMetric.var), 
+            `0` = Points.DissimilarityMetric.Pythagoras.cmd(), 
+            `1` = Points.DissimilarityMetric.SquareRootOfManhattan.cmd(), 
+            `2` = Points.DissimilarityMetric.Clark.cmd(), `3` = Points.DissimilarityMetric.Mahalanobis.cmd())
     }
     SettingsBox.frame <- tkframe(GUI.TopLevel, relief = "groove", 
         borderwidth = "1.5p")
@@ -9406,11 +9426,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         else par(mar = c(2.5, 3, 2.5, 2))
         par(bg = "white", pty = "s")
         if (n.in <= 250) {
-            diss <- Points.DistanceMetric.DissimilarityMatrix[lower.tri(Points.DistanceMetric.DissimilarityMatrix)]
+            diss <- Points.DissimilarityMetric.DissimilarityMatrix[lower.tri(Points.DissimilarityMetric.DissimilarityMatrix)]
             dissordered <- diss[order(diss)]
-            disp <- Points.DistanceMetric.DisparityMatrix[lower.tri(Points.DistanceMetric.DisparityMatrix)][order(diss)]
+            disp <- Points.DissimilarityMetric.DisparityMatrix[lower.tri(Points.DissimilarityMetric.DisparityMatrix)][order(diss)]
             disp <- round(disp, bpar$DiagnosticTabs.ShepardDiagram.digits)
-            dist <- Points.DistanceMetric.DistanceMatrix[lower.tri(Points.DistanceMetric.DistanceMatrix)][order(diss)]
+            dist <- Points.DissimilarityMetric.DistanceMatrix[lower.tri(Points.DissimilarityMetric.DistanceMatrix)][order(diss)]
             dist <- round(dist, bpar$DiagnosticTabs.ShepardDiagram.digits)
             plot(dissordered, dist, main = "", xlab = "", ylab = "", 
                 xaxt = "n", yaxt = "n", type = "p", cex.lab = 0.85, 
@@ -9741,7 +9761,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "Predict") 
                 ExportTab.data[[length(ExportTab.data)]] <<- c(ExportTab.data[[length(ExportTab.data)]], 
                   "Pred, the list of predictions, actual values and percentage relative absolute errors", 
-                  "RelMeanAbsErr, the vector of axis percentage relative mean absolute errors")
+                  "MeanRelAbsErr, the vector of axis percentage mean relative absolute errors")
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("PCA.Vr", 
                 "PCA.Y", "PCA.Delta", "PCA.eigen", "PCA.quality", 
                 "PCA.PointPredictivities", "PCA.AxisPredictivities", 
@@ -9749,7 +9769,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             if (tclvalue(tkget(SettingsBox.action.combo)) == 
                 "Predict") 
                 ExportTab.data.name[[length(ExportTab.data.name)]] <<- c(ExportTab.data.name[[length(ExportTab.data.name)]], 
-                  "PCA.Pred", "PCA.RelMeanAbsErr")
+                  "PCA.Pred", "PCA.MeanRelAbsErr")
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
                 temp1 <- Biplot.B_
                 rownames(temp1) <- AxisLabels[variables.in]
@@ -9830,14 +9850,14 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "Predict") 
                 ExportTab.data[[length(ExportTab.data)]] <<- c(ExportTab.data[[length(ExportTab.data)]], 
                   "Pred, the list of predictions, actual values and percentage relative absolute errors", 
-                  "RelMeanAbsErr, the vector of axis percentage relative mean absolute errors")
+                  "MeanRelAbsErr, the vector of axis percentage mean relative absolute errors")
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("CovarianceCorrelation.Vr", 
                 "CovarianceCorrelation.Y", "CovarianceCorrelation.CovCor", 
                 "CovarianceCorrelation.eigen", "CovarianceCorrelation.quality")))
             if (tclvalue(tkget(SettingsBox.action.combo)) == 
                 "Predict") 
                 ExportTab.data.name[[length(ExportTab.data.name)]] <<- c(ExportTab.data.name[[length(ExportTab.data.name)]], 
-                  "CovarianceCorrelation.Pred", "CovarianceCorrelation.RelMeanAbsErr")
+                  "CovarianceCorrelation.Pred", "CovarianceCorrelation.MeanRelAbsErr")
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
                 temp1 <- Biplot.B_
                 rownames(temp1) <- AxisLabels[variables.in]
@@ -9894,7 +9914,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                   })
         }
         if (tclvalue(Biplot.Axes.var) == "2") {
-            ExportTab.data <<- c(ExportTab.data, list(CVA = c("Xbar, the matrix of sample group means", 
+            ExportTab.data <<- c(ExportTab.data, list(CVA = c("XtrBar, the matrix of sample group means", 
                 "B, the matrix of between-groups sums-of-squares-and-crossproducts", 
                 "W, the matrix of within-groups sums-of-squares-and-crossproducts", 
                 "N, the matrix of group sizes", "Vr, the matrix of axis basis vectors", 
@@ -9906,7 +9926,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "Predict") 
                 ExportTab.data[[length(ExportTab.data)]] <<- c(ExportTab.data[[length(ExportTab.data)]], 
                   "Pred, the list of predictions, actual values and percentage relative absolute errors", 
-                  "RelMeanAbsErr, the vector of axis percentage relative mean absolute errors")
+                  "MeanRelAbsErr, the vector of axis percentage mean relative absolute errors")
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("CVA.Xbar", 
                 "CVA.B", "CVA.W", "CVA.N", "CVA.Vr", "CVA.Y", 
                 "CVA.Delta", "CVA.PointPredictivities", "CVA.GroupPredictivities", 
@@ -9914,7 +9934,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             if (tclvalue(tkget(SettingsBox.action.combo)) == 
                 "Predict") 
                 ExportTab.data.name[[length(ExportTab.data.name)]] <<- c(ExportTab.data.name[[length(ExportTab.data.name)]], 
-                  "CVA.Pred", "CVA.RelMeanAbsErr")
+                  "CVA.Pred", "CVA.MeanRelAbsErr")
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
                 temp1 <- apply(Biplot.Xtransformed, 2, function(x) tapply(x, 
                   factor(group[samples.in], exclude = NULL), 
@@ -10024,7 +10044,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "PCO.B", "PCO.Y", "PCO.Delta", "PCO.eigenB", 
                 "PCO.quality")))
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
-                temp1 <- Points.DistanceMetric.DissimilarityMatrix
+                temp1 <- Points.DissimilarityMetric.DissimilarityMatrix
                 rownames(temp1) <- PointLabels[samples.in]
                 colnames(temp1) <- PointLabels[samples.in]
                 temp1
@@ -10032,7 +10052,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 temp1 <- matrix(0, nrow = n.in, ncol = n.in)
                 temp1[cbind(1:n.in, 1:n.in)] <- 1
                 temp1 <- temp1 - 1/n.in
-                temp2 <- -0.5 * temp1 %*% (Points.DistanceMetric.DissimilarityMatrix^2) %*% 
+                temp2 <- -0.5 * temp1 %*% (Points.DissimilarityMetric.DissimilarityMatrix^2) %*% 
                   temp1
                 rownames(temp2) <- PointLabels[samples.in]
                 colnames(temp2) <- PointLabels[samples.in]
@@ -10051,7 +10071,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 temp1 <- matrix(0, nrow = n.in, ncol = n.in)
                 temp1[cbind(1:n.in, 1:n.in)] <- 1
                 temp1 <- temp1 - 1/n.in
-                temp2 <- -0.5 * temp1 %*% (Points.DistanceMetric.DissimilarityMatrix^2) %*% 
+                temp2 <- -0.5 * temp1 %*% (Points.DissimilarityMetric.DissimilarityMatrix^2) %*% 
                   temp1
                 temp3 <- eigen(temp2, symmetric = TRUE)$values
                 names(temp3) <- paste("Dimension", 1:length(temp3))
@@ -10060,7 +10080,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 temp1 <- matrix(0, nrow = n.in, ncol = n.in)
                 temp1[cbind(1:n.in, 1:n.in)] <- 1
                 temp1 <- temp1 - 1/n.in
-                temp2 <- -0.5 * temp1 %*% (Points.DistanceMetric.DissimilarityMatrix^2) %*% 
+                temp2 <- -0.5 * temp1 %*% (Points.DissimilarityMetric.DissimilarityMatrix^2) %*% 
                   temp1
                 sum((temp3 <- eigen(temp2, symmetric = TRUE)$values)[1:2])/sum(temp3)
             })))
@@ -10074,7 +10094,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("MDS.D", 
                 "MDS.Y", "MDS.Delta", "MDS.Y0", "MDS.stress")))
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
-                temp1 <- Points.DistanceMetric.DissimilarityMatrix
+                temp1 <- Points.DissimilarityMetric.DissimilarityMatrix
                 rownames(temp1) <- PointLabels[samples.in]
                 colnames(temp1) <- PointLabels[samples.in]
                 temp1
@@ -10105,12 +10125,12 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("MDS.D", 
                 "MDS.Dhat", "MDS.Y", "MDS.Delta", "MDS.Y0", "MDS.stress")))
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
-                temp1 <- Points.DistanceMetric.DissimilarityMatrix
+                temp1 <- Points.DissimilarityMetric.DissimilarityMatrix
                 rownames(temp1) <- PointLabels[samples.in]
                 colnames(temp1) <- PointLabels[samples.in]
                 temp1
             }, function() {
-                temp1 <- Points.DistanceMetric.DisparityMatrix
+                temp1 <- Points.DissimilarityMetric.DisparityMatrix
                 rownames(temp1) <- PointLabels[samples.in]
                 colnames(temp1) <- PointLabels[samples.in]
                 temp1
@@ -10137,12 +10157,12 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "Predict") 
                 ExportTab.data[[length(ExportTab.data)]] <<- c(ExportTab.data[[length(ExportTab.data)]], 
                   "Pred, the list of predictions, actual values and percentage relative absolute errors", 
-                  "RelMeanAbsErr, the vector of axis percentage relative mean absolute errors")
+                  "MeanRelAbsErr, the vector of axis percentage mean relative absolute errors")
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("Regression.B")))
             if (tclvalue(tkget(SettingsBox.action.combo)) == 
                 "Predict") 
                 ExportTab.data.name[[length(ExportTab.data.name)]] <<- c(ExportTab.data.name[[length(ExportTab.data.name)]], 
-                  "Regression.Pred", "Regression.RelMeanAbsErr")
+                  "Regression.Pred", "Regression.MeanRelAbsErr")
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
                 temp1 <- Biplot.B
                 rownames(temp1) <- AxisLabels[variables.in]
@@ -10186,9 +10206,9 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             "Predict") {
             ExportTab.data <<- c(ExportTab.data, list(Procrustes = c("Q, the orthogonal Procrustes matrix", 
                 "Pred, the list of predictions, actual values and percentage relative absolute errors", 
-                "RelMeanAbsErr, the vector of axis percentage relative mean absolute errors")))
+                "MeanRelAbsErr, the vector of axis percentage mean relative absolute errors")))
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("Procrustes.Q", 
-                "Procrustes.Pred", "Procrustes.RelMeanAbsErr")))
+                "Procrustes.Pred", "Procrustes.MeanRelAbsErr")))
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
                 temp1 <- Biplot.B
                 rownames(temp1) <- AxisLabels[variables.in]
@@ -10241,12 +10261,12 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                 "Predict") 
                 ExportTab.data[[length(ExportTab.data)]] <<- c(ExportTab.data[[length(ExportTab.data)]], 
                   "Pred, the list of predictions, actual values and percentage relative absolute errors", 
-                  "RelMeanAbsErr, the vector of axis percentage relative mean absolute errors")
+                  "MeanRelAbsErr, the vector of axis percentage mean relative absolute errors")
             ExportTab.data.name <<- c(ExportTab.data.name, list(c("CircularNonLinear.Axis")))
             if (tclvalue(tkget(SettingsBox.action.combo)) == 
                 "Predict") 
                 ExportTab.data.name[[length(ExportTab.data.name)]] <<- c(ExportTab.data.name[[length(ExportTab.data.name)]], 
-                  "CircularNonLinear.Pred", "CircularNonLinear.RelMeanAbsErr")
+                  "CircularNonLinear.Pred", "CircularNonLinear.MeanRelAbsErr")
             ExportTab.data.func <<- c(ExportTab.data.func, list(c(function() {
                 temp1 <- Biplot.axis
                 names(temp1) <- AxisLabels[variables.in]
