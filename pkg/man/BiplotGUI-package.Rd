@@ -13,7 +13,7 @@ A GUI with which to construct and interact with biplots.
 Package: \tab BiplotGUI\cr
 Type: \tab Package\cr
 Version: \tab 0.0-4\cr
-Date: \tab 2009-02-17\cr
+Date: \tab 2009-02-24\cr
 License: \tab GPL-3 or later\cr
 LazyLoad: \tab yes\cr
 }

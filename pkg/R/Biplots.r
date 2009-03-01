@@ -968,11 +968,6 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             tkentryconfigure(Biplot.RightClickOutside.Menu, temp1 - 
                 5, variable = View.AxisLabels.var)
         }
-        if (tclvalue(Biplot.Axes.var) %in% c("10", "13") | tclvalue(tkget(SettingsBox.action.combo)) != 
-            "Predict") 
-            tkentryconfigure(MenuBar.View, 21, state = "disabled")
-        else tkentryconfigure(MenuBar.View, 21, state = "normal")
-        tkentryconfigure(MenuBar.View, 21, variable = View.ExteriorAxes.var)
         for (temp1 in c(0:1, 3)) tkentryconfigure(MenuBar.Joint, 
             temp1, variable = Biplot.Axes.var)
         if (tclvalue(Points.var) %in% c("10", "11", "12")) 
@@ -1399,10 +1394,6 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         Biplot.replot()
     }
     View.CalibrateDisplaySpaceAxes.var <- tclVar("0")
-    View.ExteriorAxes.cmd <- function() {
-        Biplot.replot()
-    }
-    View.ExteriorAxes.var <- tclVar("0")
     Format.Title.cmd <- function() {
         local.GUI.func <- function() {
             top <- tktoplevel()
@@ -4094,7 +4085,6 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     Axes.None.cmd <- function(FollowThrough = TRUE) {
         View.ClipAround.var <<- tclVar("0")
         View.AxisLabels.var <<- tclVar("-1")
-        View.ExteriorAxes.var <<- tclVar("0")
         Additional.Interpolate.ANewSample.var <<- tclVar("0")
         Additional.Interpolate.SampleGroupMeans.var <<- tclVar("0")
         Additional.ClassificationRegion.var <<- tclVar("0")
@@ -4574,7 +4564,6 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     Axes.CircularNonLinear.cmd <- function(FollowThrough = TRUE) {
         if (tclvalue(View.AxisLabels.var) %in% c("-1", "1")) 
             View.AxisLabels.var <<- tclVar("2")
-        View.ExteriorAxes.var <<- tclVar("0")
         Additional.ClassificationRegion.var <<- tclVar("0")
         if (Points.skipped) {
             switch(tclvalue(Points.DissimilarityMetric.var), 
@@ -6160,13 +6149,6 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             View.CalibrateDisplaySpaceAxes.cmd()
             GUI.BindingsOn()
         })
-    tkadd(MenuBar.View, "separator")
-    tkadd(MenuBar.View, "checkbutton", label = "Exterior axes", 
-        underline = "1", variable = View.ExteriorAxes.var, command = function() {
-            GUI.BindingsOff()
-            View.ExteriorAxes.cmd()
-            GUI.BindingsOn()
-        })
     tkadd(MenuBar.menu, "cascade", label = "View", underline = "0", 
         menu = MenuBar.View)
     MenuBar.Format <- tk2menu(MenuBar.menu, tearoff = FALSE)
@@ -6935,290 +6917,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         }
         box(which = "plot", lty = "solid")
     }
-    Biplot.linear.plot.exterior <- function(screen = TRUE) {
-        innertol <- 1.25
-        outertol <- 1.1
-        reloffset <- 0.0075
-        AxisSepfac <- 0.125
-        if (as.numeric(tclvalue(Biplot.Axes.var)) < 10) {
-            Y <- Biplot.Y_
-            B <- Biplot.B_
-        }
-        else {
-            Y <- Biplot.Y
-            B <- Biplot.B
-        }
-        Predicted <- NULL
-        for (i in 1:p.in) {
-            temp1 <- Y %*% B[i, ] %*% t(B[i, ])/sum(B[i, ]^2)
-            Predicted <- cbind(Predicted, SettingsBox.BackTransformation.func(temp1[, 
-                1]/(B[i, 1]/sum(B[i, ]^2)), WhichCol = i))
-        }
-        OUT.angle <- NULL
-        OUT.mu <- NULL
-        OUT.PrettyMarkersCharacter <- NULL
-        OUT.Coord <- NULL
-        GetAxisAngle <- function(from = c(0, 0), to) {
-            corners <- rbind(c(par("usr")[1], par("usr")[3]), 
-                c(par("usr")[1], par("usr")[4]), c(par("usr")[2], 
-                  par("usr")[4]), c(par("usr")[2], par("usr")[3]))
-            ReferenceAngles <- apply(corners, 1, function(a) atan2(y = a[2] - 
-                from[2], x = a[1] - from[1]))
-            ReferenceAngles <- ifelse(ReferenceAngles < 0, ReferenceAngles + 
-                2 * pi, ReferenceAngles)
-            angle1 <- atan2(y = to[2] - from[2], x = to[1] - 
-                from[1])
-            if (angle1 < 0) 
-                angle1 <- angle1 + 2 * pi
-            angle1
-        }
-        GetOrigAxesInfo <- function(i) {
-            angle <- GetAxisAngle(to = B[i, ])
-            mu <- SettingsBox.transformation.func(pretty(Predicted[, 
-                i]), WhichCol = i)
-            PrettyMarkers <- zapsmall(pretty(Predicted[, i]))
-            ttemp <- max(max(nchar(as.character(abs(PrettyMarkers) - 
-                trunc(abs(PrettyMarkers))))) - 2, 0)
-            PrettyMarkersCharacter <- format(PrettyMarkers, nsmall = ttemp, 
-                trim = TRUE)
-            Coord <- t(sapply(mu, function(a) B[i, ] * a))
-            Coord <- Coord/sum(B[i, ]^2)
-            OUT.angle <<- c(OUT.angle, angle)
-            OUT.PrettyMarkersCharacter <<- c(OUT.PrettyMarkersCharacter, 
-                list(PrettyMarkersCharacter))
-            OUT.Coord <<- c(OUT.Coord, list(Coord))
-        }
-        for (i in 1:p.in) GetOrigAxesInfo(i)
-        side1 <- which(OUT.angle >= 1.75 * pi | OUT.angle < 0.25 * 
-            pi)
-        tempp1 <- ifelse(OUT.angle[side1] >= 1.75 * pi, OUT.angle[side1] - 
-            2 * pi, OUT.angle[side1])
-        side1 <- side1[rev(order(abs(tempp1)))]
-        side2 <- which(OUT.angle >= 0.25 * pi & OUT.angle < 0.75 * 
-            pi)
-        side2 <- side2[rev(order(abs(OUT.angle[side2] - pi/2)))]
-        side3 <- which(OUT.angle >= 0.75 * pi & OUT.angle < 1.25 * 
-            pi)
-        side3 <- side3[rev(order(abs(OUT.angle[side3] - pi)))]
-        side4 <- which(OUT.angle >= 1.25 * pi & OUT.angle < 1.75 * 
-            pi)
-        side4 <- side4[rev(order(abs(OUT.angle[side4] - 3 * pi/2)))]
-        OUT2 <- NULL
-        OUT2 <- list()
-        length(OUT2) <- p.in
-        xtemp <- 0
-        ytemp <- 0
-        truewidth <- max(Y[, 1]) - min(Y[, 1])
-        trueheight <- max(Y[, 2]) - min(Y[, 2])
-        if (truewidth >= trueheight) 
-            InnerSquareUsr <- c(min(Y[, 1]), max(Y[, 1]), (max(Y[, 
-                2]) + min(Y[, 2]))/2 - 0.5 * truewidth, (max(Y[, 
-                2]) + min(Y[, 2]))/2 + 0.5 * truewidth)
-        else InnerSquareUsr <- c((max(Y[, 1]) + min(Y[, 1]))/2 - 
-            0.5 * trueheight, (max(Y[, 1]) + min(Y[, 1]))/2 + 
-            0.5 * trueheight, min(Y[, 2]), max(Y[, 2]))
-        InnerSquareUsr <- InnerSquareUsr * innertol
-        SquareWidth <- max(truewidth, trueheight)
-        j <- 0
-        for (i in side1) {
-            ytildeinner <- rep(InnerSquareUsr[3] - SquareWidth * 
-                (AxisSepfac * j + 0.02), length(OUT.PrettyMarkersCharacter[[i]]))
-            ytilde <- rep(InnerSquareUsr[3] - SquareWidth * (AxisSepfac * 
-                j + 0.045), length(OUT.PrettyMarkersCharacter[[i]]))
-            ytildeouter <- rep(InnerSquareUsr[3] - SquareWidth * 
-                (AxisSepfac * j + 0.07), length(OUT.PrettyMarkersCharacter[[i]]))
-            ytildelabels <- rep(InnerSquareUsr[3] - SquareWidth * 
-                (AxisSepfac * j + 0.095), length(OUT.PrettyMarkersCharacter[[i]]))
-            m <- tan(OUT.angle[i])
-            xtildeinner <- -m * (ytildeinner - OUT.Coord[[i]][, 
-                2]) + OUT.Coord[[i]][, 1]
-            xtilde <- -m * (ytilde - OUT.Coord[[i]][, 2]) + OUT.Coord[[i]][, 
-                1]
-            xtildeouter <- -m * (ytildeouter - OUT.Coord[[i]][, 
-                2]) + OUT.Coord[[i]][, 1]
-            xtildelabels <- -m * (ytildelabels - OUT.Coord[[i]][, 
-                2]) + OUT.Coord[[i]][, 1]
-            xvarnamepos <- function(usr, i) OUT2[[i]]$xtilde[length(OUT2[[i]]$xtilde)] + 
-                (usr[2] - usr[1]) * 0.02
-            yvarnamepos <- function(usr, i) OUT2[[i]]$ytilde[length(OUT2[[i]]$ytilde)]
-            OUT2[[i]] <- list(xtildeinner = xtildeinner, xtilde = xtilde, 
-                xtildeouter = xtildeouter, xtildelabels = xtildelabels, 
-                ytildeinner = ytildeinner, ytilde = ytilde, ytildeouter = ytildeouter, 
-                ytildelabels = ytildelabels, xvarnamepos = xvarnamepos, 
-                yvarnamepos = yvarnamepos, srtvalue = 0, col = "black", 
-                adjvalue = c(0, 0.5))
-            xtemp <- c(xtemp, xtildeinner, xtilde, xtildeouter, 
-                xtildelabels)
-            ytemp <- c(ytemp, ytildeinner, ytilde, ytildeouter, 
-                ytildelabels)
-            j <- j + 1
-        }
-        j <- 0
-        for (i in side2) {
-            xtildeinner <- rep(InnerSquareUsr[2] + SquareWidth * 
-                (AxisSepfac * j + 0.02), length(OUT.PrettyMarkersCharacter[[i]]))
-            xtilde <- rep(InnerSquareUsr[2] + SquareWidth * (AxisSepfac * 
-                j + 0.045), length(OUT.PrettyMarkersCharacter[[i]]))
-            xtildeouter <- rep(InnerSquareUsr[2] + SquareWidth * 
-                (AxisSepfac * j + 0.07), length(OUT.PrettyMarkersCharacter[[i]]))
-            xtildelabels <- rep(InnerSquareUsr[2] + SquareWidth * 
-                (AxisSepfac * j + 0.095), length(OUT.PrettyMarkersCharacter[[i]]))
-            m <- tan(OUT.angle[i])
-            ytildeinner <- -1/m * (xtildeinner - OUT.Coord[[i]][, 
-                1]) + OUT.Coord[[i]][, 2]
-            ytilde <- -1/m * (xtilde - OUT.Coord[[i]][, 1]) + 
-                OUT.Coord[[i]][, 2]
-            ytildeouter <- -1/m * (xtildeouter - OUT.Coord[[i]][, 
-                1]) + OUT.Coord[[i]][, 2]
-            ytildelabels <- -1/m * (xtildelabels - OUT.Coord[[i]][, 
-                1]) + OUT.Coord[[i]][, 2]
-            xvarnamepos <- function(usr, i) OUT2[[i]]$xtilde[length(OUT2[[i]]$xtilde)]
-            yvarnamepos <- function(usr, i) OUT2[[i]]$ytilde[length(OUT2[[i]]$ytilde)] + 
-                (usr[4] - usr[3]) * 0.02
-            OUT2[[i]] <- list(xtildeinner = xtildeinner, xtilde = xtilde, 
-                xtildeouter = xtildeouter, xtildelabels = xtildelabels, 
-                ytildeinner = ytildeinner, ytilde = ytilde, ytildeouter = ytildeouter, 
-                ytildelabels = ytildelabels, xvarnamepos = xvarnamepos, 
-                yvarnamepos = yvarnamepos, srtvalue = 90, col = "black", 
-                adjvalue = c(0, 0.5))
-            xtemp <- c(xtemp, xtildeinner, xtilde, xtildeouter, 
-                xtildelabels)
-            ytemp <- c(ytemp, ytildeinner, ytilde, ytildeouter, 
-                ytildelabels)
-            j <- j + 1
-        }
-        j <- 0
-        for (i in side3) {
-            ytildeinner <- rep(InnerSquareUsr[4] + SquareWidth * 
-                (AxisSepfac * j + 0.02), length(OUT.PrettyMarkersCharacter[[i]]))
-            ytilde <- rep(InnerSquareUsr[4] + SquareWidth * (AxisSepfac * 
-                j + 0.045), length(OUT.PrettyMarkersCharacter[[i]]))
-            ytildeouter <- rep(InnerSquareUsr[4] + SquareWidth * 
-                (AxisSepfac * j + 0.07), length(OUT.PrettyMarkersCharacter[[i]]))
-            ytildelabels <- rep(InnerSquareUsr[4] + SquareWidth * 
-                (AxisSepfac * j + 0.095), length(OUT.PrettyMarkersCharacter[[i]]))
-            m <- tan(OUT.angle[i])
-            xtildeinner <- -m * (ytildeinner - OUT.Coord[[i]][, 
-                2]) + OUT.Coord[[i]][, 1]
-            xtilde <- -m * (ytilde - OUT.Coord[[i]][, 2]) + OUT.Coord[[i]][, 
-                1]
-            xtildeouter <- -m * (ytildeouter - OUT.Coord[[i]][, 
-                2]) + OUT.Coord[[i]][, 1]
-            xtildelabels <- -m * (ytildelabels - OUT.Coord[[i]][, 
-                2]) + OUT.Coord[[i]][, 1]
-            xvarnamepos <- function(usr, i) OUT2[[i]]$xtilde[length(OUT2[[i]]$xtilde)] - 
-                (usr[2] - usr[1]) * 0.02
-            yvarnamepos <- function(usr, i) OUT2[[i]]$ytilde[length(OUT2[[i]]$ytilde)]
-            OUT2[[i]] <- list(xtildeinner = xtildeinner, xtilde = xtilde, 
-                xtildeouter = xtildeouter, xtildelabels = xtildelabels, 
-                ytildeinner = ytildeinner, ytilde = ytilde, ytildeouter = ytildeouter, 
-                ytildelabels = ytildelabels, xvarnamepos = xvarnamepos, 
-                yvarnamepos = yvarnamepos, srtvalue = 0, col = "black", 
-                adjvalue = c(1, 0.5))
-            xtemp <- c(xtemp, xtildeinner, xtilde, xtildeouter, 
-                xtildelabels)
-            ytemp <- c(ytemp, ytildeinner, ytilde, ytildeouter, 
-                ytildelabels)
-            j <- j + 1
-        }
-        j <- 0
-        for (i in side4) {
-            xtildeinner <- rep(InnerSquareUsr[1] - SquareWidth * 
-                (AxisSepfac * j + 0.02), length(OUT.PrettyMarkersCharacter[[i]]))
-            xtilde <- rep(InnerSquareUsr[1] - SquareWidth * (AxisSepfac * 
-                j + 0.045), length(OUT.PrettyMarkersCharacter[[i]]))
-            xtildeouter <- rep(InnerSquareUsr[1] - SquareWidth * 
-                (AxisSepfac * j + 0.07), length(OUT.PrettyMarkersCharacter[[i]]))
-            xtildelabels <- rep(InnerSquareUsr[1] - SquareWidth * 
-                (AxisSepfac * j + 0.095), length(OUT.PrettyMarkersCharacter[[i]]))
-            m <- tan(OUT.angle[i])
-            ytilde <- -1/m * (xtilde - OUT.Coord[[i]][, 1]) + 
-                OUT.Coord[[i]][, 2]
-            ytildeouter <- -1/m * (xtildeouter - OUT.Coord[[i]][, 
-                1]) + OUT.Coord[[i]][, 2]
-            ytildelabels <- -1/m * (xtildelabels - OUT.Coord[[i]][, 
-                1]) + OUT.Coord[[i]][, 2]
-            ytildeinner <- -1/m * (xtildeinner - OUT.Coord[[i]][, 
-                1]) + OUT.Coord[[i]][, 2]
-            xvarnamepos <- function(usr, i) OUT2[[i]]$xtilde[length(OUT2[[i]]$xtilde)]
-            yvarnamepos <- function(usr, i) OUT2[[i]]$ytilde[length(OUT2[[i]]$ytilde)] - 
-                (usr[4] - usr[3]) * 0.02
-            OUT2[[i]] <- list(xtildeinner = xtildeinner, xtilde = xtilde, 
-                xtildeouter = xtildeouter, xtildelabels = xtildelabels, 
-                ytildeinner = ytildeinner, ytilde = ytilde, ytildeouter = ytildeouter, 
-                ytildelabels = ytildelabels, xvarnamepos = xvarnamepos, 
-                yvarnamepos = yvarnamepos, srtvalue = 270, col = "black", 
-                adjvalue = c(0, 0.5))
-            xtemp <- c(xtemp, xtildeinner, xtilde, xtildeouter, 
-                xtildelabels)
-            ytemp <- c(ytemp, ytildeinner, ytilde, ytildeouter, 
-                ytildelabels)
-            j <- j + 1
-        }
-        par(mar = c(2, 2, 2, 2))
-        par(pty = "s", bg = "white")
-        xtemp <- c(xtemp, Y[, 1])
-        ytemp <- c(ytemp, Y[, 2])
-        eqscplot(x = Y[, 1], y = Y[, 2], xaxs = "i", xaxt = "n", 
-            yaxt = "n", xlab = "", ylab = "", xlim = c(min(xtemp), 
-                max(xtemp)) * outertol, ylim = c(min(ytemp), 
-                max(ytemp)) * outertol, type = "n", xpd = NA)
-        Biplot.par <<- par()
-        Biplot.par$strwidthx <<- strwidth("x")
-        Biplot.par$strheightx <<- strheight("x")
-        polygon(x = c(par("usr")[1], par("usr")[1], par("usr")[2], 
-            par("usr")[2]), y = c(par("usr")[3], par("usr")[4], 
-            par("usr")[4], par("usr")[3]), col = "gray85")
-        polygon(x = c(InnerSquareUsr[1], InnerSquareUsr[1], InnerSquareUsr[2], 
-            InnerSquareUsr[2]), y = c(InnerSquareUsr[3], InnerSquareUsr[4], 
-            InnerSquareUsr[4], InnerSquareUsr[3]), col = "white")
-        text(Y[, 1] + 0 * strwidth("x", cex = 0.7), Y[, 2] - 
-            1 * strheight("x", cex = 0.7), labels = rownames(Data), 
-            font = 1, cex = 0.7, col = "black")
-        points(Y, pch = 22, cex = 1, col = "black", bg = "red")
-        for (i in 1:p.in) {
-            lines(OUT2[[i]]$xtilde, OUT2[[i]]$ytilde, col = bpar$axes.col[i])
-            segments(x0 = OUT2[[i]]$xtildeinner, x1 = OUT2[[i]]$xtildeouter, 
-                y0 = OUT2[[i]]$ytildeinner, y1 = OUT2[[i]]$ytildeouter, 
-                col = bpar$axes.tick.col[i])
-            text(OUT2[[i]]$xtildelabels, OUT2[[i]]$ytildelabels, 
-                labels = OUT.PrettyMarkersCharacter[[i]], cex = 0.7, 
-                srt = OUT2[[i]]$srtvalue, col = bpar$axes.marker.col[i])
-        }
-        box()
-        for (i in side1) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
-            i) + 0.5 * strwidth(colnames(Data)[i], cex = 0.8), 
-            y = OUT2[[i]]$yvarnamepos(par("usr"), i), rectangles = matrix(c(1.1 * 
-                strwidth(colnames(Data)[i], cex = 0.8), 1.3 * 
-                strheight(colnames(Data)[i], cex = 0.8)), ncol = 2), 
-            inches = FALSE, add = TRUE, bg = "white", xpd = NA)
-        for (i in side2) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
-            i), y = OUT2[[i]]$yvarnamepos(par("usr"), i) + 0.5 * 
-            strwidth(colnames(Data)[i], cex = 0.8), rectangles = matrix(c(1.3 * 
-            strheight(colnames(Data)[i], cex = 0.8), 1.1 * strwidth(colnames(Data)[i], 
-            cex = 0.8)), ncol = 2), inches = FALSE, add = TRUE, 
-            bg = "white", xpd = NA)
-        for (i in side3) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
-            i) - 0.5 * strwidth(colnames(Data)[i], cex = 0.8), 
-            y = OUT2[[i]]$yvarnamepos(par("usr"), i), rectangles = matrix(c(1.1 * 
-                strwidth(colnames(Data)[i], cex = 0.8), 1.3 * 
-                strheight(colnames(Data)[i], cex = 0.8)), ncol = 2), 
-            inches = FALSE, add = TRUE, bg = "white", xpd = NA)
-        for (i in side4) symbols(x = OUT2[[i]]$xvarnamepos(par("usr"), 
-            i), y = OUT2[[i]]$yvarnamepos(par("usr"), i) - 0.5 * 
-            strwidth(colnames(Data)[i], cex = 0.8), rectangles = matrix(c(1.3 * 
-            strheight(colnames(Data)[i], cex = 0.8), 1.1 * strwidth(colnames(Data)[i], 
-            cex = 0.8)), ncol = 2), inches = FALSE, add = TRUE, 
-            bg = "white", xpd = NA)
-        for (i in 1:p.in) text(OUT2[[i]]$xvarnamepos(par("usr"), 
-            i), OUT2[[i]]$yvarnamepos(par("usr"), i), label = colnames(Data)[i], 
-            col = bpar$axes.label.col[i], srt = OUT2[[i]]$srtvalue, 
-            adj = OUT2[[i]]$adjvalue, xpd = NA, cex = 0.8)
-    }
     Biplot.linear.plot <- function(screen = TRUE) {
-        if (tclvalue(View.ExteriorAxes.var) == "0") 
-            Biplot.linear.plot.interior(screen)
-        else Biplot.linear.plot.exterior(screen)
+        Biplot.linear.plot.interior(screen)
     }
     Biplot.NonLinear.determine.interpolative <- function() {
         temp0 <- matrix(0, nrow = n.in, ncol = n.in)
@@ -8978,7 +8678,6 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         temp1 <- tclvalue(tkget(SettingsBox.action.combo))
         if (tclvalue(tkget(SettingsBox.action.combo)) != "Predict") {
             Biplot.points.mode <<- tclVar("0")
-            View.ExteriorAxes.var <<- tclVar("0")
         }
         switch(tclvalue(Biplot.Axes.var), `1` = Joint.CovarianceCorrelation.determine(), 
             `2` = Joint.CVA.determine(), `12` = Axes.Procrustes.determine(), 
