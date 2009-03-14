@@ -1,10 +1,10 @@
-`Biplots` <-
+Biplots <-
 function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data), 
     AxisLabels = colnames(Data), excel = NULL, ExcelGroupsCol = 0) 
 {
     tclRequire("BWidget")
     if (!missing(excel) | !missing(ExcelGroupsCol)) {
-        stop("The `excel' and `ExcelGroupsCol' arguments are deprecated from BiplotGUI 0.0-4.1 onwards: the `xlsReadWrite' package was removed from CRAN in March 2009. As an alternative, the `RODBC' package may be considered for the manual import of data from Excel to R.")
+        stop("Due to the removal of the `xlsReadWrite' package from CRAN, the direct import of data from Excel 1997-2003 files has been deprecated as from BiplotGUI 0.0-4.1. As an alternative mechanism, consider the `RODBC' package.")
     }
     Data <- as.matrix(Data)
     n <- nrow(Data)
