@@ -1,4 +1,4 @@
-Biplots <-
+`Biplots` <-
 function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data), 
     AxisLabels = colnames(Data), excel = NULL, ExcelGroupsCol = 0) 
 {
