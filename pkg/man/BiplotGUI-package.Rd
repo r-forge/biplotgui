@@ -12,8 +12,8 @@ A GUI with which to construct and interact with biplots.
 \tabular{ll}{
 Package: \tab BiplotGUI\cr
 Type: \tab Package\cr
-Version: \tab 0.0-4\cr
-Date: \tab 2009-02-24\cr
+Version: \tab 0.0-4.1\cr
+Date: \tab 2009-03-16\cr
 License: \tab GPL-3 or later\cr
 LazyLoad: \tab yes\cr
 }

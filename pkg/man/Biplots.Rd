@@ -15,8 +15,8 @@
   \item{groups}{ A vector or factor of length \eqn{n}{n} specifying the group membership of the samples. By default, all samples are taken to be from a single group. The group labels are taken from this argument, deprecated to 14 characters each.}
   \item{PointLabels}{ A vector of length \eqn{n}{n} specifying the point labels. By default, the point labels are taken to be the row names of \code{Data}. }
   \item{AxisLabels}{ A vector of length \eqn{p}{p} specifying the axis labels. By default, the axis labels are taken to be the column names of \code{Data}, deprecated to 14 characters each.}
-  \item{excel}{ Deprecated.}
-  \item{ExcelGroupsCol}{ Deprecated.}
+  \item{excel}{ Deprecated from \pkg{BiplotGUI} 0.0-4.1 onwards.}
+  \item{ExcelGroupsCol}{ Deprecated from \pkg{BiplotGUI} 0.0-4.1 onwards.}
 }
 \details{
   \code{Biplots} is the sole function of the \pkg{BiplotGUI} package. The function initialises the GUI for a particular data set. All further options are available from within the GUI. The GUI features themselves are documented in a separate manual available from the Help menu of the GUI. The manual is also included as a vignette to the package.
