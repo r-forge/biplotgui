@@ -1,0 +1,13 @@
+citHeader("Citation for the BiplotGUI package:")
+
+citEntry(
+ entry = "Article",
+ title = "BiplotGUI: Interactive Biplots in R",
+ journal = "Journal of Statistical Software",
+ volume = "30",
+ number = "12",
+ pages = "1-37",
+ year = "2009",
+ author = "AM la Grange and NJ le Roux and S Gardner-Lubbe",
+ url = "http://www.jstatsoft.org/v30/i12",
+ textVersion = "La Grange, AM, Le Roux, NJ, Gardner-Lubbe, S (2009) BiplotGUI: Interactive Biplots in R. Journal of Statistical Software 30(12):1-37. " )

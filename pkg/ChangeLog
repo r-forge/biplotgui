@@ -1,0 +1,74 @@
+VERSION 0.0-5
+19 Septermber 2009
+
+* Separate Vignette and Features Manual entries are created in the Help menu.
+* The Vignette is updated. In particular, a statement concerning the calibrate package is corrected.
+* The Features Manual is updated.
+
+
+VERSION 0.0-4.1
+14 March 2009
+
+* Due to the removal of the xlsReadWrite package from CRAN, the direct import of data from Excel 1997-2003 files has been deprecated. As an alternative mechanism, consider the RODBC package. 
+
+
+VERSION 0.0-4
+24 February 2009
+
+* A Run option, with shortcut `R', is included in the MDS menu. 
+* The `fly-by' in three-dimensional biplots is now disabled by default. It may be enabled via the File : Options dialogue box.
+* The `Distance metric' entry in the Points menu is renamed `Dissimilarity metric'.
+* The `Xbar' entry in the export tab of the CVA biplot is renamed `XtrBar'. This object represents the matrix of sample group means of the transformed data matrix.
+* `RelMeanAbsErr' entries in the export tab are renamed `MeanRelAbsErr'.
+* Changes are made to the package help files, including correcting the units of the `Tel.' variable of the countries data. This variable measures the `number of fixed line telephones per 1000 people' instead of `per capita'.
+* The manual is updated and reviewed.
+
+Technical
+* A NAMESPACE file is incorporated, and the DESCRIPTION file is updated. All features are now designed to work from the outset; there is no hierarchy of packages.
+* A bug is fixed that occassionally resulted in the scroll bar of the predictions tab appearing at the centre of the table rather than at its right.
+* A bug is fixed that occassionally resulted in the kraal being sized incorrectly.
+
+
+VERSION 0.0-3
+November 2008
+Master's thesis version. Not publicly released.
+
+* Classification regions in two canonical dimensions are now calculated explicitly, and classification regions are by default now calculated in two canonical dimensions. The deldir package becomes a required package.
+* A bug is fixed that very rarely caused the axes to be calibrated with values with 16 decimal places.
+* A bug is fixed that resulted in a console error when sample group means were formatted before being displayed for the first time.
+* The `Report a bug' option is removed from the Help menu.
+* The package help files are updated.
+
+Technical
+* A typographical error is corrected in the DESCRIPTION file.
+* A more modern implementation of the progress bar is used. 
+* Work is done towards compatibility with Unix-alike. More work remains to be done.
+
+
+VERSION 0.0-2
+12 August 2008
+The first CRAN release.
+
+* The Help : Homepage option is added.
+* The names of two graphical parameters in the Format : Interaction dialogue box are corrected.
+* The `CountryData' data set is renamed the `Countries' data set.
+* Changes are made to the package help files, including correcting the units of the `GDP' variable of the countries data. The variable measures `PPP GDP per capita in US dollars' rather than `PPP GDP in trillions of US dollars' as previously stated. However, the countries  are still  those with the 15 highest PPP GDP in US dollars during 2007 without adjusting for population size.
+* The manual is updated with two new chapters included.
+
+
+VERSION 0.0-1
+29 July 2008
+The first release. 
+
+Contains support for
+* Biplots: PCA, covariance/correlation, CVA, regression, Procrustes, circular non-linear.
+* Interpolation and prediction.
+* Scaling techniques: PCO, metric MDS (identity transformation), non-metric MDS (monotone regression), semi-metric MDS (monotone spline transformation).
+* Data transformations: centre; centre, scale; unitise, centre; log, centre; log, centre, scale; log, unitise, centre.
+* Distance metrics: Pythagoras, Square-root-of-Manhattan, Clark, Mahalanobis.
+* Additional descriptors: convex hulls, alpha-bags, point densities, classification regions.
+* Export of intermediate quantities back to R.
+* Diagnostic graphs: convergence; point, group and axis predictivities; Shepard diagrams.
+* Interactivity: variable value prediction, zooming, point and axis drag-and-drop; 3D biplots.
+* Customisation of graphs.
+* Import of data from Excel 1997--2003 files.

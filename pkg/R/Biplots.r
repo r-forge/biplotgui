@@ -1,4 +1,4 @@
-`Biplots` <-
+Biplots <-
 function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data), 
     AxisLabels = colnames(Data), excel = NULL, ExcelGroupsCol = 0) 
 {
@@ -37,6 +37,22 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     boptions$ThreeD.MouseButtonAction <- c("trackball", "zoom", 
         "fov")
     boptions$axes.tick.inter.n <- rep(20, p)
+    boptions$ExternalGraphWidth <- 7
+    boptions$ExternalGraphHeight <- 7
+    boptions$BiplotRegion.WithoutLegend.Main.mar <- c(2, 4, 2, 
+        4)
+    boptions$BiplotRegion.WithLegend.Main.mar <- c(1, 4, 4, 4)
+    boptions$BiplotRegion.WithLegend.Legend.mar <- c(0, 0, 0, 
+        0)
+    boptions$DiagnosticGraphs.External.WithoutLegend.mar <- c(2, 
+        4, 2, 4)
+    boptions$DiagnosticGraphs.External.WithLegend.Main.mar <- c(1, 
+        4, 4, 4)
+    boptions$DiagnosticGraphs.External.WithLegend.Legend.mar <- c(0, 
+        0, 0, 0)
+    boptions$DiagnosticGraphs.Screen.mar <- c(2.5, 3, 2.5, 2)
+    boptions$Legend.cex <- 0.65
+    boptions$Legend.TextString <- "12345678901234"
     bpar <- list()
     bpar.initialise1.func <- function() {
         bpar$groups.label.text <<- levels(group)
@@ -84,7 +100,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         else bpar$gSampleGroupMeans.label.col <<- hcl(seq(0, 
             360, length = g + 2)[-c(1, g + 2)], 200, 60)
         bpar$gSampleGroupMeans.label.HorizOffset <<- rep(0, g)
-        bpar$gSampleGroupMeans.label.VertOffset <<- rep(-1, g)
+        bpar$gSampleGroupMeans.label.VertOffset <<- rep(-1.1, 
+            g)
         bpar$SampleGroupMeans.LabelsInBiplot <<- TRUE
         bpar$gConvexHullAlphaBag.lty <<- rep(1, g)
         bpar$gConvexHullAlphaBag.lwd <<- rep(4, g)
@@ -174,6 +191,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         bpar$DiagnosticTabs.predictivities.label.cex <<- 0.85
         bpar$DiagnosticTabs.predictivities.label.HorizOffset <<- 0
         bpar$DiagnosticTabs.predictivities.label.VertOffset <<- -1
+        bpar$DiagnosticTabs.predictivities.diagonal.col <<- "black"
         bpar$DiagnosticTabs.ShepardDiagram.pch <<- 1
         bpar$DiagnosticTabs.ShepardDiagram.cex <<- 1
         bpar$DiagnosticTabs.ShepardDiagram.col.fg <<- "gray50"
@@ -1077,7 +1095,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".pdf") 
                 FileName <- paste(FileName, ".pdf", sep = "")
-            pdf(FileName, width = 7, height = 7)
+            pdf(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight)
             Biplot.plot(screen = FALSE)
             dev.off()
         }
@@ -1089,9 +1108,9 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 4 || substr(FileName, nn - 2, nn) != ".ps") 
                 FileName <- paste(FileName, ".ps", sep = "")
-            postscript(file = FileName, width = 8, height = 8, 
-                horizontal = FALSE, onefile = FALSE, paper = "default", 
-                family = "URWHelvetica")
+            postscript(file = FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, horizontal = FALSE, 
+                onefile = FALSE, paper = "default", family = "URWHelvetica")
             Biplot.plot(screen = FALSE)
             dev.off()
         }
@@ -1103,7 +1122,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".wmf") 
                 FileName <- paste(FileName, ".wmf", sep = "")
-            win.metafile(FileName, width = 8, height = 8, restoreConsole = FALSE)
+            win.metafile(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, restoreConsole = FALSE)
             Biplot.plot(screen = FALSE)
             dev.off()
         }
@@ -1115,7 +1135,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".bmp") 
                 FileName <- paste(FileName, ".bmp", sep = "")
-            bmp(FileName, width = 8, height = 8, units = "in", 
+            bmp(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, units = "in", 
                 restoreConsole = FALSE, res = 96)
             Biplot.plot(screen = FALSE)
             dev.off()
@@ -1128,7 +1149,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".png") 
                 FileName <- paste(FileName, ".png", sep = "")
-            png(FileName, width = 8, height = 8, units = "in", 
+            png(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, units = "in", 
                 restoreConsole = FALSE, res = 96)
             Biplot.plot(screen = FALSE)
             dev.off()
@@ -1141,7 +1163,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".jpg") 
                 FileName <- paste(FileName, ".jpg", sep = "")
-            jpeg(FileName, width = 8, height = 8, units = "in", 
+            jpeg(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, units = "in", 
                 restoreConsole = FALSE, res = 96, quality = File.Jpeg.quality)
             Biplot.plot(screen = FALSE)
             dev.off()
@@ -1155,7 +1178,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".tex") 
                 FileName <- paste(FileName, ".tex", sep = "")
-            pictex(FileName, width = 8, height = 8, debug = FALSE, 
+            pictex(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, debug = FALSE, 
                 bg = "white", fg = "black")
             Biplot.plot(screen = FALSE)
             dev.off()
@@ -1163,7 +1187,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         tkfocus(GUI.TopLevel)
     }
     File.Copy.cmd <- function() {
-        win.metafile(width = 8, height = 8, restoreConsole = FALSE)
+        win.metafile(width = boptions$ExternalGraphWidth, height = boptions$ExternalGraphHeight, 
+            restoreConsole = FALSE)
         Biplot.plot(screen = FALSE)
         dev.off()
     }
@@ -3675,8 +3700,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     Points.DissimilarityMetric.Mahalanobis.derivfunc <- NULL
     Points.DissimilarityMetric.Mahalanobis.cmd <- function(FollowThrough = TRUE) {
         if (tclvalue(Points.var) == "0" && tclvalue(Biplot.Axes.var) %in% 
-            c("0", "1", "2", "11", "12", "13", "14")) 
-            Biplot.Axes.var <<- tclVar("10")
+            c("0", "1", "2", "13", "14")) 
+            Biplot.Axes.var <<- tclVar("11")
         if (tclvalue(Points.var) %in% c("10", "11", "12") && 
             tclvalue(Biplot.Axes.var) %in% c("0", "1", "2", "13", 
                 "14")) 
@@ -4127,15 +4152,17 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                   byrow = TRUE), heights = c(4 * BiplotRegion.VerticalScale.func() - 
                   1.1, 1.1))
             else layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                byrow = TRUE), heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                byrow = TRUE), heights = c(boptions$ExternalGraphHeight - 
+                1.1, 1.1))
+            par(mar = boptions$BiplotRegion.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
             Legend.func()
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$BiplotRegion.WithLegend.Main.mar)
         }
-        else par(mar = c(2, 4, 2, 4))
+        else par(mar = boptions$BiplotRegion.WithoutLegend.Main.mar)
         par(pty = "s", bg = "white")
         temp.Y1 <- Y[, 1]
         temp.Y2 <- Y[, 2]
@@ -4857,8 +4884,11 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                   Biplot.Axes.var <<- tclVar("13")
                   Axes.CircularNonLinear.cmd()
                 }, `3` = {
-                  Biplot.Axes.var <<- tclVar("10")
-                  Axes.None.cmd()
+                  Biplot.Axes.var <<- tclVar("11")
+                  Axes.Regression.cmd()
+                }, `20` = {
+                  Biplot.Axes.var <<- tclVar("11")
+                  Axes.Regression.cmd()
                 })
         else Axes.Regression.cmd()
     }
@@ -5878,9 +5908,13 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         Additional.PointDensities.var <<- tclVar("0")
         Additional.ClassificationRegion.var <<- tclVar("0")
     }
-    Help.Manual.cmd <- function() {
+    Help.Vignette.cmd <- function() {
         shell.exec(as.character(paste(system.file(package = "BiplotGUI"), 
-            "/doc/BiplotGUIManual.pdf", sep = "")))
+            "/doc/BiplotGUI.pdf", sep = "")))
+    }
+    Help.FeaturesManual.cmd <- function() {
+        shell.exec(as.character(paste(system.file(package = "BiplotGUI"), 
+            "/doc/FeaturesManual.pdf", sep = "")))
     }
     Help.HomePage.cmd <- function() {
         shell.exec("http://biplotgui.r-forge.r-project.org")
@@ -5935,7 +5969,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     }
     Help.About.cmd <- function() {
         tkmessageBox(title = "About", parent = GUI.TopLevel, 
-            message = "Anthony la Grange\n<amlg at sun.ac.za>\n\nVersion 0.0-4.1\n\nDistributed under the GPL-3 license available from \nhttp://www.r-project.org/Licenses/", 
+            message = "Anthony la Grange\n<amlg at sun.ac.za>\n\nVersion 0.0-5\n\nDistributed under the GPL-3 license available from \nhttp://www.r-project.org/Licenses/", 
             icon = "info", type = "ok")
     }
     MenuBar.menu <- tk2menu(GUI.TopLevel)
@@ -6410,11 +6444,15 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     tkadd(MenuBar.menu, "cascade", label = "Additional", underline = "0", 
         menu = MenuBar.Additional)
     MenuBar.Help <- tk2menu(MenuBar.menu, tearoff = FALSE)
-    tkadd(MenuBar.Help, "command", label = "Manual (in PDF)", 
+    tkadd(MenuBar.Help, "command", label = "Vignette (in PDF)", 
         underline = "0", accelerator = "F1", state = if (.Platform$OS.type != 
             "windows") 
             "disabled"
-        else "normal", command = Help.Manual.cmd)
+        else "normal", command = Help.Vignette.cmd)
+    tkadd(MenuBar.Help, "command", label = "Features Manual (in PDF)", 
+        underline = "0", state = if (.Platform$OS.type != "windows") 
+            "disabled"
+        else "normal", command = Help.FeaturesManual.cmd)
     tkadd(MenuBar.Help, "command", label = "Home page", underline = "0", 
         state = if (.Platform$OS.type != "windows") 
             "disabled"
@@ -6666,15 +6704,17 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                   byrow = TRUE), heights = c(4 * BiplotRegion.VerticalScale.func() - 
                   1.1, 1.1))
             else layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                byrow = TRUE), heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                byrow = TRUE), heights = c(boptions$ExternalGraphHeight - 
+                1.1, 1.1))
+            par(mar = boptions$BiplotRegion.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
             Legend.func()
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$BiplotRegion.WithLegend.Main.mar)
         }
-        else par(mar = c(2, 4, 2, 4))
+        else par(mar = boptions$BiplotRegion.WithoutLegend.Main.mar)
         par(pty = "s", bg = "white")
         temp.Y1 <- Y[, 1]
         temp.Y2 <- Y[, 2]
@@ -7079,15 +7119,17 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
                   byrow = TRUE), heights = c(4 * BiplotRegion.VerticalScale.func() - 
                   1.1, 1.1))
             else layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, 
-                byrow = TRUE), heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                byrow = TRUE), heights = c(boptions$ExternalGraphHeight - 
+                1.1, 1.1))
+            par(mar = boptions$BiplotRegion.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
             Legend.func()
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$BiplotRegion.WithLegend.Main.mar)
         }
-        else par(mar = c(2, 4, 2, 4))
+        else par(mar = boptions$BiplotRegion.WithoutLegend.Main.mar)
         par(pty = "s", bg = "white")
         Y <- Biplot.Y
         temp.Y1 <- Y[, 1]
@@ -8311,8 +8353,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         Legend.CurrentIndices <<- ((Legend.CurrentPage - 1) * 
             16 + 1):(min(Legend.CurrentPage * 16, length(Legend.legend)))
         legend2(x = "center", legend = Legend.transpose(Legend.legend[Legend.CurrentIndices]), 
-            cex = 0.85, text.width = strwidth("12345678901234", 
-                cex = 0.85), text.col = Legend.transpose(Legend.text.col[Legend.CurrentIndices]), 
+            cex = boptions$Legend.cex, text.width = strwidth(boptions$Legend.TextString, 
+                cex = boptions$Legend.cex), text.col = Legend.transpose(Legend.text.col[Legend.CurrentIndices]), 
             ncol = 4, lty = Legend.transpose(Legend.lty[Legend.CurrentIndices]), 
             lwd = Legend.transpose(Legend.lwd[Legend.CurrentIndices]), 
             lines.col = Legend.transpose(Legend.lines.col[Legend.CurrentIndices]), 
@@ -8887,7 +8929,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".pdf") 
                 FileName <- paste(FileName, ".pdf", sep = "")
-            pdf(FileName, width = 8, height = 8)
+            pdf(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight)
             DiagnosticTabs.switch()
             dev.off()
         }
@@ -8899,9 +8942,9 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 4 || substr(FileName, nn - 2, nn) != ".ps") 
                 FileName <- paste(FileName, ".ps", sep = "")
-            postscript(file = FileName, width = 8, height = 8, 
-                horizontal = FALSE, onefile = FALSE, paper = "default", 
-                family = "URWHelvetica")
+            postscript(file = FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, horizontal = FALSE, 
+                onefile = FALSE, paper = "default", family = "URWHelvetica")
             DiagnosticTabs.switch()
             dev.off()
         }
@@ -8913,7 +8956,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".wmf") 
                 FileName <- paste(FileName, ".wmf", sep = "")
-            win.metafile(FileName, width = 8, height = 8, restoreConsole = FALSE)
+            win.metafile(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, restoreConsole = FALSE)
             DiagnosticTabs.switch()
             dev.off()
         }
@@ -8925,7 +8969,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".bmp") 
                 FileName <- paste(FileName, ".bmp", sep = "")
-            bmp(FileName, width = 8, height = 8, units = "in", 
+            bmp(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, units = "in", 
                 restoreConsole = FALSE, res = 96)
             DiagnosticTabs.switch()
             dev.off()
@@ -8938,7 +8983,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".png") 
                 FileName <- paste(FileName, ".png", sep = "")
-            png(FileName, width = 8, height = 8, units = "in", 
+            png(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, units = "in", 
                 restoreConsole = FALSE, res = 96)
             DiagnosticTabs.switch()
             dev.off()
@@ -8951,7 +8997,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".jpg") 
                 FileName <- paste(FileName, ".jpg", sep = "")
-            jpeg(FileName, width = 8, height = 8, units = "in", 
+            jpeg(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, units = "in", 
                 restoreConsole = FALSE, res = 96, quality = File.Jpeg.quality)
             DiagnosticTabs.switch()
             dev.off()
@@ -8964,7 +9011,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             nn <- nchar(FileName)
             if (nn < 5 || substr(FileName, nn - 3, nn) != ".tex") 
                 FileName <- paste(FileName, ".tex", sep = "")
-            pictex(FileName, width = 8, height = 8, debug = FALSE, 
+            pictex(FileName, width = boptions$ExternalGraphWidth, 
+                height = boptions$ExternalGraphHeight, debug = FALSE, 
                 bg = "white", fg = "black")
             DiagnosticTabs.switch()
             dev.off()
@@ -8972,7 +9020,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         tkfocus(GUI.TopLevel)
     }
     DiagnosticTabs.Copy.cmd <- function() {
-        win.metafile(width = 8, height = 8, restoreConsole = FALSE)
+        win.metafile(width = boptions$ExternalGraphWidth, height = boptions$ExternalGraphHeight, 
+            restoreConsole = FALSE)
         DiagnosticTabs.switch()
         dev.off()
     }
@@ -8986,7 +9035,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     DiagnosticTabs.ExternalWindow.cmd <- function() {
         if (boptions$ReuseExternalWindows && dev.cur() > 1) 
             graphics.off()
-        x11(width = 7, height = 7)
+        x11(width = boptions$ExternalGraphWidth, height = boptions$ExternalGraphHeight)
         DiagnosticTabs.switch()
     }
     ConvergenceTab.update <- FALSE
@@ -8999,16 +9048,18 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     ConvergenceTab.plot <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
             layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
-                heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                heights = c(boptions$ExternalGraphHeight - 1.1, 
+                  1.1))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Main.mar)
         }
         else if (!screen) 
-            par(mar = c(2, 4, 2, 4))
-        else par(mar = c(2.5, 3, 2.5, 2))
+            par(mar = boptions$DiagnosticGraphs.External.WithoutLegend.mar)
+        else par(mar = boptions$DiagnosticGraphs.Screen.mar)
         par(bg = "white", pty = "s")
         if (!is.null(ConvergenceTab.points.StressVector)) 
             plot(ConvergenceTab.points.StressVector, type = "s", 
@@ -9048,16 +9099,18 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     PointsTab.plot.predictivities <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
             layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
-                heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                heights = c(boptions$ExternalGraphHeight - 1.1, 
+                  1.1))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Main.mar)
         }
         else if (!screen) 
-            par(mar = c(2, 4, 2, 4))
-        else par(mar = c(2.5, 3, 2.5, 2))
+            par(mar = boptions$DiagnosticGraphs.External.WithoutLegend.mar)
+        else par(mar = boptions$DiagnosticGraphs.Screen.mar)
         par(bg = "white", pty = "s")
         leaveout <- sort(unique(c(which(is.na(PointsTab.predictivities1dim)), 
             which(is.na(PointsTab.predictivities)))))
@@ -9085,7 +9138,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             else title(main = "Point predictivities", cex.main = 0.85)
         axis(side = 1, at = tickatx, cex.axis = 0.75)
         axis(side = 2, at = tickaty, cex.axis = 0.75)
-        lines(x = c(0, 1), y = c(0, 1), col = "orange")
+        lines(x = c(0, 1), y = c(0, 1), col = bpar$DiagnosticTabs.predictivities.diagonal.col)
         if (tclvalue(PointsTab.ShowPointLabels.var) == "1") 
             text(x = PointsTab.predictivities1dim[leavein] + 
                 bpar$DiagnosticTabs.predictivities.label.HorizOffset * 
@@ -9109,16 +9162,18 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     PointsTab.plot.ShepardDiagram <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
             layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
-                heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                heights = c(boptions$ExternalGraphHeight - 1.1, 
+                  1.1))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Main.mar)
         }
         else if (!screen) 
-            par(mar = c(2, 4, 2, 4))
-        else par(mar = c(2.5, 3, 2.5, 2))
+            par(mar = boptions$DiagnosticGraphs.External.WithoutLegend.mar)
+        else par(mar = boptions$DiagnosticGraphs.Screen.mar)
         par(bg = "white", pty = "s")
         if (n.in <= 250) {
             diss <- Points.DissimilarityMetric.DissimilarityMatrix[lower.tri(Points.DissimilarityMetric.DissimilarityMatrix)]
@@ -9208,16 +9263,18 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     GroupsTab.plot.predictivities <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
             layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
-                heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                heights = c(boptions$ExternalGraphHeight - 1.1, 
+                  1.1))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Main.mar)
         }
         else if (!screen) 
-            par(mar = c(2, 4, 2, 4))
-        else par(mar = c(2.5, 3, 2.5, 2))
+            par(mar = boptions$DiagnosticGraphs.External.WithoutLegend.mar)
+        else par(mar = boptions$DiagnosticGraphs.Screen.mar)
         par(bg = "white", pty = "s")
         leaveout <- sort(unique(c(which(is.na(GroupsTab.predictivities1dim)), 
             which(is.na(GroupsTab.predictivities)))))
@@ -9245,7 +9302,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             else title(main = "Group predictivities", cex.main = 0.85)
         axis(side = 1, at = tickatx, cex.axis = 0.75)
         axis(side = 2, at = tickaty, cex.axis = 0.75)
-        lines(x = c(0, 1), y = c(0, 1), col = "orange")
+        lines(x = c(0, 1), y = c(0, 1), col = bpar$DiagnosticTabs.predictivities.diagonal.col)
         if (tclvalue(GroupsTab.ShowGroupLabels.var) == "1") 
             text(x = GroupsTab.predictivities1dim[leavein] + 
                 bpar$DiagnosticTabs.predictivities.label.HorizOffset * 
@@ -9286,16 +9343,18 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
     AxesTab.plot.predictivities <- function(screen = TRUE) {
         if (!screen && Legend.yes()) {
             layout(mat = matrix(c(2, 2, 1, 1), ncol = 2, byrow = TRUE), 
-                heights = c(8 - 1.1, 1.1))
-            par(mar = c(0, 0, 0, 0), bg = "white")
+                heights = c(boptions$ExternalGraphHeight - 1.1, 
+                  1.1))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Legend.mar, 
+                bg = "white")
             plot(0.5, 0.5, bty = "n", type = "n", xaxt = "n", 
                 yaxt = "n", xlab = "", ylab = "", xaxs = "i", 
                 yaxs = "i", xlim = c(0, 1), ylim = c(0, 1))
-            par(mar = c(1, 4, 4, 4))
+            par(mar = boptions$DiagnosticGraphs.External.WithLegend.Main.mar)
         }
         else if (!screen) 
-            par(mar = c(2, 4, 2, 4))
-        else par(mar = c(2.5, 3, 2.5, 2))
+            par(mar = boptions$DiagnosticGraphs.External.WithoutLegend.mar)
+        else par(mar = boptions$DiagnosticGraphs.Screen.mar)
         par(bg = "white", pty = "s")
         leaveout <- sort(unique(c(which(is.na(AxesTab.predictivities1dim)), 
             which(is.na(AxesTab.predictivities)))))
@@ -9324,7 +9383,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             else title(main = "Axis predictivities", cex.main = 0.85)
         axis(side = 1, at = tickatx, cex.axis = 0.75)
         axis(side = 2, at = tickaty, cex.axis = 0.75)
-        lines(x = c(0, 1), y = c(0, 1), col = "orange")
+        lines(x = c(0, 1), y = c(0, 1), col = bpar$DiagnosticTabs.predictivities.diagonal.col)
         if (Biplot.axes.mode == 0) {
             if (tclvalue(AxesTab.ShowAxisLabels.var) == "1") 
                 text(x = AxesTab.predictivities1dim[leavein] + 
@@ -11296,8 +11355,8 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
         .Tcl("update")
         if (boptions$ReuseExternalWindows && dev.cur() > 1) 
             graphics.off()
-        x11(width = 7, height = 7)
-        Biplot.plot()
+        x11(width = boptions$ExternalGraphWidth, height = boptions$ExternalGraphHeight)
+        Biplot.plot(screen = FALSE)
         .Tcl("update")
     }
     Other.DisplayInExternalWindow.In3D.cmd <- function() {
