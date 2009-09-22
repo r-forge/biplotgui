@@ -5913,8 +5913,7 @@ function (Data, groups = rep(1, nrow(Data)), PointLabels = rownames(Data),
             "/doc/BiplotGUI.pdf", sep = "")))
     }
     Help.FeaturesManual.cmd <- function() {
-        shell.exec(as.character(paste(system.file(package = "BiplotGUI"), 
-            "/doc/FeaturesManual.pdf", sep = "")))
+        shell.exec("http://biplotgui.r-forge.r-project.org/FeaturesManual.pdf")
     }
     Help.HomePage.cmd <- function() {
         shell.exec("http://biplotgui.r-forge.r-project.org")

@@ -2,6 +2,7 @@ VERSION 0.0-5
 19 Septermber 2009
 
 * Separate Vignette and Features Manual entries are created in the Help menu.
+* The Features Manual is removed from the package; it is now available as a download from R-Forge.
 * The Vignette is updated. In particular, a statement concerning the calibrate package is corrected.
 * The Features Manual is updated.
 
